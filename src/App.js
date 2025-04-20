@@ -1,23 +1,33 @@
-import logo from './logo.svg';
+import { useEffect, useState } from 'react';
 import './App.css';
+import { supabase } from './supabaseClient';
 
 function App() {
+  const [accounts, setAccounts] = useState([]);
+
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      const { data, error } = await supabase.from('User').select('*');
+      if (error) {
+        console.error('錯誤：', error);
+      } else {
+        setAccounts(data);
+      }
+    };
+
+    fetchAccounts();
+  }, []);
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <h1>帳號列表</h1>
+      {accounts.map((item) => (
+        <div key={item.UserId}>
+          <p>帳號編號：{item.UserNo}</p>
+          <p>建立時間：{new Date(item.created_at).toLocaleString()}</p>
+          <hr />
+        </div>
+      ))}
     </div>
   );
 }
