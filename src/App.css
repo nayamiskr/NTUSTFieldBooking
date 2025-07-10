@@ -36,3 +36,41 @@
     transform: rotate(360deg);
   }
 }
+
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 64px;
+  padding: 0 24px;
+  background-color: white;
+  border-bottom: 1px solid #ddd;
+  font-family: 'Noto Sans TC', sans-serif;
+}
+
+.navbar-left h2 {
+  font-weight: bold;
+}
+
+.navbar-center {
+  display: flex;
+  gap: 24px;
+  list-style: none;
+}
+
+.navbar-center li a {
+  text-decoration: none;
+  color: #333;
+  font-weight: 500;
+}
+
+.navbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+
+
+
+
