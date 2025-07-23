@@ -1,13 +1,12 @@
 import './App.css';
-import Navbar from './components/navbar';
+import Homepage from './page/homepage';
 
 function App() {
   return (
     <div className="App">
-      <Navbar />
-      <h1>帳號列表</h1>
-      
+      <Homepage />
     </div>
+    
   );
 }
 
