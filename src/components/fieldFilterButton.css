@@ -1,0 +1,48 @@
+.field-filter-buttons {
+    display: flex;  
+    justify-content: flex-start;
+    padding: 20px 100px;
+    gap: 10px;
+}   
+
+.field-filter-buttons button {
+    width: 100px;
+    height: 40px;
+    border-radius: 50px;
+    border: 2px solid #7b7b7b;
+    background-color: #ffffff;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.field-filter-buttons button:hover {
+    background-color: #e0e0e0;
+    transition: background-color 0.5s ease;
+}
+
+.field-card-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    padding: 20px 100px;
+}
+
+.field-card img {
+    width: 100%;
+    height: 200px;
+    align-items: center;
+    object-fit: cover;
+    border-radius: 10px;
+}
+
+.field-card {
+    width: 300px;
+    height: 400px;
+    border: 1px solid #7b7b7b;
+    border-radius: 10px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
