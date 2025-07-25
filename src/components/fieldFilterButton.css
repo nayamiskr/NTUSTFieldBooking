@@ -46,3 +46,10 @@
     flex-direction: column;
     justify-content: space-between;
 }
+
+.field-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
+    transform: scale(1.02);
+    transition: box-shadow 0.3s ease;
+
+}
