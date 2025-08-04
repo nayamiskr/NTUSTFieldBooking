@@ -1,0 +1,258 @@
+.back-button {
+    padding: 15px 100px;
+    width: 100%;
+    display: flex;
+    color: #7b7b7b;
+}
+
+.back-button button {
+    display: flex;
+    justify-items: flex-end;
+    background: none;
+    border: none;
+    font-size: 18px;
+    font-weight: bold;
+    gap: 8px;
+    color: #7b7b7b;
+    align-items: center;
+}
+
+.back-button button:hover {
+    color: black;
+    transition: color 0.5s ease;
+}
+
+.main-container {
+    display: flex;
+    padding: 0px 100px;
+    gap: 20px;
+}
+
+.field-image {
+    width: 760px;
+    height: 410px;
+    border-radius: 10px;
+    object-fit: contain;
+}
+
+.right-panel {
+    width: 100%;
+    display: flex;
+    border: 1px solid #7b7b7b60;
+    border-radius: 10px;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 15px;
+    margin-bottom: 50px;
+
+}
+
+.right-panel h4,
+.right-panel p {
+    margin: 0;
+    padding: 10px;
+}
+
+.right-panel h4 {
+    font-size: 24px;
+    color: #000000;
+}
+
+.right-panel p {
+    display: flex;
+    box-sizing: border-box;
+    font-size: 20px;
+    width: 100%;
+    color: #7b7b7b;
+    border-bottom: 1px solid #ccc;
+}
+
+.main-container h2 {
+    display: flex;
+    justify-content: flex-start;
+    font-size: 36px;
+    color: #000000;
+    margin-bottom: 20px;
+}
+
+.field-description {
+    display: flex;
+    justify-content: flex-start;
+    font-size: 20px;
+    color: #7b7b7b;
+    margin-bottom: 20px;
+}
+
+.tab-container {
+    display: flex;
+    justify-content: space-between;
+    background-color: #f5f8fe;
+    border-radius: 12px;
+    padding: 8px 10px;
+    gap: 12px;
+    width: fit-content;
+    margin: 0 auto;
+}
+
+.tab {
+    width: 200px;
+    padding: 12px 24px;
+    border: none;
+    background-color: transparent;
+    color: #4b5563;
+    font-size: 18px;
+    font-weight: 500;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.tab:hover {
+    background-color: #e0e7ff;
+}
+
+.tab.active {
+    background-color: white;
+    color: #1f2937;
+    font-weight: 700;
+    box-shadow: 0 0 0 1px #d1d5db;
+}
+
+.info-section {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.info-card {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 270px;
+    gap: 40px;
+    padding: 20px;
+    border: 1px solid #d1d5db;  
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.icon {
+    font-size: 28px;
+    color: #3C6BD4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+}
+
+.text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    color: #111827;
+}
+
+.text .label {
+    font-size: 16px;
+    color: #4B5563;
+}
+
+.text .value {
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.text .status-open {
+    color: green;
+}
+
+.text .status-closed {
+    color: red;
+}
+
+.rule-section {
+    display: flex;
+    flex-direction: column;
+    justify-items: center;
+    margin: 20px auto 0 auto;
+    padding: 20px;
+    border: 1px solid #d1d5db;  
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 80%;
+    text-align: left;
+}
+
+.rule-list {
+    align-items: flex-start;
+    list-style-type: disc;
+    font-size: 20px;
+    padding-left: 20px;
+    color: #4b5563;
+}
+
+.facility-list {
+    display: grid;
+    grid-template-columns: repeat(2, 0.5fr); 
+    gap: 15px;
+    justify-content: center;
+    padding: 20px;
+}
+
+.facility-card {
+    padding: 20px;
+    border: 1px solid #d1d5db;  
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    width: 250px;
+    margin-left: auto;
+    margin-right: auto;
+    font-size: 18px;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.calendar {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.time-select {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+    padding: 16px;
+}
+
+.time-select button {
+    font-size: 20px;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+    color: #333;
+    cursor: pointer;
+}
+
+.book-now {
+    display: block;
+    align-items: center;
+    width: 70%;
+    padding: 15px;
+    background-color: #3C6BD4;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 20px;
+    cursor: pointer;
+    margin: 0 auto;
+}
