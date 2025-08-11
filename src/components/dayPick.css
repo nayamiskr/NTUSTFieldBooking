@@ -26,7 +26,7 @@
   background-color: rgba(0, 0, 0, 0.05);
 }
 
-.day-picker button.rdp-day_button_selected {
+.day-picker td.rdp-selected {
   background-color: #3b82f6;
   color: white;
   border-radius: 8px;
@@ -39,6 +39,11 @@
     margin-bottom: 16px;
 }
 
+.day-picker td[data-outside="true"],
+.day-picker td[data-disabled="true"] {
+  opacity: 0.4;
+  pointer-events: none;
+}
 
 .day-picker button.rdp-button_next,
 .day-picker button.rdp-button_previous {

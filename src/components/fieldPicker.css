@@ -1,0 +1,40 @@
+
+.grid-container {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    width: 760px;
+    height: 410px;
+    justify-items: center;
+    padding: 1rem;
+}
+
+.grid-box {
+    width: 140px;
+    height: 170px;
+    background-color: #d3d3d3;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.grid-box.selected {
+    background-color: #3b82f6;
+}
+
+.door {
+    position: absolute; 
+    bottom: 20px;
+    right: 0;
+    background-color: rgb(0, 195, 0);
+    width: 20px;
+    height: 70px;
+    display: flex;
+    color: white;
+    justify-content: center;
+    align-items: center;
+}

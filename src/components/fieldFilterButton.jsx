@@ -5,17 +5,17 @@ import "./fieldFilterButton.css";
 function FieldFilterButton() {
   const [filter, setFilter] = useState("全部");
   const navigate = useNavigate();
-  const handleFieldClick = (fieldId) => {
-    navigate(`/field/${fieldId}`);
+  const handleFieldClick = (fieldName, isSchool, field_img) => {
+    navigate(`/${fieldName}/${isSchool}/${field_img}`);
   };
 
   const mockFields = [
-    { id: 1, type: "羽球場", name: "羽球場一號", pict: "/field_img/badminton.jpg", desc: "這裡是介紹訊息" }, //新增所屬單位
-    { id: 2, type: "網球場", name: "網球場一號", pict: "/field_img/tennis-field.png", desc: "這裡是介紹訊息" },
-    { id: 5, type: "網球場", name: "網球場二號", pict: "/field_img/tennis-field.png", desc: "這裡是介紹訊息" },
-    { id: 3, type: "籃球場", name: "籃球場一號", pict: "/field_img/basketball.jpg", desc: "這裡是介紹訊息" },
-    { id: 4, type: "排球場", name: "排球場一號", pict: "/field_img/volleyball.jpg", desc: "這裡是介紹訊息" },
-    { id: 6, type: "排球場", name: "排球場二號", pict: "/field_img/volleyball.jpg", desc: "這裡是介紹訊息" },
+    { id: 1, type: "羽球場", isSchool: true, name: "羽球場一號", pict: "/field_img/badminton.jpg", desc: "在台科大裡面的羽球場" }, 
+    { id: 2, type: "網球場", isSchool: true, name: "網球場一號", pict: "/field_img/tennis-field.png", desc: "這裡是網球場所以不能煮飯" },
+    { id: 5, type: "網球場", isSchool: false, name: "校外某一個網球場", pict: "/field_img/tennis-not-school.jpg", desc: "我不是台科大的" },
+    { id: 3, type: "籃球場", isSchool: true, name: "籃球場一號", pict: "/field_img/basketball.jpg", desc: "這裡是打籃球的地方不是打架的地方" },
+    { id: 4, type: "排球場", isSchool: true, name: "排球場一號", pict: "/field_img/volleyball.jpg", desc: "這裡是介紹訊息" },
+    { id: 6, type: "排球場", isSchool: false, name: "排球場二號", pict: "/field_img/volleyball.jpg", desc: "這裡是介紹訊息" },
   ];
   //以使用者去分類可以看到的場地
   const filteredFields = filter === "全部"
@@ -38,7 +38,7 @@ function FieldFilterButton() {
 
       <div className="field-card-container">
         {filteredFields.map(field => (
-          <div key={field.id} className="field-card" onClick={() => handleFieldClick(field.name)}>
+          <div key={field.id} className="field-card" onClick={() => handleFieldClick(field.name, field.isSchool, field.pict)}>
             <img src={`${field.pict}`} alt={field.name} />
             <h3>{field.name}</h3>
             <p>{field.desc}</p>
