@@ -26,6 +26,7 @@
     display: flex;
     padding: 0px 100px;
     gap: 20px;
+    flex-direction: column;
 }
 
 .field-image {
@@ -130,7 +131,7 @@
     display: flex;
     flex-direction: row;
     align-items: center;
-    width: 270px;
+    width: 240px;
     gap: 40px;
     padding: 20px;
     border: 1px solid #d1d5db;
@@ -235,23 +236,6 @@
     padding: 16px;
 }
 
-.time-dropdown {
-    display: flex;
-    font-size: 16px;
-    flex-direction: column;
-    width: 100px;
-    height: 70px;
-    gap: 10px;
-}
-
-.start-time,
-.end-time {
-    height: 100%;
-    width: 100%;
-    text-align: center;
-    font-size: 24px;
-}
-
 .book-now {
     display: block;
     align-items: center;
@@ -264,4 +248,61 @@
     font-size: 20px;
     cursor: pointer;
     margin: 0 auto;
+}
+
+.time-select {
+    display: flex;
+    flex-direction: column;
+}
+
+.time-scale {
+    margin-top: 12px;
+}
+
+.time-scale__bar {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr); /* 08:00 到 22:00 共14格 */
+    gap: 6px;
+    align-items: stretch;
+    justify-items: stretch;
+}
+
+.time-scale__slot {
+    position: relative;
+    height: 60px;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+    background: #fafafa;
+    cursor: pointer;
+    user-select: none;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 12px;
+    padding: 4px;
+}
+
+/* reserved */
+.time-scale__slot.is-reserved {
+    background: rgba(27, 27, 27, 0.35);
+    border-color: #222222;
+}
+
+/* selected */
+.time-scale__slot.is-selected {
+    outline: 3px solid #4da3ff;
+    background: rgba(77, 163, 255, 0.15);
+}
+
+.time-scale__reserved-title {
+    font-size: 10px;
+    color: #333;
+}
+
+.time-scale__summary {
+    margin-top: 8px;
+    font-size: 14px;
+    opacity: 0.8;
 }
