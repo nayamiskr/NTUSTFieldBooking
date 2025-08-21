@@ -12,12 +12,14 @@ function FieldFilterButton() {
   const mockFields = [
     { id: 1, type: "羽球場", isSchool: true, name: "羽球場一號", pict: "/field_img/badminton.jpg", desc: "在台科大裡面的羽球場" }, 
     { id: 2, type: "網球場", isSchool: true, name: "網球場一號", pict: "/field_img/tennis-field.png", desc: "這裡是網球場所以不能煮飯" },
-    { id: 5, type: "網球場", isSchool: false, name: "校外某一個網球場", pict: "/field_img/tennis-not-school.jpg", desc: "我不是台科大的" },
     { id: 3, type: "籃球場", isSchool: true, name: "籃球場一號", pict: "/field_img/basketball.jpg", desc: "這裡是打籃球的地方不是打架的地方" },
     { id: 4, type: "排球場", isSchool: true, name: "排球場一號", pict: "/field_img/volleyball.jpg", desc: "這裡是介紹訊息" },
+    { id: 5, type: "網球場", isSchool: false, name: "校外某一個網球場", pict: "/field_img/tennis-not-school.jpg", desc: "我不是台科大的" },
     { id: 6, type: "排球場", isSchool: false, name: "排球場二號", pict: "/field_img/volleyball.jpg", desc: "這裡是介紹訊息" },
+    { id: 7, type: "羽球場", isSchool: false, name: "新店國小_羽球場", pict: "/field_img/pintu_bad.jpg", desc: "這裡是介紹訊息" },
+    { id: 8, type: "羽球場", isSchool: false, name: "新羽力_羽球場", pict: "/field_img/bad.jpg", desc: "這裡是介紹訊息" },
+    
   ];
-  //以使用者去分類可以看到的場地
   const filteredFields = filter === "全部"
     ? mockFields
     : mockFields.filter(field => field.type === filter);

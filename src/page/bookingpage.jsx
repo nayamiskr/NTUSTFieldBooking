@@ -2,19 +2,17 @@ import Navbar from "../components/navbar";
 import { FaArrowLeft } from "react-icons/fa";
 import "./bookingpage.css";
 import Calendar from "../components/dayPick";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import FieldPicker from "../components/fieldPicker";
+import TimeSelect from "../components/timeSelect";
 
-// --- Horizontal time scale config (1h intervals) ---
-const OPEN_HOUR = 8;  // 08:00
-const CLOSE_HOUR = 22; // 22:00 (last slot ends here)
+const OPEN_HOUR = 8;
+const CLOSE_HOUR = 22;
 const HOURS = Array.from({ length: CLOSE_HOUR - OPEN_HOUR }, (_, i) => OPEN_HOUR + i);
 
-// Demo reservations; replace with data from API later
-// time in 24h integer hours [start,end)
 const RESERVED_BOOKINGS = [
-  { start: 17, end: 20, title: "校隊訊練" }, // 7PM-8PM
+    { start: 17, end: 20, title: "校隊訊練" },
 ];
 
 function Bookpage() {
@@ -25,26 +23,32 @@ function Bookpage() {
     const [selectedField, setSelectedField] = useState(null);
     const [startTime, setStartTime] = useState("");
     const [endTime, setEndTime] = useState("");
+    const [selectedDate, setSelectedDate] = useState(new Date());
     const parseTime = (t) => parseInt(t.split(":")[0], 10);
+
+    const weekdayStr = useCallback((d) => {
+        if (!d) return null;
+        const map = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"]; // Date.getDay(): 0=週日
+        return map[d.getDay()];
+    }, []);
 
     const isReserved = (hour) => RESERVED_BOOKINGS.some(b => hour >= b.start && hour < b.end);
 
     const handleSlotClick = (hour) => {
-        if (isReserved(hour)) return; 
+        if (isReserved(hour)) return;
         if (!startTime) {
             setStartTime(`${hour}:00`);
             setEndTime("");
             return;
         }
-        
+
         const s = parseTime(startTime);
         if (hour + 1 <= s) {
-            // restart selection from this hour
             setStartTime(`${hour}:00`);
             setEndTime("");
             return;
         }
-        // ensure selection doesn't include reserved blocks in between
+
         for (let h = s; h < hour + 1; h++) {
             if (isReserved(h)) return;
         }
@@ -160,40 +164,21 @@ function Bookpage() {
                         </div>
                     )}
                 </div>
-                                {/* 右側 */}
+                {/* 右側 */}
                 <div className="right-panel">
                     <h4>預約場地</h4>
                     <p>選擇日期與時間進行預約</p>
 
                     <div className="calendar">
-                        <Calendar />
+                        <Calendar onChange={(d) => setSelectedDate(d)} />
                     </div>
 
-                    <div className="time-select">
-                        <div className="time-scale__bar">
-                            {HOURS.map((h) => {
-                                const reserved = isReserved(h);
-                                const selected = (startTime && parseTime(startTime) === h) || (endTime && parseTime(endTime) === h + 1) || (startTime && endTime && h >= parseTime(startTime) && h < parseTime(endTime));
-                                const slotClass = `time-scale__slot${reserved ? ' is-reserved' : ''}${selected ? ' is-selected' : ''}`;
-                                return (
-                                    <div
-                                        key={h}
-                                        className={slotClass}
-                                        onClick={() => handleSlotClick(h)}
-                                        title={reserved ? '已被預約' : `${h}:00 - ${h + 1}:00`}
-                                    >
-                                        <span>{`${String(h).padStart(2,'0')}:00 - ${String(h+1).padStart(2,'0')}:00`}</span>
-                                        {reserved && (
-                                          <span className="time-scale__reserved-title">{RESERVED_BOOKINGS.find(b => b.start === h)?.title || '已預約'}</span>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                        <div className="time-scale__summary">
-                            已選擇：{startTime || '—'} {endTime ? `→ ${endTime}` : ''}
-                        </div>
-                    </div>
+                    <TimeSelect
+                        lockedDay={weekdayStr(selectedDate) || "週四"}
+                        hideOtherDays={true}
+                        autoHighlightLockedBooked={true}
+                    />
+
                     <button className="book-now" onClick={handleBooking}>立即預約</button>
                 </div>
             </div>
