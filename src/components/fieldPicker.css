@@ -1,49 +1,24 @@
-.field-diagram {
-    position: flex;
-    background-color: rgba(0, 0, 0, 0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
+.field-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
 }
 
-
-.grid-container {
-    position: relative;
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 16px;
-    width: 760px;
-    height: 410px;
-    align-items: center;
-    justify-items: center;
-    padding: 1rem;
+.field-area {
+  padding: 10px 16px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s, transform 0.1s;
 }
 
-.grid-box {
-    width: 140px;
-    height: 170px;
-    background-color: #d3d3d3;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    color: white;
-    font-size: 1.5rem;
-    cursor: pointer;
+.field-area:hover {
+  background-color: #e0eaff;
 }
 
-.grid-box.selected {
-    background-color: #3b82f6;
-}
-
-.door {
-    position: absolute; 
-    bottom: 20px;
-    right: 0;
-    background-color: rgb(0, 195, 0);
-    width: 20px;
-    height: 70px;
-    display: flex;
-    color: white;
-    justify-content: center;
-    align-items: center;
+.field-area:active {
+  transform: scale(0.96);
 }

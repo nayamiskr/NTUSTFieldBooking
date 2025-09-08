@@ -46,11 +46,19 @@
 
 .slot[data-demo="true"] .badge {
     display: block;
-    background: rgba(59, 130, 246, 0.1);
-    border-color: #3b82f6;
+    background: rgba(255, 221, 87, 0.2);
+    border-color: #facc15;
 }
 
 .slot.locked {
-    background-color: #fff3cd;
-    border: 2px solid #f59e0b;
+  background-color: #cce5ff9d;
+  outline: 2px solid #58a9ebb9; 
+  color: #004d9a; 
+}
+
+/* 當同時是 locked + selected-range，優先使用選取的深藍 */
+.slot.locked.selected-range {
+  background-color: #1e3a8a; /* 深藍 */
+  color: #ffffff;
+  outline-color: #1e3a8a;
 }

@@ -5,66 +5,59 @@ const OPEN_HOUR = 8;
 const CLOSE_HOUR = 22; 
 const HOURS = Array.from({ length: CLOSE_HOUR - OPEN_HOUR }, (_, i) => OPEN_HOUR + i);
 
-const DAYS = ["週一", "週二", "週三", "週四", "週五", "週六", "週日"];
+const DAYS = [ "週日", "週一", "週二", "週三", "週四", "週五", "週六"];
 
 const RESERVED_BOOKINGS = [
-  { start: 17, end: 20, title: "校隊訓練" },
+  { day: "週二", start: 17, end: 20, title: "校隊訓練" },
+  { day: "週五", start: 13, end: 16, title: "校隊訓練" },
 ];
-
-const EN2ZH = {
-  Sunday: "週日",
-  Monday: "週一",
-  Tuesday: "週二",
-  Wednesday: "週三",
-  Thursday: "週四",
-  Friday: "週五",
-  Saturday: "週六",
-};
-
-const ZH_XQ = {
-  "星期一": "週一",
-  "星期二": "週二",
-  "星期三": "週三",
-  "星期四": "週四",
-  "星期五": "週五",
-  "星期六": "週六",
-  "星期日": "週日",
-  "星期天": "週日",
-};
-
-function normalizeWeekday(input) {
-  if (input == null) return null;
-  if (typeof input === "number") {
-    // JS getDay(): 0=Sunday ... 6=Saturday
-    const map = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
-    return map[input] ?? null;
-  }
-  if (typeof input === "string") {
-    const trimmed = input.trim();
-    if (DAYS.includes(trimmed)) return trimmed; // already zh label like "週一"
-    if (EN2ZH[trimmed]) return EN2ZH[trimmed]; // English name
-    if (ZH_XQ[trimmed]) return ZH_XQ[trimmed]; // Chinese "星期X"
-  }
-  return null;
-}
 
 function formatSlotLabel(h) {
   const pad = (n) => String(n).padStart(2, "0");
   return `${pad(h)}:00—${pad(h + 1)}:00`;
 }
 
-function TimeSelect({ selectedWeekday = null, lockedDay, hideOtherDays = true, autoHighlightLockedBooked = false }) {
-  const effectiveLockedDay = normalizeWeekday(selectedWeekday) || lockedDay;
-  const [selected, setSelected] = useState(new Set());
+function isInSelectedRange(day, hour, selectedRange) {
+  if (!selectedRange) return false;
+  if (day !== selectedRange.day) return false;
+  return hour >= selectedRange.start && hour < selectedRange.end;
+}
+
+function TimeSelect({lockedDay}) {
+  const [selectedRange, setSelectedRange] = useState(null);
+
+  const lockedIdx = DAYS.indexOf(lockedDay);
+  const visibleDays = lockedIdx >= 0
+    ? [DAYS[(lockedIdx + 6) % 7], DAYS[lockedIdx], DAYS[(lockedIdx + 1) % 7]]
+    : DAYS.slice(0, 3); 
+
+  const handleSlotClick = (day, hour) => {
+    if (!selectedRange) {
+      setSelectedRange({ day, start: hour, end: hour + 1 });
+      console.log('range =>', {day, start: hour, end: hour + 1});
+    } else {
+      if (day === selectedRange.day) {
+        if (hour >= selectedRange.start) {
+          setSelectedRange({ day, start: selectedRange.start, end: hour + 1 });
+          console.log('range =>', { day: selectedRange.day, start: Math.min(selectedRange.start, hour), end: Math.max(selectedRange.end, hour + 1) });
+        } else {
+          setSelectedRange({ day, start: hour, end: selectedRange.end });
+          console.log('range =>', { day: selectedRange.day, start: Math.min(selectedRange.start, hour), end: Math.max(selectedRange.end, hour + 1) });
+        }
+      } else {
+        setSelectedRange({ day, start: hour, end: hour + 1 });
+        console.log('range =>', {day, start: hour, end: hour + 1});
+      }
+    }
+  };
+
   return (
     <div style={{ width: "100%" }}>
-      
-
       <table className="time-grid">
         <thead>
           <tr>
             <th></th>
-            {DAYS.map((d) => (
+            {visibleDays.map((d) => (
               <th key={d}>{d}</th>
             ))}
           </tr>
@@ -73,32 +66,26 @@ function TimeSelect({ selectedWeekday = null, lockedDay, hideOtherDays = true, a
           {HOURS.map((h) => (
             <tr key={h}>
               <th>{formatSlotLabel(h)}</th>
-              {DAYS.map((d) => {
-                const demo = RESERVED_BOOKINGS.some((b) => h >= b.start && h < b.end);
+              {visibleDays.map((d) => {
+                const demo = RESERVED_BOOKINGS.some((b) => d === b.day && h >= b.start && h < b.end);
                 const key = `${d}-${h}`;
-                const isSelected = selected.has(key);
-                const toggle = () => {
-                  setSelected((prev) => {
-                    const next = new Set(prev);
-                    if (next.has(key)) next.delete(key);
-                    else next.add(key);
-                    return next;
-                  });
-                };
-                const isLockedDay = d === effectiveLockedDay;
+                const isSelected = isInSelectedRange(d, h, selectedRange);
+                const isLockedDay = d === lockedDay;
+                const inSelectedRange = isInSelectedRange(d, h, selectedRange);
                 return (
                   <td
                     key={key}
-                    className={`slot${isLockedDay ? " locked" : ""}`}
+                    className={`slot${isLockedDay ? " locked" : ""}${inSelectedRange ? " selected-range" : ""}`}
                     data-day={d}
                     data-hour={h}
                     data-demo={demo ? "true" : undefined}
                     data-selected={isSelected ? "true" : undefined}
                     title={`${d} ${formatSlotLabel(h)}`}
+                    onClick={() => handleSlotClick(d, h)}
                   >
                     {demo && (
                       <div className="badge">
-                        {RESERVED_BOOKINGS.find((b) => h >= b.start && h < b.end)?.title}
+                        {RESERVED_BOOKINGS.find((b) => d === b.day && h >= b.start && h < b.end)?.title}
                       </div>
                     )}
                   </td>

@@ -1,6 +1,5 @@
 .back-button {
     padding: 15px 100px;
-    width: 100%;
     display: flex;
     color: #7b7b7b;
 }
@@ -66,6 +65,13 @@
     width: 100%;
     color: #7b7b7b;
     border-bottom: 1px solid #ccc;
+}
+
+.legend{
+    display: flex;
+    flex-direction: row;
+    height: auto;
+    padding: 30px;
 }
 
 .main-container h2 {

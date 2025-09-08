@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./fieldFilterButton.css"; 
+import "./fieldFilterButton.css";
+import DayPicker from "./dayPick";
 
 function FieldFilterButton() {
   const [filter, setFilter] = useState("全部");
@@ -10,7 +11,7 @@ function FieldFilterButton() {
   };
 
   const mockFields = [
-    { id: 1, type: "羽球場", isSchool: true, name: "羽球場一號", pict: "/field_img/badminton.jpg", desc: "在台科大裡面的羽球場" }, 
+    { id: 1, type: "羽球場", isSchool: true, name: "羽球場一號", pict: "/field_img/badminton.jpg", desc: "在台科大裡面的羽球場" },
     { id: 2, type: "網球場", isSchool: true, name: "網球場一號", pict: "/field_img/tennis-field.png", desc: "這裡是網球場所以不能煮飯" },
     { id: 3, type: "籃球場", isSchool: true, name: "籃球場一號", pict: "/field_img/basketball.jpg", desc: "這裡是打籃球的地方不是打架的地方" },
     { id: 4, type: "排球場", isSchool: true, name: "排球場一號", pict: "/field_img/volleyball.jpg", desc: "這裡是介紹訊息" },
@@ -18,7 +19,8 @@ function FieldFilterButton() {
     { id: 6, type: "排球場", isSchool: false, name: "排球場二號", pict: "/field_img/volleyball.jpg", desc: "這裡是介紹訊息" },
     { id: 7, type: "羽球場", isSchool: false, name: "新店國小_羽球場", pict: "/field_img/pintu_bad.jpg", desc: "這裡是介紹訊息" },
     { id: 8, type: "羽球場", isSchool: false, name: "新羽力_羽球場", pict: "/field_img/bad.jpg", desc: "這裡是介紹訊息" },
-    
+    { id: 9, type: "羽球場", isSchool: false, name: "康軒文教_羽球場", pict: "/field_img/comeshame.webp", desc: "這裡是介紹訊息" },
+    { id: 10, type: "羽球場", isSchool: false, name: "北新_羽球場", pict: "/field_img/northnew.jpg", desc: "這裡是介紹訊息" },
   ];
   const filteredFields = filter === "全部"
     ? mockFields
@@ -26,6 +28,8 @@ function FieldFilterButton() {
 
   return (
     <>
+      <DayPicker />
+
       <div className="field-filter-buttons">
         {["全部", "羽球場", "網球場", "籃球場", "排球場"].map(type => (
           <button

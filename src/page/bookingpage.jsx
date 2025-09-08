@@ -21,51 +21,11 @@ function Bookpage() {
     const [activeTab, setActiveTab] = useState("info");
     const [isOpen, setIsOpen] = useState(true);
     const [selectedField, setSelectedField] = useState(null);
-    const [startTime, setStartTime] = useState("");
-    const [endTime, setEndTime] = useState("");
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const parseTime = (t) => parseInt(t.split(":")[0], 10);
+    const [selectedWeekday, setSelectedWeekday] = useState();
 
-    const weekdayStr = useCallback((d) => {
-        if (!d) return null;
-        const map = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"]; // Date.getDay(): 0=週日
-        return map[d.getDay()];
-    }, []);
-
-    const isReserved = (hour) => RESERVED_BOOKINGS.some(b => hour >= b.start && hour < b.end);
-
-    const handleSlotClick = (hour) => {
-        if (isReserved(hour)) return;
-        if (!startTime) {
-            setStartTime(`${hour}:00`);
-            setEndTime("");
-            return;
-        }
-
-        const s = parseTime(startTime);
-        if (hour + 1 <= s) {
-            setStartTime(`${hour}:00`);
-            setEndTime("");
-            return;
-        }
-
-        for (let h = s; h < hour + 1; h++) {
-            if (isReserved(h)) return;
-        }
-        setEndTime(`${hour + 1}:00`);
-    };
-
-    const handleBooking = () => {
-        if (!startTime || !endTime) {
-            alert("請選擇開始和結束時間");
-            return;
-        }
-        if (startTime >= endTime) {
-            alert("結束時間必須晚於開始時間");
-            return;
-        }
-        alert(`已成功預約 ${name}的 ${selectedField}，時間：${startTime} - ${endTime}`);
-    };
+    const handkeBooking = useCallback(() => {
+    })
 
     return (
 
@@ -86,7 +46,11 @@ function Bookpage() {
                         {isSchool === 'true' ? (
                             <img src={imgUrl} alt="場地圖片" className="field-image" />
                         ) : (
-                            <FieldPicker areaList={[1, 2, 3, 4, 5, 6]} onSelectField={setSelectedField} />
+                            <FieldPicker
+                                fieldName={name}
+                                selectedId={selectedField}
+                                onSelectField={({ id }) => setSelectedField(id)}
+                            />
                         )}
                     </div>
 
@@ -168,18 +132,16 @@ function Bookpage() {
                 <div className="right-panel">
                     <h4>預約場地</h4>
                     <p>選擇日期與時間進行預約</p>
+                    <div className="legend">
+                        <TimeSelect
+                            lockedDay={selectedWeekday}
+                        />
+                        <div className="calendar">
+                            <Calendar onDayPicked={(info) => { setSelectedDate(info.date); setSelectedWeekday(info.weekday); }} />
+                        </div>
 
-                    <div className="calendar">
-                        <Calendar onChange={(d) => setSelectedDate(d)} />
                     </div>
-
-                    <TimeSelect
-                        lockedDay={weekdayStr(selectedDate) || "週四"}
-                        hideOtherDays={true}
-                        autoHighlightLockedBooked={true}
-                    />
-
-                    <button className="book-now" onClick={handleBooking}>立即預約</button>
+                    <button className="book-now" onClick={handkeBooking}>立即預約</button>
                 </div>
             </div>
         </div>
