@@ -9,7 +9,6 @@ function FieldPicker({ fieldName, onSelectField, selectedId }) {
         return <div className="field-diagram-error">找不到「{String(fieldName)}」的場地資料</div>;
     }
 
-    // 2) 取得 viewBox 與資料
     const vb = { w: 1000, h: 600 };
 
     const areas = layout.areas;
@@ -29,7 +28,6 @@ function FieldPicker({ fieldName, onSelectField, selectedId }) {
                 style={{ width: '100%', height: 'auto', display: 'block' }}
                 role="img"
             >
-                {/* Areas: 可被選取的區塊 */}
                 {areas.map((a) => {
                     const isSelected = a.id === selectedId;
                     const isDisabled = a.status === 'blocked';
@@ -70,7 +68,6 @@ function FieldPicker({ fieldName, onSelectField, selectedId }) {
                     );
                 })}
 
-                {/* Fixtures */}
                 <g pointerEvents="none">
                     {fixtures.map((f, idx) => {
                         const isDoor = f.type === 'door';
