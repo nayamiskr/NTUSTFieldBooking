@@ -1,0 +1,51 @@
+.content {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+    margin-top: 20px;
+    gap: 20px;
+}
+
+.map-list {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    flex-direction: column;
+    padding: 20px;
+    height: 350px;
+    width: 40%;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+}
+
+h2 {
+    margin: 0px;
+}
+
+.content ul {
+    padding: 2px;
+    width: 100%;
+    overflow-y: scroll;
+}
+
+.content li {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* 上下分散 */
+    align-items: flex-start;
+    padding: 8px 12px;
+    height: 60px;
+    width: 90%;
+    border-radius: 10px;
+    border: 1px solid #000;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.content li .distance {
+    align-self: flex-end; /* 跑到右邊 */
+    font-size: 0.9em;
+    color: gray;
+}

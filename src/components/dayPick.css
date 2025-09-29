@@ -3,7 +3,7 @@
     flex-direction: column;
     align-items: center;
     margin: 20px;
-    background-color: white; /* 可以依需求換成其他色 */
+    background-color: white; 
     padding: 16px;
     border-radius: 8px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);

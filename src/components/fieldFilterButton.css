@@ -1,55 +1,76 @@
 .field-filter-buttons {
-    display: flex;  
+    display: flex;
     justify-content: flex-start;
     padding: 20px 100px;
     gap: 10px;
-}   
+}
 
 .field-filter-buttons button {
     width: 100px;
     height: 40px;
     border-radius: 50px;
     border: 2px solid #7b7b7b;
-    background-color: #ffffff;
-    font-size: 16px;
+    background-color: white;
     cursor: pointer;
+    font-size: 16px;
 }
 
-.field-filter-buttons button:hover {
-    background-color: #e0e0e0;
-    transition: background-color 0.5s ease;
-}
-
-.field-card-container {
-    display: flex;
-    flex-wrap: wrap;
+.table-wrapper {
     justify-content: center;
-    gap: 20px;
-    padding: 20px 100px;
-}
-
-.field-card img {
-    width: 100%;
-    height: 200px;
     align-items: center;
-    object-fit: cover;
-    border-radius: 10px;
+    overflow-x: auto;
 }
 
-.field-card {
-    width: 300px;
-    height: 400px;
+.field-schedule-table {
+    table-layout: fixed;
+    border-collapse: collapse;
+    min-width: max-content;
+    border-spacing: 0;
+    overflow: scroll;
+}
+
+.field-schedule-table th {
+    height: 50px;
+}
+
+.field-schedule-table th.time-col,
+.field-schedule-table td.time-col {
+    padding: 8px;
+    text-align: center;
+    vertical-align: middle;
+    width: 120px;
+    height: 50px;
+    word-wrap: break-word;
+    font-weight: bold;
+    background-color: #b0b0b0;
     border: 1px solid #7b7b7b;
-    border-radius: 10px;
-    padding: 10px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    border-right: none;
+    position: sticky;
+    left: 0;
+    z-index: 2;
 }
 
-.field-card:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4);
-    transform: scale(1.02);
-    transition: box-shadow 0.3s ease;
+.field-schedule-table th.field-col,
+.field-schedule-table td.field-col {
+    border: 1px solid #7b7b7b;
+    padding: 8px;
+    text-align: center;
+    vertical-align: middle;
+    width: auto;
+    height: 50px;
+    word-wrap: break-word;
+}
 
+.court-button {
+    border-radius: 10px;
+    border: 1px solid #7b7b7b;
+    background-color: white;
+}
+
+.arrow-button {
+    width: 30px;
+    height: 30px;
+    border-radius: 20px;
+    border: 1px solid #7b7b7b;
+    background-color: white;
 }

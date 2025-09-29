@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./fieldFilterButton.css";
 import DayPicker from "./dayPick";
+import NearbyMap from "./nearbyMap";
 
 function FieldFilterButton() {
   const [filter, setFilter] = useState("全部");
@@ -26,10 +27,34 @@ function FieldFilterButton() {
     ? mockFields
     : mockFields.filter(field => field.type === filter);
 
+  const timeSlots = [
+    "08:00 - 09:00",
+    "09:00 - 10:00",
+    "10:00 - 11:00",
+    "11:00 - 12:00",
+    "12:00 - 13:00",
+    "13:00 - 14:00",
+    "14:00 - 15:00",
+    "15:00 - 16:00",
+    "16:00 - 17:00",
+  ];
+
+  const fieldCourts = {
+    1: [1, 2, 3, 4],
+    2: [1, 2],
+    3: [1, 2, 3],
+    4: [1],
+    5: [1, 2],
+    6: [1, 2, 3],
+    7: [1, 2],
+    8: [1, 2, 3, 4],
+    9: [1],
+    10: [1, 2, 3],
+  };
+
   return (
     <>
-      <DayPicker />
-
+      <NearbyMap />
       <div className="field-filter-buttons">
         {["全部", "羽球場", "網球場", "籃球場", "排球場"].map(type => (
           <button
@@ -41,15 +66,41 @@ function FieldFilterButton() {
           </button>
         ))}
       </div>
+      <div className="table-wrapper">
+        <table className="field-schedule-table">
+          <thead>
+            <tr>
+              <th className="time-col">時間</th>
+              {filteredFields.map(field => (
+                <th key={field.id} className="field-col">{field.name}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {timeSlots.map((slot, idx) => (
+              <tr key={idx}>
+                <td className="time-col">{slot}</td>
+                {filteredFields.map(field => (
+                  <td key={field.id} className="field-col">
+                    <div className="field-cell" style={{ border: "1px solid #ccc", padding: "0.5rem", borderRadius: "4px" }}>
+                      <div className="court-numbers" style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
+                        {fieldCourts[field.id]?.map(courtNum => (
+                          <button key={courtNum} className="court-button" style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem" }}>
+                            {courtNum}
+                          </button>
 
-      <div className="field-card-container">
-        {filteredFields.map(field => (
-          <div key={field.id} className="field-card" onClick={() => handleFieldClick(field.name, field.isSchool, field.pict)}>
-            <img src={`${field.pict}`} alt={field.name} />
-            <h3>{field.name}</h3>
-            <p>{field.desc}</p>
-          </div>
-        ))}
+                        ))}
+                        <button className="arrow-button" onClick={() => handleFieldClick(field.name, field.isSchool, field.pict)}>
+                          →
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </>
   );
