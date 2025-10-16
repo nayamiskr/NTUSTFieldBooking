@@ -55,7 +55,7 @@ function FieldFilterButton() {
 
   return (
     <>
-      <div style={{width: "30%", margin: "1rem auto"}}>
+      <div style={{width: "400px", margin: "1rem auto"}}>
         <Calendar />
       </div>
       <NearbyMap filter={filter} />

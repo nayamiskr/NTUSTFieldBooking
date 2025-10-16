@@ -13,9 +13,19 @@ function Navbar() {
         <li><a href="#">公告</a></li>
         <li><a href="#">我的預約</a></li>
       </ul>
-      <div className="navbar-right">
-        <GiHamburgerMenu className="hamburger-icon" />
-        <IoPersonCircle className="person-icon" />
+      <div className="navbar-right dropdown">
+        <div className="icon-container">
+          <GiHamburgerMenu className="menu-icon" />
+          <IoPersonCircle className="person-icon" />
+        </div>
+        <div className="dropdown-content">
+          <a href="#">場地</a>
+          <a href="#">公告</a>
+          <a href="#">我的預約</a>
+          <a href="#">個人資料</a>
+          <a href="#">設定</a>
+          <a href="#">登出</a>
+        </div>
       </div>
     </nav>
   );

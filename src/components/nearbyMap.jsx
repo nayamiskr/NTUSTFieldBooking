@@ -1,5 +1,5 @@
 import { GoogleMap, LoadScript, OverlayView } from "@react-google-maps/api";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { RiMapPinUserFill } from "react-icons/ri";
 import { IoPinSharp } from "react-icons/io5";
 import { RiMapPin2Fill } from "react-icons/ri";
@@ -8,6 +8,8 @@ import "./nearbyMap.css";
 function NearbyMap(type) {
 
     const [currentPosition, setCurrentPosition] = useState(null);
+    const mapRef = useRef(null);
+
     const places = [
         { name: "羽球場一號", type: "羽球場", lat: 25.0137, lng: 121.5405, distance: "距離約0.3公里" },
         { name: "新羽力_羽球場", type: "羽球場", lat: 25.02437, lng: 121.5505, distance: "距離約1.0公里" },
@@ -43,6 +45,16 @@ function NearbyMap(type) {
     const getDistinctColor = (index) => pinColor[index % pinColor.length];
     const placesWithColor = places.map((p, i) => ({ ...p, color: getDistinctColor(i) }));
 
+    const handleRecenter = () => {
+        if (currentPosition && mapRef.current) {
+            mapRef.current.panTo(currentPosition);
+        }
+    };
+
+    const onLoad = (map) => {
+        mapRef.current = map;
+    };
+
     return (
         <div>
             <div className="content">
@@ -55,9 +67,11 @@ function NearbyMap(type) {
                             {
                                 zoomControl: false,
                                 mapTypeControl: false,
-                                streetViewControl: false
+                                streetViewControl: false,
+                                disableDefaultUI: true,
                             }
                         }
+                        onLoad={onLoad}
                     >
                         {currentPosition && (
                             <OverlayView
@@ -85,6 +99,13 @@ function NearbyMap(type) {
                                 </div>
                             </OverlayView>
                         ))}
+                        <button 
+                            className="recenter-button"
+                            onClick={handleRecenter}
+                            title="回到目前位置"
+                        >
+                            <IoPinSharp size={24} color="#333" />
+                        </button>
                     </GoogleMap>
                 </LoadScript>
                 <div className="map-list">
