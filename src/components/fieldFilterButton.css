@@ -15,7 +15,16 @@
     font-size: 16px;
 }
 
+.field-filter-buttons button:hover {
+    background-color: #b0b0b0;
+}
+
+.field-filter-buttons button.active {
+    background-color: #b0b0b0;
+}
+
 .table-wrapper {
+    display: flex;
     justify-content: center;
     align-items: center;
     overflow-x: auto;
@@ -43,7 +52,8 @@
     word-wrap: break-word;
     font-weight: bold;
     background-color: #b0b0b0;
-    border: 1px solid #7b7b7b;
+    border-top: 1px solid #7b7b7b;
+    border-bottom: 1px solid #7b7b7b;
     border-right: none;
     position: sticky;
     left: 0;
@@ -67,10 +77,6 @@
     background-color: white;
 }
 
-.arrow-button {
-    width: 30px;
-    height: 30px;
-    border-radius: 20px;
-    border: 1px solid #7b7b7b;
-    background-color: white;
+.court-button:hover {
+    background-color: #7b7b7b;
 }

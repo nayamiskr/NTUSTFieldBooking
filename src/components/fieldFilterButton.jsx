@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import "./fieldFilterButton.css";
 import DayPicker from "./dayPick";
 import NearbyMap from "./nearbyMap";
+import Calendar from "./dayPick";
 
 function FieldFilterButton() {
-  const [filter, setFilter] = useState("全部");
+  const [filter, setFilter] = useState("羽球場");
   const navigate = useNavigate();
   const handleFieldClick = (fieldName, isSchool, field_img) => {
     navigate(`/${fieldName}/${isSchool}/${field_img}`);
@@ -54,7 +55,10 @@ function FieldFilterButton() {
 
   return (
     <>
-      <NearbyMap />
+      <div style={{width: "30%", margin: "1rem auto"}}>
+        <Calendar />
+      </div>
+      <NearbyMap filter={filter} />
       <div className="field-filter-buttons">
         {["全部", "羽球場", "網球場", "籃球場", "排球場"].map(type => (
           <button
@@ -85,14 +89,14 @@ function FieldFilterButton() {
                     <div className="field-cell" style={{ border: "1px solid #ccc", padding: "0.5rem", borderRadius: "4px" }}>
                       <div className="court-numbers" style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
                         {fieldCourts[field.id]?.map(courtNum => (
-                          <button key={courtNum} className="court-button" style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem" }}>
+                          <button key={courtNum} className="court-button"
+                            onClick={() => handleFieldClick(field.name, field.isSchool, field.pict)}
+                            style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem" }}>
                             {courtNum}
                           </button>
 
                         ))}
-                        <button className="arrow-button" onClick={() => handleFieldClick(field.name, field.isSchool, field.pict)}>
-                          →
-                        </button>
+
                       </div>
                     </div>
                   </td>

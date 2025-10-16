@@ -14,7 +14,7 @@
     flex-direction: column;
     padding: 20px;
     height: 350px;
-    width: 40%;
+    width: 20%;
     border: 1px solid #ccc;
     border-radius: 10px;
 }
@@ -42,10 +42,16 @@ h2 {
     border: 1px solid #000;
     margin-bottom: 10px;
     position: relative;
+    font-size: 20px;
 }
 
 .content li .distance {
     align-self: flex-end; /* 跑到右邊 */
     font-size: 0.9em;
     color: gray;
+}
+
+.location-pin {
+    font-size: 30px;
+    -webkit-text-stroke: 2px rgb(0, 0, 0); /* 白色邊框 */
 }

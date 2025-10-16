@@ -1,3 +1,14 @@
+.calendar-button {
+  width: 140px;
+  height: 40px;
+  margin-top: 20px;
+  font-size: 16px;
+  background-color: #F6FAFF;
+  border-radius: 10px;
+  border: 0.5px solid #bcbfc3;
+  cursor: pointer;
+}
+
 .day-picker {
     display: flex;
     flex-direction: column;
