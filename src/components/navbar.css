@@ -101,7 +101,6 @@
     background-color: #f5f5f5;
 }
 
-/* 滑過或點擊 dropdown 顯示內容 */
 .dropdown:hover .dropdown-content {
     display: block;
 }

@@ -1,12 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "./fieldFilterButton.css";
-import DayPicker from "./dayPick";
 import NearbyMap from "./nearbyMap";
 import Calendar from "./dayPick";
 
 function FieldFilterButton() {
-  const [filter, setFilter] = useState("羽球場");
+  const [filter, setFilter] = useState("全部");
   const navigate = useNavigate();
   const handleFieldClick = (fieldName, isSchool, field_img) => {
     navigate(`/${fieldName}/${isSchool}/${field_img}`);
@@ -55,49 +53,52 @@ function FieldFilterButton() {
 
   return (
     <>
-      <div style={{width: "400px", margin: "1rem auto"}}>
+      <div style={{ width: "400px", margin: "1rem auto" }}>
         <Calendar />
       </div>
       <NearbyMap filter={filter} />
-      <div className="field-filter-buttons">
-        {["全部", "羽球場", "網球場", "籃球場", "排球場"].map(type => (
-          <button
-            key={type}
-            className={filter === type ? "active" : ""}
-            onClick={() => setFilter(type)}
-          >
-            {type}
-          </button>
-        ))}
-      </div>
-      <div className="table-wrapper">
-        <table className="field-schedule-table">
-          <thead>
+      
+      <div class="overflow-x-auto m-10 boreder border-gray-100 rounded-lg shadow-neutral-800">
+        <table class="min-w-full rounded-lg border-collapse shadow-sm text-center text-sm">
+          <thead class="bg-blue-100 text-gray-700 text-lg">
             <tr>
-              <th className="time-col">時間</th>
-              {filteredFields.map(field => (
-                <th key={field.id} className="field-col">{field.name}</th>
+              <th class="px-4 py-2  font-semibold sticky left-0 bg-blue-100">
+                時間
+              </th>
+              {filteredFields.map((field) => (
+                <th
+                  key={field.id}
+                  class="px-4 py-2 border border-gray-300 whitespace-nowrap"
+                >
+                  {field.name}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {timeSlots.map((slot, idx) => (
-              <tr key={idx}>
-                <td className="time-col">{slot}</td>
-                {filteredFields.map(field => (
-                  <td key={field.id} className="field-col">
-                    <div className="field-cell" style={{ border: "1px solid #ccc", padding: "0.5rem", borderRadius: "4px" }}>
-                      <div className="court-numbers" style={{ display: "flex", gap: "0.25rem", flexWrap: "wrap" }}>
-                        {fieldCourts[field.id]?.map(courtNum => (
-                          <button key={courtNum} className="court-button"
-                            onClick={() => handleFieldClick(field.name, field.isSchool, field.pict)}
-                            style={{ padding: "0.25rem 0.5rem", fontSize: "0.8rem" }}>
-                            {courtNum}
-                          </button>
-
-                        ))}
-
-                      </div>
+            {timeSlots.map((slot, index) => (
+              <tr
+                key={index}
+                class={`hover:bg-gray-50 transition ${index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                  }`}
+              >
+                <td class="px-4 py-2 border border-gray-300 font-medium text-gray-700 sticky left-0 bg-blue-50">
+                  {slot}
+                </td>
+                {filteredFields.map((field) => (
+                  <td key={field.id} class="px-2 py-2 border border-gray-300">
+                    <div class="flex justify-center gap-2 ">
+                      {fieldCourts[field.id].map((court) => (
+                        <button
+                          key={court}
+                          onClick={() =>
+                            handleFieldClick(field.name, field.isSchool, field.pict)
+                          }
+                          class="w-8 h-10 rounded-full bg-blue-100 text-blue-600 font-medium hover:bg-blue-500 hover:text-white transition"
+                        >
+                          {court}
+                        </button>
+                      ))}
                     </div>
                   </td>
                 ))}

@@ -3,7 +3,6 @@ import { useState, useEffect, useRef } from "react";
 import { RiMapPinUserFill } from "react-icons/ri";
 import { IoPinSharp } from "react-icons/io5";
 import { RiMapPin2Fill } from "react-icons/ri";
-import "./nearbyMap.css";
 
 function NearbyMap(type) {
 
@@ -57,10 +56,12 @@ function NearbyMap(type) {
 
     return (
         <div>
-            <div className="content">
+            
+            <div className="content flex flex-col justify-center md:flex-row gap-4">
+                <div className="w-full md:w-[55%] h-[400px] rounded-[10px] overflow-hidden">
                 <LoadScript googleMapsApiKey={'AIzaSyBNCKN0oogWugXNw5hgo1Ml7anOAbmNfMQ'}>
-                    <GoogleMap
-                        mapContainerStyle={{ width: '65%', height: '400px', borderRadius: '10px' }}
+                    <GoogleMap 
+                        mapContainerStyle={{ width: '100%', height: '100%' }}
                         center={currentPosition}
                         zoom={15}
                         options={
@@ -108,11 +109,12 @@ function NearbyMap(type) {
                         </button>
                     </GoogleMap>
                 </LoadScript>
-                <div className="map-list">
-                    <h2>附近場地</h2>
-                    <ul>
+                </div>
+                <div className="map-list" >
+                    <h2 class="text-2xl mb-5">附近場地</h2>
+                    <ul className="flex flex-row gap-1 w-auto overflow-x-auto snap-x snap-mandatory md:flex-col md:w-[300px] md:overflow-x-hidden md:gap-5">
                         {placesWithColor.map((place, idx) => (
-                            <li key={idx}>
+                            <li key={idx} class="flex justify-between shrink-0 max-w-[400px] snap-center text-center border rounded-xl p-2 mx-2 bg-white shadow">
                                 <span className="name" style={{ color: place.color }}>{place.name}</span>
                                 <span className="distance">{place.distance}</span>
                             </li>

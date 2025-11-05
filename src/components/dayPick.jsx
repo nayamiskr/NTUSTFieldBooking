@@ -43,7 +43,7 @@ function Calendar({ onDayPicked = () => { } }) {
           })
           : "選擇日期"}
       </button>
-      {showCalendar && (
+      <div className={`calendar-container ${showCalendar ? 'active' : ''}`}>
         <DayPicker
           mode="single"
           selected={selected}
@@ -54,7 +54,8 @@ function Calendar({ onDayPicked = () => { } }) {
             new Date(2025, 7, 18),
           ]}
         />
-      )}
+      </div>
+
     </div>
 
 

@@ -5,6 +5,7 @@
   "dependencies": {
     "@react-google-maps/api": "^2.20.7",
     "@supabase/supabase-js": "^2.49.4",
+    "@tailwindcss/cli": "^4.1.16",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
@@ -18,12 +19,17 @@
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
+  
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
+    "start": "concurrently -k \"npm:tw:watch\" \"react-scripts start\"",
+    "build": "npm run tw:build && react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "tw:build": "tailwindcss -i ./src/index.css -o ./src/index.output.css -m",
+    "tw:watch": "tailwindcss -i ./src/index.css -o ./src/index.output.css --watch"
   },
+
+  
   "eslintConfig": {
     "extends": [
       "react-app",
@@ -41,5 +47,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.16"
   }
 }

@@ -10,14 +10,31 @@
 }
 
 .day-picker {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    margin: 20px;
-    background-color: white; 
-    padding: 16px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  position: absolute;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: white;
+  padding: 16px;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  margin-top: 20px;
+}
+
+.calendar-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  max-height: 0;
+  opacity: 0;
+  z-index: 2;
+  transition: all 0.5s ease;
+}
+
+.calendar-container.active {
+  position: absolute;
+  left: 50%;
+  opacity: 1;
 }
 
 .day-picker button.rdp-day_button {
@@ -43,11 +60,11 @@
   border-radius: 8px;
 }
 
-.day-picker nav{
-    display: flex;
-    justify-content: space-between;
-    width: 100%;
-    margin-bottom: 16px;
+.day-picker nav {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 16px;
 }
 
 .day-picker td[data-outside="true"],

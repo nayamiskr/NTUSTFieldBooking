@@ -14,37 +14,14 @@
         align-items: center;
         width: 100%;
     }
-    .map-list {
-        width: 90%;
-        justify-content: center;
-        height: auto;
-    }
     GoogleMap {
         width: 100% !important;
         height: 300px !important;
     }
 }
 
-.map-list {
-    display: flex;
-    justify-content: flex-start;
-    align-items: flex-start;
-    flex-direction: column;
-    padding: 20px;
-    min-width: 20%;
-    height: 350px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-}
-
 h2 {
     margin: 0px;
-}
-
-.content ul {
-    padding: 2px;
-    width: 100%;
-    overflow-y: scroll;
 }
 
 .content li {
@@ -52,10 +29,9 @@ h2 {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    /* 上下分散 */
     align-items: flex-start;
     padding: 8px 12px;
-    height: 60px;
+    height: 70px;
     width: 90%;
     border-radius: 10px;
     border: 1px solid #000;
@@ -66,7 +42,6 @@ h2 {
 
 .content li .distance {
     align-self: flex-end;
-    /* 跑到右邊 */
     font-size: 0.9em;
     color: gray;
 }
@@ -74,7 +49,6 @@ h2 {
 .location-pin {
     font-size: 30px;
     -webkit-text-stroke: 2px rgb(0, 0, 0);
-    /* 白色邊框 */
 }
 
 .recenter-button {

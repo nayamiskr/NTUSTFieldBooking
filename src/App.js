@@ -9,7 +9,8 @@ function App() {
     <BrowserRouter>
       <div className="App">
         <Routes>
-          <Route path="/" element={<Homepage />} />
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/home" element={<Homepage />} />
           <Route path="/:name/:isSchool//field_img/:pict" element={<Bookingpage />} /> 
         </Routes>
       </div>
