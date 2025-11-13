@@ -74,7 +74,10 @@ function FieldFilterButton({ type }) {
 
   return (
     <>
-      <div style={{ width: "400px", margin: "1rem auto" }}>
+      <div class="flex flex-row justify-center items-center m-4 gap-4">
+        <div class="flex text-xl font-semibold">
+          預約日期 :
+        </div>
         <Calendar />
       </div>
       <NearbyMap filter={filter} onConfirmPlace={handleScrollToColumn} />
@@ -89,7 +92,7 @@ function FieldFilterButton({ type }) {
               {filteredFields.map((field) => (
                 <th
                   key={field.id}
-                  class={`px-4 py-2 border  whitespace-nowrap ${selectColumn === field.id ? "bg-yellow-200 border-gray-300" : ""}`}
+                  class={`px-4 py-2 border  whitespace-nowrap ${selectColumn === field.id ? "bg-yellow-200 border-gray-300" : "border-gray-300"}`}
                 >
                   {field.name}
                 </th>
@@ -115,11 +118,14 @@ function FieldFilterButton({ type }) {
                           onClick={() =>
                             handleFieldClick(field.name, field.isSchool, field.pict)
                           }
-                          class="w-8 h-10 rounded-full bg-blue-100 text-blue-600 font-medium hover:bg-blue-500 hover:text-white transition"
+                          class="hidden md:table-cell w-8 h-10 rounded-full bg-blue-100 text-blue-600 font-medium hover:bg-blue-500 hover:text-white transition"
                         >
                           {court}
                         </button>
                       ))}
+                      <button onClick={() => handleFieldClick(field.name, field.isSchool, field.pict)} class="md:hidden bg-green-400 text-white hover:bg-green-600 text-xs font-semibold px-2 py-1 rounded-md shadow">
+                        確認此時段
+                      </button>
                     </div>
                   </td>
                 ))}

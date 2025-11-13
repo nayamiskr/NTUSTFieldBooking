@@ -1,7 +1,6 @@
 .calendar-button {
   width: 140px;
   height: 40px;
-  margin-top: 20px;
   font-size: 16px;
   background-color: #F6FAFF;
   border-radius: 10px;
@@ -32,8 +31,7 @@
 }
 
 .calendar-container.active {
-  position: absolute;
-  left: 50%;
+
   opacity: 1;
 }
 

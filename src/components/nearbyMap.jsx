@@ -74,30 +74,29 @@ function NearbyMap({ filter, onConfirmPlace = () => { } }) {
     return (
         <div>
             <div className="map-list" >
-                <h2 className="text-2xl mb-5">附近場地</h2>
-                <ul className="flex flex-row gap-1 w-auto h-19 mb-5 overflow-x-auto snap-x snap-mandatory md:justify-center">
+                <ul class="flex flex-row gap-1 w-auto h-5rem mb-5 overflow-x-auto snap-x snap-mandatory md:justify-center">
                     {placesWithColor.map((place, idx) => (
                         <li
                             key={idx}
-                            className="relative flex justify-between shrink-0 max-w-[400px] snap-center text-center border rounded-xl p-2 mx-2 bg-white shadow"
+                            class="relative flex justify-between shrink-0 max-w-[400px] h-19 snap-center text-center border rounded-xl p-2 mx-2 bg-white shadow"
                         >
                             {idx === 0 && (
-                                <div className="absolute bottom-2 left-2 bg-red-100 text-red-600 text-xs font-medium px-2 py-0.5 rounded-full">
+                                <div class="absolute bottom-2 left-2 bg-red-100 text-red-600 text-xs font-medium px-2 py-0.5 rounded-full">
                                     上次預約
                                 </div>
                             )}
-                            <span className="name" style={{ color: place.color }}>{place.name}</span>
-                            <span className="distance">{place.distance}</span>
+                            <span class="name" style={{ color: place.color }}>{place.name}</span>
+                            <span class="distance">{place.distance}</span>
                             <button
                                 onClick={() => handleClickLocation(idx)}
-                                className="absolute bottom-2 right-20 bg-blue-400 text-white hover:bg-blue-600 text-base font-semibold px-2 py-1 rounded-md shadow"
+                                class="absolute bottom-2 right-20 bg-blue-400 text-white hover:bg-blue-600 text-base font-semibold px-2 py-1 rounded-md shadow"
                                 title="查看位置"
                             >
                                 <FaSearch />
                             </button>
                             <button
                                 onClick={() => handleClick(idx)}
-                                className="absolute bottom-2 right-2 bg-green-400 text-white hover:bg-green-600 text-xs font-semibold px-2 py-1 rounded-md shadow"
+                                class="absolute bottom-2 right-2 bg-green-400 text-white hover:bg-green-600 text-xs font-semibold px-2 py-1 rounded-md shadow"
                                 title="確認選擇"
                             >
                                 確認場地
@@ -106,13 +105,13 @@ function NearbyMap({ filter, onConfirmPlace = () => { } }) {
                     ))}
                 </ul>
             </div>
-            <div className="content flex flex-col justify-center md:flex-row gap-4">
-                <div className="w-full md:w-[70%] h-[400px] rounded-[10px] overflow-hidden relative">
+            <div class="content flex flex-col justify-center md:flex-row gap-4">
+                <div class="w-full md:w-[70%] h-[350px] rounded-[10px] overflow-hidden relative">
                     <LoadScript googleMapsApiKey={'AIzaSyBNCKN0oogWugXNw5hgo1Ml7anOAbmNfMQ'}>
                         <GoogleMap
                             mapContainerClassName="w-full h-full rounded-[10px] shadow-lg"
                             center={currentPosition}
-                            zoom={15}
+                            zoom={14.5}
                             options={
                                 {
                                     zoomControl: false,
