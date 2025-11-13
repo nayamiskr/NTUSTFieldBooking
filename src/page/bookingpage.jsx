@@ -2,7 +2,7 @@ import Navbar from "../components/navbar";
 import { FaArrowLeft } from "react-icons/fa";
 import "./bookingpage.css";
 import Calendar from "../components/dayPick";
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
 import FieldPicker from "../components/fieldPicker";
 import TimeSelect from "../components/timeSelect";
@@ -10,7 +10,6 @@ import TimeSelect from "../components/timeSelect";
 const OPEN_HOUR = 8;
 const CLOSE_HOUR = 22;
 const HOURS = Array.from({ length: CLOSE_HOUR - OPEN_HOUR }, (_, i) => OPEN_HOUR + i);
-
 const RESERVED_BOOKINGS = [
     { start: 17, end: 20, title: "校隊訊練" },
 ];

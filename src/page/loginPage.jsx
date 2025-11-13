@@ -4,16 +4,17 @@ import { useState } from "react";
 function LoginPage() {
   const [filter, setFilter] = useState();
   const navigate = useNavigate();
-  const handleLogin = (e) => {
+  const handleLogin = (e, type) => {
+    console.log("Logging in with filter:", filter);
     e.preventDefault();
-    navigate("/home", { state: { selectedType: filter } });
+    navigate(`/home/${type}`, { state: { selectedType: filter } });
   };
 
   return (
     <div class="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-100 to-blue-300">
       <div class="bg-white shadow-lg rounded-xl p-8 w-[90%] max-w-md">
         <h2 class="text-2xl font-bold text-center mb-6 text-gray-800">登入</h2>
-        <form class="space-y-5" onSubmit={handleLogin}>
+        <form class="space-y-5" onSubmit={(e) => handleLogin(e, filter)}>
           <div>
             <label class="block text-gray-600 mb-1" htmlFor="email">電子郵件</label>
             <input

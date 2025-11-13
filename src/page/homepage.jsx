@@ -1,16 +1,17 @@
-import { use } from "react";
+import { use, useRef } from "react";
 import FieldFilterButton from "../components/fieldFilterButton";
 import Navbar from "../components/navbar";
-import { useLocation } from "react-router-dom";
+import { useLocation, useParams } from "react-router-dom";
 
-function homepage() {
+function Homepage() {
+  const { fieldType } = useParams();
+  const refScroll = useRef(null);
   return (
     <div className="homepage">
         <Navbar />
-        <FieldFilterButton/>
-        
+        <FieldFilterButton type = {fieldType}/>
     </div>
   );
 }   
 
-export default homepage;
+export default Homepage;

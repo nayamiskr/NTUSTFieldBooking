@@ -8,7 +8,7 @@ function getWeekday(date) {
 }
 
 function Calendar({ onDayPicked = () => { } }) {
-  const [selected, setSelected] = useState();
+  const [selected, setSelected] = useState(new Date());
   const [showCalendar, setShowCalendar] = useState(false);
 
   const openCalendar = () => {
@@ -43,7 +43,12 @@ function Calendar({ onDayPicked = () => { } }) {
           })
           : "選擇日期"}
       </button>
-      <div className={`calendar-container ${showCalendar ? 'active' : ''}`}>
+      <div
+        className={`calendar-container ${showCalendar ? 'active' : ''}`}
+        style={{
+          pointerEvents: showCalendar ? "auto" : "none",
+        }}
+      >
         <DayPicker
           mode="single"
           selected={selected}

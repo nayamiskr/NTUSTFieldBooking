@@ -3,11 +3,14 @@ import { useState, useEffect, useRef } from "react";
 import { RiMapPinUserFill } from "react-icons/ri";
 import { IoPinSharp } from "react-icons/io5";
 import { RiMapPin2Fill } from "react-icons/ri";
+import { GiConfirmed } from "react-icons/gi";
 
-function NearbyMap(type) {
+
+function NearbyMap({ filter, onConfirmPlace = () => { } }) {
 
     const [currentPosition, setCurrentPosition] = useState(null);
     const mapRef = useRef(null);
+    const scrollRef = useRef(null);
 
     const places = [
         { name: "羽球場一號", type: "羽球場", lat: 25.0137, lng: 121.5405, distance: "距離約0.3公里" },
@@ -32,13 +35,13 @@ function NearbyMap(type) {
     }, []);
 
     const pinColor = [
-        "#E74C3C", 
-        "#E67E22", 
-        "#F1C40F", 
-        "#2ECC71", 
-        "#3498DB", 
-        "#0501e2ff", 
-        "#9B59B6", 
+        "#E74C3C",
+        "#E67E22",
+        "#F1C40F",
+        "#2ECC71",
+        "#3498DB",
+        "#0501e2ff",
+        "#9B59B6",
     ];
 
     const getDistinctColor = (index) => pinColor[index % pinColor.length];
@@ -50,78 +53,123 @@ function NearbyMap(type) {
         }
     };
 
+    const handleClickLocation = (idx) => {
+        newPos = { lat: (placesWithColor[idx].lat - currentPosition.lat) / 2, lng: (placesWithColor[idx].lng - currentPosition.lng) / 2 };
+    }
+
+    const handleClick = (index) => {
+        scrollRef.current.scrollIntoView({ behavior: 'smooth' });
+        setTimeout(() => {
+            if (onConfirmPlace) {
+                onConfirmPlace(index);
+            }
+        }, 800);
+    };
+
     const onLoad = (map) => {
         mapRef.current = map;
     };
 
     return (
         <div>
-            
-            <div className="content flex flex-col justify-center md:flex-row gap-4">
-                <div className="w-full md:w-[55%] h-[400px] rounded-[10px] overflow-hidden">
-                <LoadScript googleMapsApiKey={'AIzaSyBNCKN0oogWugXNw5hgo1Ml7anOAbmNfMQ'}>
-                    <GoogleMap 
-                        mapContainerStyle={{ width: '100%', height: '100%' }}
-                        center={currentPosition}
-                        zoom={15}
-                        options={
-                            {
-                                zoomControl: false,
-                                mapTypeControl: false,
-                                streetViewControl: false,
-                                disableDefaultUI: true,
-                            }
-                        }
-                        onLoad={onLoad}
-                    >
-                        {currentPosition && (
-                            <OverlayView
-                                position={currentPosition}
-                                mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-                            >
-                                <div className="location-pin">
-                                    <RiMapPinUserFill />
-                                </div>
-                            </OverlayView>
-                        )}
-                        {placesWithColor.map((place) => (
-                            <OverlayView
-                                position={{ lat: place.lat, lng: place.lng }}
-                                mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-                            >
-                                <div
-                                    className="location-pin"
-                                    style={{
-                                        color: place.color,
-                                        WebkitTextStroke: "2px white"
-                                    }}
-                                >
-                                    <RiMapPin2Fill />
-                                </div>
-                            </OverlayView>
-                        ))}
-                        <button 
-                            className="recenter-button"
-                            onClick={handleRecenter}
-                            title="回到目前位置"
+            <div className="map-list" >
+                <h2 className="text-2xl mb-5">附近場地</h2>
+                <ul className="flex flex-row gap-1 w-auto h-19 mb-5 overflow-x-auto snap-x snap-mandatory md:justify-center">
+                    {placesWithColor.map((place, idx) => (
+                        <li
+                            key={idx}
+                            className="relative flex justify-between shrink-0 max-w-[400px] snap-center text-center border rounded-xl p-2 mx-2 bg-white shadow"
                         >
-                            <IoPinSharp size={24} color="#333" />
-                        </button>
-                    </GoogleMap>
-                </LoadScript>
-                </div>
-                <div className="map-list" >
-                    <h2 class="text-2xl mb-5">附近場地</h2>
-                    <ul className="flex flex-row gap-1 w-auto overflow-x-auto snap-x snap-mandatory md:flex-col md:w-[300px] md:overflow-x-hidden md:gap-5">
-                        {placesWithColor.map((place, idx) => (
-                            <li key={idx} class="flex justify-between shrink-0 max-w-[400px] snap-center text-center border rounded-xl p-2 mx-2 bg-white shadow">
-                                <span className="name" style={{ color: place.color }}>{place.name}</span>
-                                <span className="distance">{place.distance}</span>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
+                            {idx === 0 && (
+                                <div className="absolute bottom-2 left-2 bg-red-100 text-red-600 text-xs font-medium px-2 py-0.5 rounded-full">
+                                    上次預約
+                                </div>
+                            )}
+                            <span className="name" style={{ color: place.color }}>{place.name}</span>
+                            <span className="distance">{place.distance}</span>
+                            <button
+                                onClick={() => handleClickLocation(idx)}
+                                className="absolute bottom-2 right-20 bg-blue-400 text-white hover:bg-blue-600 text-xs font-semibold px-2 py-1 rounded-md shadow"
+                                title="查看位置"
+                            >
+                                查看位置
+                            </button>
+                            <button
+                                onClick={() => handleClick(idx)}
+                                className="absolute bottom-2 right-2 bg-green-400 text-white hover:bg-green-600 text-xs font-semibold px-2 py-1 rounded-md shadow"
+                                title="確認選擇"
+                            >
+                                確認場地
+                            </button>
+                        </li>
+                    ))}
+                </ul>
             </div>
+            <div className="content flex flex-col justify-center md:flex-row gap-4">
+                <div className="w-full md:w-[70%] h-[400px] rounded-[10px] overflow-hidden relative">
+                    <LoadScript googleMapsApiKey={'AIzaSyBNCKN0oogWugXNw5hgo1Ml7anOAbmNfMQ'}>
+                        <GoogleMap
+                            mapContainerClassName="w-full h-full rounded-[10px] shadow-lg"
+                            center={currentPosition}
+                            zoom={15}
+                            options={
+                                {
+                                    zoomControl: false,
+                                    mapTypeControl: false,
+                                    streetViewControl: false,
+                                    disableDefaultUI: true,
+                                    styles: [
+                                        {
+                                            featureType: "poi",
+                                            stylers: [{ visibility: "off" }]
+                                        }
+                                    ]
+                                }
+                            }
+                            onLoad={onLoad}
+                        >
+                            {currentPosition && (
+                                <OverlayView
+                                    position={currentPosition}
+                                    mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+                                    getPixelPositionOffset={() => ({ x: -12, y: -24 })}
+                                >
+                                    <div className="text-blue-500 text-3xl drop-shadow-md">
+                                        <RiMapPinUserFill />
+                                    </div>
+                                </OverlayView>
+                            )}
+                            {placesWithColor.map((place, i) => (
+                                <OverlayView
+                                    key={i}
+                                    position={{ lat: place.lat, lng: place.lng }}
+                                    mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
+                                    getPixelPositionOffset={() => ({ x: -12, y: -24 })}
+                                >
+                                    <div
+                                        className="text-2xl drop-shadow-md"
+                                        style={{
+                                            color: place.color,
+                                            WebkitTextStroke: "2px white"
+                                        }}
+                                    >
+                                        <RiMapPin2Fill />
+                                    </div>
+                                </OverlayView>
+                            ))}
+                            <button
+                                className="absolute bottom-4 right-4 bg-white rounded-full p-2 shadow-md hover:bg-gray-100"
+                                onClick={handleRecenter}
+                                title="回到目前位置"
+                            >
+                                <IoPinSharp size={24} color="#333" />
+                            </button>
+                        </GoogleMap>
+                    </LoadScript>
+                </div>
+
+            </div>
+            <div ref={scrollRef}></div>
         </div>
     );
 
