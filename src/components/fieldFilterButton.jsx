@@ -3,25 +3,30 @@ import { useNavigate } from "react-router-dom";
 import NearbyMap from "./nearbyMap";
 import Calendar from "./dayPick";
 
-function FieldFilterButton({type}) {
+function FieldFilterButton({ type }) {
   const filter = type || "全部";
   const navigate = useNavigate();
   const tableRef = useRef(null);
+  const [selectColumn, setSelectColumn] = useState(null);
 
   const handleScrollToColumn = (index) => {
+    index++;
     if (tableRef.current) {
       const headers = tableRef.current.querySelectorAll("th");
-      const targetHeader = headers[index]; 
+      const targetHeader = headers[index];
       if (targetHeader) {
+        console.log(tableRef);
         tableRef.current.scrollTo({
-          left: targetHeader.offsetLeft,
+          left: targetHeader.offsetLeft - 150,
           behavior: "smooth",
         });
       }
+
+      setSelectColumn(index);
     }
   };
 
-  
+
   const handleFieldClick = (fieldName, isSchool, field_img) => {
     navigate(`/${fieldName}/${isSchool}/${field_img}`);
   };
@@ -33,10 +38,10 @@ function FieldFilterButton({type}) {
     { id: 4, type: "排球場", isSchool: true, name: "排球場一號", pict: "/field_img/volleyball.jpg", desc: "這裡是介紹訊息" },
     { id: 5, type: "網球場", isSchool: false, name: "校外某一個網球場", pict: "/field_img/tennis-not-school.jpg", desc: "我不是台科大的" },
     { id: 6, type: "排球場", isSchool: false, name: "排球場二號", pict: "/field_img/volleyball.jpg", desc: "這裡是介紹訊息" },
-    { id: 7, type: "羽球場", isSchool: false, name: "新羽力_羽球場", pict: "/field_img/pintu_bad.jpg", desc: "這裡是介紹訊息" },
-    { id: 8, type: "羽球場", isSchool: false, name: "北新_羽球場", pict: "/field_img/bad.jpg", desc: "這裡是介紹訊息" },
-    { id: 9, type: "羽球場", isSchool: false, name: "新店國小_羽球場", pict: "/field_img/comeshame.webp", desc: "這裡是介紹訊息" },
-    { id: 10, type: "羽球場", isSchool: false, name: "康軒文教_羽球場", pict: "/field_img/northnew.jpg", desc: "這裡是介紹訊息" },
+    { id: 2, type: "羽球場", isSchool: false, name: "新羽力_羽球場", pict: "/field_img/pintu_bad.jpg", desc: "這裡是介紹訊息" },
+    { id: 3, type: "羽球場", isSchool: false, name: "北新_羽球場", pict: "/field_img/bad.jpg", desc: "這裡是介紹訊息" },
+    { id: 4, type: "羽球場", isSchool: false, name: "新店國小_羽球場", pict: "/field_img/comeshame.webp", desc: "這裡是介紹訊息" },
+    { id: 5, type: "羽球場", isSchool: false, name: "康軒文教_羽球場", pict: "/field_img/northnew.jpg", desc: "這裡是介紹訊息" },
   ];
   const filteredFields = filter === "全部"
     ? mockFields
@@ -72,9 +77,9 @@ function FieldFilterButton({type}) {
       <div style={{ width: "400px", margin: "1rem auto" }}>
         <Calendar />
       </div>
-      <NearbyMap filter={filter} onConfirmPlace={handleScrollToColumn}/>
-      
-      <div ref={tableRef} class="overflow-x-auto m-5 boreder border-gray-100 rounded-lg shadow-neutral-800">
+      <NearbyMap filter={filter} onConfirmPlace={handleScrollToColumn} />
+
+      <div ref={tableRef} class={`overflow-x-auto m-5 boreder border-gray-100 rounded-lg shadow-neutral-800 `}>
         <table class="min-w-full rounded-lg border-collapse shadow-sm text-center text-sm">
           <thead class="bg-blue-100 text-gray-700 text-lg">
             <tr>
@@ -84,7 +89,7 @@ function FieldFilterButton({type}) {
               {filteredFields.map((field) => (
                 <th
                   key={field.id}
-                  class="px-4 py-2 border border-gray-300 whitespace-nowrap"
+                  class={`px-4 py-2 border  whitespace-nowrap ${selectColumn === field.id ? "bg-yellow-200 border-gray-300" : ""}`}
                 >
                   {field.name}
                 </th>

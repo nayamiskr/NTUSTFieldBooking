@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { RiMapPinUserFill } from "react-icons/ri";
 import { IoPinSharp } from "react-icons/io5";
 import { RiMapPin2Fill } from "react-icons/ri";
-import { GiConfirmed } from "react-icons/gi";
+import { FaSearch } from "react-icons/fa";
 
 
 function NearbyMap({ filter, onConfirmPlace = () => { } }) {
@@ -54,7 +54,8 @@ function NearbyMap({ filter, onConfirmPlace = () => { } }) {
     };
 
     const handleClickLocation = (idx) => {
-        newPos = { lat: (placesWithColor[idx].lat - currentPosition.lat) / 2, lng: (placesWithColor[idx].lng - currentPosition.lng) / 2 };
+        const newPos = { lat: (placesWithColor[idx].lat + currentPosition.lat) / 2, lng: (placesWithColor[idx].lng + currentPosition.lng) / 2 };
+        mapRef.current.panTo(newPos);
     }
 
     const handleClick = (index) => {
@@ -89,10 +90,10 @@ function NearbyMap({ filter, onConfirmPlace = () => { } }) {
                             <span className="distance">{place.distance}</span>
                             <button
                                 onClick={() => handleClickLocation(idx)}
-                                className="absolute bottom-2 right-20 bg-blue-400 text-white hover:bg-blue-600 text-xs font-semibold px-2 py-1 rounded-md shadow"
+                                className="absolute bottom-2 right-20 bg-blue-400 text-white hover:bg-blue-600 text-base font-semibold px-2 py-1 rounded-md shadow"
                                 title="查看位置"
                             >
-                                查看位置
+                                <FaSearch />
                             </button>
                             <button
                                 onClick={() => handleClick(idx)}
