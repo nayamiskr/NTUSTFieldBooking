@@ -12,7 +12,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/home/:fieldType/:token" element={<Homepage />} />
-          <Route path="/:name/:isSchool//field_img/:pict" element={<Bookingpage />} /> 
+          <Route path="/:name/:isSchool//:field_img/:pict" element={<Bookingpage />} /> 
           <Route path='/pay' element={<PayPage/>}/>
         </Routes>
       </div>
