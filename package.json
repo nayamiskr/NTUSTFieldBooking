@@ -10,6 +10,8 @@
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
+    "axios": "^1.13.2",
+    "concurrently": "^9.2.1",
     "react": "^19.1.0",
     "react-day-picker": "^9.8.1",
     "react-dom": "^19.1.0",
@@ -19,7 +21,6 @@
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
-  
   "scripts": {
     "start": "concurrently -k \"npm:tw:watch\" \"react-scripts start\"",
     "build": "npm run tw:build && react-scripts build",
@@ -28,8 +29,6 @@
     "tw:build": "tailwindcss -i ./src/index.css -o ./src/index.output.css -m",
     "tw:watch": "tailwindcss -i ./src/index.css -o ./src/index.output.css --watch"
   },
-
-  
   "eslintConfig": {
     "extends": [
       "react-app",

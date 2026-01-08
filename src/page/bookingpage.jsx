@@ -22,6 +22,7 @@ function Bookpage() {
     const [selectedField, setSelectedField] = useState(null);
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [selectedWeekday, setSelectedWeekday] = useState();
+    const [selectedSlot, setSelectedSlot] = useState(null);
 
     const handkeBooking = useCallback(() => {
     })
@@ -30,18 +31,18 @@ function Bookpage() {
 
         <div className="booking-page">
             <Navbar />
-            <div className="back-button">
-                <button onClick={() => window.history.back()}>
+            <div class="flex w-[150px] gap-2.5 items-end m-5 md:ml-[50px]">
+                <button onClick={() => window.history.back()} class="flex items-center gap-2.5 text-xl text-gray-500 hover:text-black transition-colors duration-300">
                     <FaArrowLeft />
                     返回場地列表
                 </button>
             </div>
 
-            <div className="main-container">
+            <div className="main-container" class="px-4">
 
                 {/* 左側 */}
                 <div className="left-panel">
-                    <div className="field-board">
+                    <div className="field-board" class="flex justify-center">
                         {isSchool === 'true' ? (
                             <img src={imgUrl} alt="場地圖片" className="field-image" />
                         ) : (
@@ -52,14 +53,14 @@ function Bookpage() {
                             />
                         )}
                     </div>
-
-                    <h2>{name}</h2>
-                    <p className="field-description">跟你們介紹一下這個網球場，這裡是拿來打籃球的，
-                        不是打羽球的
-                    </p>
-
+                    <div class="md:px-[50px]">
+                        <h2 class="flex justify-self-start text-3xl font-medium">{name}</h2>
+                        <p className="field-description">跟你們介紹一下這個網球場，這裡是拿來打籃球的，
+                            不是打羽球的
+                        </p>
+                    </div>
                     {/* Tabs */}
-                    <div className="tab-container">
+                    <div className="tab-container w-full min-width 260px max-w-[450px] mx-auto m-3 flex justify-center gap-7 border border-gray-200 rounded-lg">
                         <button className={`tab ${activeTab === 'info' ? 'active' : ''}`} onClick={() => setActiveTab('info')}>場地資訊</button>
                         <button className={`tab ${activeTab === 'rule' ? 'active' : ''}`} onClick={() => setActiveTab('rule')}>使用規則</button>
                         <button className={`tab ${activeTab === 'facility' ? 'active' : ''}`} onClick={() => setActiveTab('facility')}>設施</button>
@@ -129,16 +130,73 @@ function Bookpage() {
                 </div>
                 {/* 右側 */}
                 <div className="right-panel">
-                    <h4>預約場地</h4>
+                    <h4>場地時段金額總覽</h4>
                     <p>選擇日期與時間進行預約</p>
-                    <div className="legend">
-                        <TimeSelect
-                            lockedDay={selectedWeekday}
-                        />
-                        <div className="calendar">
-                            <Calendar onDayPicked={(info) => { setSelectedDate(info.date); setSelectedWeekday(info.weekday); }} />
-                        </div>
+                    <div class="overflow-x-auto xl:overflow-visible mt-[20px] mb-[100px] border border-gray-100 rounded-lg shadow-neutral-800 w-full xl:w-auto mx-auto">
+                        <table class="w-full min-w-[900px] md:w-full rounded-lg border-collapse shadow-sm text-center text-sm mx-auto">
+                            <thead class="bg-blue-100 text-gray-700 text-lg">
+                                <tr>
+                                    <th class="px-2 py-2 font-semibold sticky left-0 bg-blue-100 min-w-[80px] text-sm">
+                                        時間
+                                    </th>
 
+                                    {Array.from({ length: 7 }, (_, i) => {
+                                        const d = new Date();
+                                        d.setDate(d.getDate() + i);
+                                        return (
+                                            <th
+                                                key={i}
+                                                className="px-3 py-2 border border-gray-300 whitespace-nowrap"
+                                            >
+                                                {d.toLocaleDateString("zh-TW", {
+                                                    weekday: "short",
+                                                    month: "numeric",
+                                                    day: "numeric",
+                                                })}
+                                            </th>
+                                        );
+                                    })}
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {HOURS.map((hour) => (
+                                    <tr key={hour} className="hover:bg-gray-50 transition">
+                                        <td className="px-2 py-2 border border-gray-300 sticky left-0 bg-blue-50 text-sm z-50">
+                                            {`${hour}:00 - ${hour + 1}:00`}
+                                        </td>
+
+                                        {Array.from({ length: 7 }, (_, i) => {
+                                            const date = new Date();
+                                            date.setDate(date.getDate() + i);
+                                            const key = `${date.toDateString()}-${hour}`;
+                                            const isFull = hour === 12;
+                                            const isSelected = selectedSlot === key;
+
+                                            return (
+                                                <td
+                                                    key={i}
+                                                    onClick={() => !isFull && setSelectedSlot(prev => (prev === key ? null : key))}
+                                                    class={`
+                                      px-2 py-3 border border-gray-300 text-sm font-medium rounded
+                                      text-blue-600
+                                      transition
+                                      ${isFull
+                                                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                                            : isSelected
+                                                                ? "bg-blue-600 text-white shadow-md scale-105 cursor-pointer"
+                                                                : "bg-white hover:bg-blue-200 cursor-pointer"
+                                                        }
+                                    `}
+                                                >
+                                                    {isFull ? "已滿" : "$200"}
+                                                </td>
+                                            );
+                                        })}
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
                     </div>
                     <button className="book-now" onClick={handkeBooking}>立即預約</button>
                 </div>

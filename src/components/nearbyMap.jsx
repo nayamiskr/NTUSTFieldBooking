@@ -21,13 +21,17 @@ function NearbyMap({ filter, onConfirmPlace = () => { } }) {
     ];
 
     useEffect(() => {
-        if (navigator.geolocation) {
+        const saved = localStorage.getItem("currentPosition");
+        if (saved) {
+            setCurrentPosition(JSON.parse(saved));
+        } else if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(position => {
                 const pos = {
                     lat: position.coords.latitude,
                     lng: position.coords.longitude
                 };
                 setCurrentPosition(pos);
+                localStorage.setItem("currentPosition", JSON.stringify(pos));
             }, () => {
                 console.log("你拒絕定位");
             });
@@ -107,7 +111,10 @@ function NearbyMap({ filter, onConfirmPlace = () => { } }) {
             </div>
             <div class="content flex flex-col justify-center md:flex-row gap-4">
                 <div class="w-full md:w-[70%] h-[350px] rounded-[10px] overflow-hidden relative">
-                    <LoadScript googleMapsApiKey={'AIzaSyBNCKN0oogWugXNw5hgo1Ml7anOAbmNfMQ'}>
+                    <LoadScript
+                        googleMapsApiKey={'AIzaSyBNCKN0oogWugXNw5hgo1Ml7anOAbmNfMQ'}
+                    >
+                        {currentPosition ? (
                         <GoogleMap
                             mapContainerClassName="w-full h-full rounded-[10px] shadow-lg"
                             center={currentPosition}
@@ -164,7 +171,11 @@ function NearbyMap({ filter, onConfirmPlace = () => { } }) {
                             >
                                 <IoPinSharp size={24} color="#333" />
                             </button>
-                        </GoogleMap>
+                        </GoogleMap>) : (
+                            <div class="w-full h-full flex items-center justify-center">
+                                取得目前位置中...
+                            </div>
+                        )}
                     </LoadScript>
                 </div>
 
