@@ -6,7 +6,6 @@ function PayPage() {
 
   const {
     fieldName,
-    fieldNo,
     date,
     timeRange,
     hours,
@@ -24,6 +23,12 @@ function PayPage() {
         </button>
       </div>
     );
+  }
+
+  function handlePayment() {
+    // 這裡可以加入付款邏輯
+    alert("訂單已送出！請耐心等候審核。");
+    navigate(`/order`);
   }
 
   return (
@@ -135,9 +140,9 @@ function PayPage() {
           </div>
         </div>
 
-        {/* 操作按鈕 */}
         <div className="space-y-3">
           <button
+          onClick={handlePayment}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition"
           >
             前往付款

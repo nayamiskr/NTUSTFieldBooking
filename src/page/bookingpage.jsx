@@ -20,8 +20,6 @@ function Bookpage() {
     const [activeTab, setActiveTab] = useState("info");
     const [isOpen, setIsOpen] = useState(true);
     const [selectedField, setSelectedField] = useState(null);
-    const [selectedDate, setSelectedDate] = useState(new Date());
-    const [selectedWeekday, setSelectedWeekday] = useState();
     const [selectedSlot, setSelectedSlot] = useState(null);
 
     const handkeBooking = useCallback(() => {

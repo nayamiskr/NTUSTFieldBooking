@@ -32,8 +32,10 @@ function LoginPage() {
       }
 
       const res = await api.post("/auth/login", { email, password });
-
-      navigate(`/home/${type}/${res.data.access_token}`, {
+      localStorage.setItem("token", res.data.access_token);
+      localStorage.setItem("userId", JSON.stringify(res.data.user.id));
+      localStorage.setItem("type", filter);
+      navigate(`/home/${type}`, {
         state: { selectedType: type },
       });
     } catch (error) {

@@ -2,8 +2,11 @@ import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import NearbyMap from "./nearbyMap";
 import Calendar from "./dayPick";
+import api from "../baseApi";
 
-function FieldFilterButton({ type }) {
+
+
+function FieldFilterButton({ type, token }) {
   const filter = type || "全部";
   const navigate = useNavigate();
   const tableRef = useRef(null);
@@ -44,6 +47,7 @@ function FieldFilterButton({ type }) {
   };
   const [priceTotal, setPriceTotal] = useState(0);
 
+  
   const mockFields = [
     { id: 1, type: "羽球場", isSchool: true, name: "羽球場一號", pict: "/field_img/badminton.jpg", desc: "在台科大裡面的羽球場" },
     { id: 2, type: "網球場", isSchool: true, name: "網球場一號", pict: "/field_img/tennis-field.png", desc: "這裡是網球場所以不能煮飯" },
@@ -56,6 +60,7 @@ function FieldFilterButton({ type }) {
     { id: 4, type: "羽球場", isSchool: false, name: "新店國小_羽球場", pict: "/field_img/comeshame.webp", desc: "這裡是介紹訊息" },
     { id: 5, type: "羽球場", isSchool: false, name: "康軒文教_羽球場", pict: "/field_img/northnew.jpg", desc: "這裡是介紹訊息" },
   ];
+  
   
   const filteredFields = filter === "全部"
     ? mockFields
@@ -243,10 +248,9 @@ function FieldFilterButton({ type }) {
                 const startTime = timeSlots[startIndex].split(" - ")[0];
                 const endTime = timeSlots[endIndex].split(" - ")[1];
 
-                navigate("/pay", {
+                navigate(`/pay`, {
                   state: {
                     fieldName: selectedSlots.fieldKey,
-                    fieldNo: "",
                     date: new Date().toLocaleDateString("zh-TW"),
                     timeRange: `${startTime} - ${endTime}`,
                     hours: selectedSlots.times.length,
