@@ -2,7 +2,7 @@ import Navbar from "../components/navbar";
 import { FaArrowLeft } from "react-icons/fa";
 import "./bookingpage.css";
 import Calendar from "../components/dayPick";
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import FieldPicker from "../components/fieldPicker";
 import TimeSelect from "../components/timeSelect";
@@ -20,7 +20,39 @@ function Bookpage() {
     const [activeTab, setActiveTab] = useState("info");
     const [isOpen, setIsOpen] = useState(true);
     const [selectedField, setSelectedField] = useState(null);
-    const [selectedSlot, setSelectedSlot] = useState(null);
+
+    // 單場地七日：選取狀態（用 fieldKey + times 來支援連選）
+    const [selectedSlots, setSelectedSlots] = useState({ fieldKey: null, times: [] });
+
+    // 依場地決定可選球場數量（先用 1~4；之後可改成由 API capacity 生成）
+    const courts = [1, 2, 3, 4];
+
+    const toggleSlot = (fieldKey, timeIndex) => {
+        setSelectedSlots((prev) => {
+            const { fieldKey: prevKey, times } = prev;
+
+            // 換到另一個 key：直接改成新的一筆
+            if (!prevKey || prevKey !== fieldKey) {
+                return { fieldKey, times: [timeIndex] };
+            }
+
+            // 點已選：取消
+            if (times.includes(timeIndex)) {
+                return { fieldKey, times: times.filter((t) => t !== timeIndex) };
+            }
+
+            // 只允許連續擴展（跟你原本邏輯一致）
+            const min = Math.min(...times);
+            const max = Math.max(...times);
+            const isAdjacent = timeIndex === min - 1 || timeIndex === max + 1;
+
+            if (!isAdjacent) {
+                return { fieldKey, times: [timeIndex] };
+            }
+
+            return { fieldKey, times: [...times, timeIndex].sort((a, b) => a - b) };
+        });
+    };
 
     const handkeBooking = useCallback(() => {
     })
@@ -29,18 +61,18 @@ function Bookpage() {
 
         <div className="booking-page">
             <Navbar />
-            <div class="flex w-[150px] gap-2.5 items-end m-5 md:ml-[50px]">
-                <button onClick={() => window.history.back()} class="flex items-center gap-2.5 text-xl text-gray-500 hover:text-black transition-colors duration-300">
+            <div className="flex w-[150px] gap-2.5 items-end m-5 md:ml-[50px]">
+                <button onClick={() => window.history.back()} className="flex items-center gap-2.5 text-xl text-gray-500 hover:text-black transition-colors duration-300">
                     <FaArrowLeft />
                     返回場地列表
                 </button>
             </div>
 
-            <div className="main-container" class="px-4">
+            <div className="main-container px-4">
 
                 {/* 左側 */}
                 <div className="left-panel">
-                    <div className="field-board" class="flex justify-center">
+                    <div className="field-board flex justify-center">
                         {isSchool === 'true' ? (
                             <img src={imgUrl} alt="場地圖片" className="field-image" />
                         ) : (
@@ -51,8 +83,8 @@ function Bookpage() {
                             />
                         )}
                     </div>
-                    <div class="md:px-[50px]">
-                        <h2 class="flex justify-self-start text-3xl font-medium">{name}</h2>
+                    <div className="md:px-[50px]">
+                        <h2 className="flex justify-self-start text-3xl font-medium">{name}</h2>
                         <p className="field-description">跟你們介紹一下這個網球場，這裡是拿來打籃球的，
                             不是打羽球的
                         </p>
@@ -130,15 +162,19 @@ function Bookpage() {
                 <div className="right-panel">
                     <h4>場地時段金額總覽</h4>
                     <p>選擇日期與時間進行預約</p>
-                    <div class="overflow-x-auto xl:overflow-visible mt-[20px] mb-[100px] border border-gray-100 rounded-lg shadow-neutral-800 w-full xl:w-auto mx-auto">
-                        <table class="w-full min-w-[900px] md:w-full rounded-lg border-collapse shadow-sm text-center text-sm mx-auto">
-                            <thead class="bg-blue-100 text-gray-700 text-lg">
+                    <div class="w-full mt-5 flex justify-center items-center">
+                        <Calendar />
+                    </div>
+
+                    <div className="overflow-x-auto xl:overflow-visible mt-[20px] mb-[100px] border border-gray-100 rounded-lg shadow-neutral-800 w-full xl:w-auto mx-auto">
+                        <table className="w-full min-w-[900px] md:w-full rounded-lg border-collapse shadow-sm text-center text-sm mx-auto">
+                            <thead className="bg-blue-100 text-gray-700 text-lg">
                                 <tr>
-                                    <th class="px-2 py-2 font-semibold sticky left-0 bg-blue-100 min-w-[80px] text-sm">
+                                    <th className="px-2 py-2 font-semibold sticky left-0 bg-blue-100 min-w-[80px] text-sm">
                                         時間
                                     </th>
 
-                                    {Array.from({ length: 7 }, (_, i) => {
+                                    {Array.from({ length: 7 }).map((_, i) => {
                                         const d = new Date();
                                         d.setDate(d.getDate() + i);
                                         return (
@@ -158,41 +194,76 @@ function Bookpage() {
                             </thead>
 
                             <tbody>
-                                {HOURS.map((hour) => (
-                                    <tr key={hour} className="hover:bg-gray-50 transition">
-                                        <td className="px-2 py-2 border border-gray-300 sticky left-0 bg-blue-50 text-sm z-50">
-                                            {`${hour}:00 - ${hour + 1}:00`}
-                                        </td>
+                                {HOURS.map((hour) => {
+                                    const timeIndex = hour - OPEN_HOUR;
+                                    return (
+                                        <tr key={hour} className="hover:bg-gray-50 transition">
+                                            <td className="px-2 py-2 border border-gray-300 sticky left-0 bg-blue-50 text-sm z-50">
+                                                {`${hour}:00 - ${hour + 1}:00`}
+                                            </td>
 
-                                        {Array.from({ length: 7 }, (_, i) => {
-                                            const date = new Date();
-                                            date.setDate(date.getDate() + i);
-                                            const key = `${date.toDateString()}-${hour}`;
-                                            const isFull = hour === 12;
-                                            const isSelected = selectedSlot === key;
+                                            {Array.from({ length: 7 }).map((_, i) => {
+                                                const date = new Date();
+                                                date.setDate(date.getDate() + i);
+                                                const dateKey = date.toISOString().split("T")[0];
 
-                                            return (
-                                                <td
-                                                    key={i}
-                                                    onClick={() => !isFull && setSelectedSlot(prev => (prev === key ? null : key))}
-                                                    class={`
-                                      px-2 py-3 border border-gray-300 text-sm font-medium rounded
-                                      text-blue-600
-                                      transition
-                                      ${isFull
-                                                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
-                                                            : isSelected
-                                                                ? "bg-blue-600 text-white shadow-md scale-105 cursor-pointer"
-                                                                : "bg-white hover:bg-blue-200 cursor-pointer"
-                                                        }
-                                    `}
-                                                >
-                                                    {isFull ? "已滿" : "$200"}
-                                                </td>
-                                            );
-                                        })}
-                                    </tr>
-                                ))}
+                                                // 你原本的示範：12 點那格滿
+                                                const isFull = hour === 12;
+
+                                                return (
+                                                    <td key={i} className="px-2 py-2 border border-gray-300">
+                                                        <div className="flex justify-center gap-2">
+                                                            {/* 桌機版：顯示每面球場按鈕 */}
+                                                            {courts.map((court) => {
+                                                                const fieldKey = `${court}-${name}-${dateKey}`;
+                                                                const isSelected =
+                                                                    selectedSlots.fieldKey === fieldKey &&
+                                                                    selectedSlots.times.includes(timeIndex);
+
+                                                                return (
+                                                                    <button
+                                                                        key={court}
+                                                                        disabled={isFull}
+                                                                        onClick={() => !isFull && toggleSlot(fieldKey, timeIndex)}
+                                                                        className={`hidden md:table-cell w-8 h-10 rounded-full font-medium transition
+                                                                            ${isFull
+                                                                                ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                                                                : isSelected
+                                                                                    ? "bg-blue-600 text-white"
+                                                                                    : "bg-blue-100 text-blue-600 hover:bg-blue-500 hover:text-white"}
+                                                                        `}
+                                                                    >
+                                                                        {court}
+                                                                    </button>
+                                                                );
+                                                            })}
+
+                                                            {/* 手機版：跟單日多場地一致，用一顆按鈕確認此時段 */}
+                                                            {(
+                                                                <button
+                                                                    disabled={isFull}
+                                                                    onClick={() => {
+                                                                        const fieldKey = `${name}-${dateKey}`;
+                                                                        if (!isFull) toggleSlot(fieldKey, timeIndex);
+                                                                    }}
+                                                                    className={`md:hidden text-xs font-semibold px-2 py-1 rounded-md shadow transition
+                                                                        ${isFull
+                                                                            ? "bg-gray-200 text-gray-500 cursor-not-allowed"
+                                                                            : (selectedSlots.fieldKey === `${name}-${dateKey}` && selectedSlots.times.includes(timeIndex))
+                                                                                ? "bg-blue-600 text-gray-100"
+                                                                                : "bg-blue-100 text-blue-600"}
+                                                                    `}
+                                                                >
+                                                                    {isFull ? "已滿" : "確認此時段"}
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </td>
+                                                );
+                                            })}
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

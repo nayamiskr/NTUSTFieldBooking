@@ -228,7 +228,7 @@ function FieldFilterButton({ type, token }) {
                   ? filteredFields.map((field) => (
                     <td key={field.id} class="px-2 py-2 border border-gray-300">
                       <div class="flex justify-center gap-2 ">
-                        {fieldCourts[field.id].map((court) => (
+                        {((fieldCourts[field.id] ?? [])).map((court) => (
                           <button
                             key={court}
                             onClick={() => toggleSlot(`${court}-${field.name}`, index)}
@@ -253,23 +253,43 @@ function FieldFilterButton({ type, token }) {
                       </div>
                     </td>
                   ))
-                  : Array.from({ length: 7 }).map((_, i) => (
-                    <td key={i} class="px-2 py-2 border border-gray-300">
-                      <div class="flex justify-center gap-2 ">
-                        {(selectedField && fieldCourts[selectedField.id] ? fieldCourts[selectedField.id] : []).map((court) => (
-                          <button
-                            key={court}
-                            onClick={() =>
-                              handleFieldClick(selectedField.name, selectedField.isSchool, selectedField.pict)
-                            }
-                            class="hidden md:table-cell w-8 h-10 rounded-full bg-blue-100 text-blue-600 font-medium hover:bg-blue-500 hover:text-white transition"
-                          >
-                            {court}
-                          </button>
-                        ))}
-                      </div>
-                    </td>
-                  ))}
+                  : Array.from({ length: 7 }).map((_, i) => {
+                    const date = new Date();
+                    date.setDate(date.getDate() + i);
+                    const dateKey = date.toISOString().split("T")[0]; // e.g. 2026-01-14
+
+                    return (
+                      <td key={i} class="px-2 py-2 border border-gray-300">
+                        <div class="flex justify-center gap-2 ">
+                          {((selectedField && (fieldCourts[selectedField.id] ?? [])) || []).map((court) => (
+                            <button
+                              key={court}
+                              onClick={() => toggleSlot(`${court}-${selectedField.name}-${dateKey}`, index)}
+                              class={`hidden md:table-cell w-8 h-10 rounded-full font-medium transition
+                                ${selectedSlots.fieldKey === `${court}-${selectedField.name}-${dateKey}` && selectedSlots.times.includes(index)
+                                  ? "bg-blue-600 text-white"
+                                  : "bg-blue-100 text-blue-600 hover:bg-blue-500 hover:text-white"}
+                              `}
+                            >
+                              {court}
+                            </button>
+                          ))}
+
+                          {/* 手機版：跟單日多場地一致，按一下確認此時段 */}
+                          {selectedField && (
+                            <button
+                              onClick={() => toggleSlot(`${selectedField.name}-${dateKey}`, index)}
+                              class={`md:hidden ${selectedSlots.fieldKey === `${selectedField.name}-${dateKey}` && selectedSlots.times.includes(index)
+                                ? "bg-blue-600 text-gray-100"
+                                : "bg-blue-100 text-blue-600"} text-xs font-semibold px-2 py-1 rounded-md shadow`}
+                            >
+                              確認此時段
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    );
+                  })}
               </tr>
             ))}
           </tbody>

@@ -11,6 +11,20 @@ function FieldPicker({ fieldName, onSelectField, selectedId }) {
 
     const vb = { w: 1000, h: 600 };
 
+    // 先寫死每個場地格子的價格區間（之後可改成由 API / props 傳入）
+    const PRICE_RANGE_MAP = {
+        "1": "$300-$500",
+        "2": "$300-$500",
+        "3": "$400-$600",
+        "4": "$500-$700",
+        "5": "$300-$500",
+        "6": "$300-$500",
+        "7": "$400-$600",
+        "8": "$500-$700",
+        "9": "$300-$500",
+        "10": "$300-$500",
+    };
+
     const areas = layout.areas;
     const fixtures = Array.isArray(layout.fixtures) && layout.fixtures.length > 0
         ? layout.fixtures
@@ -21,11 +35,11 @@ function FieldPicker({ fieldName, onSelectField, selectedId }) {
         onSelectField({ id: nextId });
     }
     return (
-        <div className="field-picker">
+        <div className="field-picker" style={{ width: '100%' }}>
             <svg
                 viewBox={`0 0 ${vb.w} ${vb.h}`}
                 preserveAspectRatio="xMidYMid meet"
-                style={{ width: '100%', height: 'auto', display: 'block' }}
+                style={{ width: '100%', maxWidth: '1000px', height: 'auto', display: 'block', margin: '0 auto' }}
                 role="img"
             >
                 {areas.map((a) => {
@@ -34,7 +48,7 @@ function FieldPicker({ fieldName, onSelectField, selectedId }) {
                     const fill = isDisabled ? '#7d7d7dff' : isSelected ? '#3f7cff' : '#d9d9d9';
                     const stroke = isSelected ? 'rgba(63,124,255,0.6)' : 'transparent';
                     const cardSize = (a.hori === true)? { w: 220, h: 140 } : { w: 140, h: 220 }
-
+                    const priceText = a.priceRange ?? PRICE_RANGE_MAP[String(a.id)] ?? null;
 
                     return (
                         <g key={a.id}
@@ -63,6 +77,19 @@ function FieldPicker({ fieldName, onSelectField, selectedId }) {
                             >
                                 {a.label ?? a.id}
                             </text>
+                            {priceText && (
+                                <text
+                                    x={a.x + cardSize.w / 2}
+                                    y={a.y + cardSize.h / 2 + 34}
+                                    textAnchor="middle"
+                                    dominantBaseline="middle"
+                                    className="area-price"
+                                    fontSize={14}
+                                    fill={isDisabled ? '#bdbdbd' : isSelected ? 'rgba(255,255,255,0.9)' : '#555'}
+                                >
+                                    {priceText}
+                                </text>
+                            )}
 
                         </g>
                     );

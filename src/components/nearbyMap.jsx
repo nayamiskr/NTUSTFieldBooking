@@ -13,7 +13,7 @@ function NearbyMap({ filter, fields = [], onConfirmPlace = () => {} }) {
     const scrollRef = useRef(null);
 
     const calcDistanceKm = (lat1, lng1, lat2, lng2) => {
-      const R = 6371; // 地球半徑（公里）
+      const R = 6371;
       const toRad = (v) => (v * Math.PI) / 180;
       const dLat = toRad(lat2 - lat1);
       const dLng = toRad(lng2 - lng1);
@@ -85,14 +85,31 @@ function NearbyMap({ filter, fields = [], onConfirmPlace = () => {} }) {
         }
     };
 
+    const fitBoundsToPoints = (points) => {
+      if (!mapRef.current || !points || points.length === 0) return;
+      if (!window.google?.maps) return;
+
+      const bounds = new window.google.maps.LatLngBounds();
+      points.forEach((p) => bounds.extend(p));
+
+      // 讓點不要貼邊，避免被 UI 擋住
+      mapRef.current.fitBounds(bounds, {
+        top: 80,
+        bottom: 80,
+        left: 80,
+        right: 80,
+      });
+    };
+
     const handleClickLocation = (idx) => {
       if (!currentPosition || !mapRef.current) return;
       const target = placesWithColor[idx];
-      const newPos = {
-        lat: (target.lat + currentPosition.lat) / 2,
-        lng: (target.lng + currentPosition.lng) / 2,
-      };
-      mapRef.current.panTo(newPos);
+      if (!target) return;
+
+      fitBoundsToPoints([
+        currentPosition,
+        { lat: target.lat, lng: target.lng },
+      ]);
     };
 
     const handleClick = (index) => {
@@ -105,8 +122,27 @@ function NearbyMap({ filter, fields = [], onConfirmPlace = () => {} }) {
     };
 
     const onLoad = (map) => {
-        mapRef.current = map;
+      mapRef.current = map;
+
+      // 初次載入：如果已經有資料，就自動縮放到能同時看到目前位置 + 所有場地
+      if (currentPosition && placesWithColor.length > 0) {
+        fitBoundsToPoints([
+          currentPosition,
+          ...placesWithColor.map((p) => ({ lat: p.lat, lng: p.lng })),
+        ]);
+      }
     };
+
+    useEffect(() => {
+      if (!mapRef.current) return;
+      if (!currentPosition) return;
+      if (placesWithColor.length === 0) return;
+
+      fitBoundsToPoints([
+        currentPosition,
+        ...placesWithColor.map((p) => ({ lat: p.lat, lng: p.lng })),
+      ]);
+    }, [currentPosition, placesWithColor.length]);
 
     return (
         <div>
@@ -151,7 +187,6 @@ function NearbyMap({ filter, fields = [], onConfirmPlace = () => {} }) {
                         <GoogleMap
                             mapContainerClassName="w-full h-full rounded-[10px] shadow-lg"
                             center={currentPosition}
-                            zoom={14.5}
                             options={
                                 {
                                     zoomControl: false,
