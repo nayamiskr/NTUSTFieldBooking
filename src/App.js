@@ -5,6 +5,7 @@ import Bookingpage from './page/bookingpage'; // 如果你有這個檔案可以�
 import LoginPage from './page/loginPage';
 import PayPage from './page/payPage';
 import OrderPage from './page/orderPage';
+import RegistPage from './page/registPage';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/" element={<LoginPage />} />
+          <Route path="/register" element={<RegistPage />} />
           <Route path="/home/:fieldType" element={<Homepage />} />
           <Route path="/:name/:isSchool//:field_img/:pict" element={<Bookingpage />} /> 
           <Route path='/pay' element={<PayPage/>}/>

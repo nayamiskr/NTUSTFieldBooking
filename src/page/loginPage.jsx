@@ -70,7 +70,7 @@ function LoginPage() {
             />
           </div>
           <div className="w-full flex justify-center flex-wrap gap-4 my-4">
-            {["全部", "羽球場", "網球場", "籃球場", "排球場"].map(type => (
+            {["全部", "羽球", "網球", "籃球", "排球", "其他"].map(type => (
               <button
                 type="button"
                 key={type}

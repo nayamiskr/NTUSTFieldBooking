@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import NearbyMap from "./nearbyMap";
 import Calendar from "./dayPick";
@@ -12,6 +12,9 @@ function FieldFilterButton({ type, token }) {
   const tableRef = useRef(null);
   const [selectColumn, setSelectColumn] = useState(null);
   const [viewMode, setViewMode] = useState("byDate");
+  const [loading, setLoading] = useState(false);
+  const [locations, setLocations] = useState([]);
+  const [errorMsg, setErrorMsg] = useState("");
   const [selectedSlots, setSelectedSlots] = useState({
     fieldKey: null,
     times: []
@@ -45,28 +48,67 @@ function FieldFilterButton({ type, token }) {
       return { fieldKey, times: [...times, timeIndex].sort((a, b) => a - b) };
     });
   };
-  const [priceTotal, setPriceTotal] = useState(0);
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        setLoading(true);
+        setErrorMsg("");
 
-  
-  const mockFields = [
-    { id: 1, type: "羽球場", isSchool: true, name: "羽球場一號", pict: "/field_img/badminton.jpg", desc: "在台科大裡面的羽球場" },
-    { id: 2, type: "網球場", isSchool: true, name: "網球場一號", pict: "/field_img/tennis-field.png", desc: "這裡是網球場所以不能煮飯" },
-    { id: 3, type: "籃球場", isSchool: true, name: "籃球場一號", pict: "/field_img/basketball.jpg", desc: "這裡是打籃球的地方不是打架的地方" },
-    { id: 4, type: "排球場", isSchool: true, name: "排球場一號", pict: "/field_img/volleyball.jpg", desc: "這裡是介紹訊息" },
-    { id: 5, type: "網球場", isSchool: false, name: "校外某一個網球場", pict: "/field_img/tennis-not-school.jpg", desc: "我不是台科大的" },
-    { id: 6, type: "排球場", isSchool: false, name: "排球場二號", pict: "/field_img/volleyball.jpg", desc: "這裡是介紹訊息" },
-    { id: 2, type: "羽球場", isSchool: false, name: "新羽力_羽球場", pict: "/field_img/pintu_bad.jpg", desc: "這裡是介紹訊息" },
-    { id: 3, type: "羽球場", isSchool: false, name: "北新_羽球場", pict: "/field_img/bad.jpg", desc: "這裡是介紹訊息" },
-    { id: 4, type: "羽球場", isSchool: false, name: "新店國小_羽球場", pict: "/field_img/comeshame.webp", desc: "這裡是介紹訊息" },
-    { id: 5, type: "羽球場", isSchool: false, name: "康軒文教_羽球場", pict: "/field_img/northnew.jpg", desc: "這裡是介紹訊息" },
-  ];
-  
-  
+        const res = await api.get("/locations", {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+
+        setLocations(res?.data?.items ?? []);
+      } catch (err) {
+        console.error("fetch /locations failed:", err);
+        setErrorMsg("取得場地資料失敗，請確認 token / API 網址 / 權限");
+        setLocations([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLocations();
+  }, [token]);
+
+  // 把 API 的 locations 轉成你原本 table 需要的欄位格式
+  const fieldsFromApi = locations.map((loc, idx) => {
+    const orgName = loc?.organization?.name ?? "";
+    const isSchool = orgName.includes("台科");
+
+    return {
+      id: idx + 1, 
+      uuid: loc.id, 
+      name: loc.name,
+      type: (loc.name.includes("羽球") && "羽球") ||
+            (loc.name.includes("籃球") && "籃球") ||
+            (loc.name.includes("排球") && "排球") ||
+            (loc.name.includes("網球") && "網球") ||
+            (loc.name.includes("足球") && "足球") ||
+            "其他",
+      isSchool:
+      isSchool,
+      pict: "",
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      capacity: loc.capacity,
+      opening: loc.opening,
+    };
+  });
+
   const filteredFields = filter === "全部"
-    ? mockFields
-    : mockFields.filter(field => field.type === filter);
+    ? fieldsFromApi
+    : fieldsFromApi.filter(field => field.type === filter);
 
-  const [selectedField, setSelectedField] = useState(filteredFields[0]);
+  const [selectedField, setSelectedField] = useState(null);
+
+  useEffect(() => {
+    if (filteredFields.length > 0) {
+      setSelectedField(filteredFields[0]);
+    } else {
+      setSelectedField(null);
+    }
+  }, [filter, locations]);
 
   const handleScrollToColumn = (index) => {
     index++;
@@ -83,6 +125,7 @@ function FieldFilterButton({ type, token }) {
       setViewMode("byPlace");
       setSelectColumn(index);
       const field = filteredFields.find(f => f.id === index);
+      if (!filteredFields || filteredFields.length === 0) return;
       if (field) {
         setSelectedField(field);
       }
@@ -122,13 +165,19 @@ function FieldFilterButton({ type, token }) {
 
   return (
     <>
+      {loading && (
+        <div className="m-4 text-center text-gray-600">載入場地中...</div>
+      )}
+      {errorMsg && (
+        <div className="m-4 text-center text-red-600">{errorMsg}</div>
+      )}
       <div class="flex flex-row justify-center items-center m-4 gap-4">
         <div class="flex text-xl font-semibold">
           預約日期 :
         </div>
         <Calendar />
       </div>
-      <NearbyMap filter={filter} onConfirmPlace={handleScrollToColumn} />
+      <NearbyMap filter={filter} onConfirmPlace={handleScrollToColumn} fields={filteredFields} />
 
       <div className="flex justify-center">
         <button
@@ -207,7 +256,7 @@ function FieldFilterButton({ type, token }) {
                   : Array.from({ length: 7 }).map((_, i) => (
                     <td key={i} class="px-2 py-2 border border-gray-300">
                       <div class="flex justify-center gap-2 ">
-                        {fieldCourts[selectedField.id].map((court) => (
+                        {(selectedField && fieldCourts[selectedField.id] ? fieldCourts[selectedField.id] : []).map((court) => (
                           <button
                             key={court}
                             onClick={() =>

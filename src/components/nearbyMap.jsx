@@ -6,19 +6,24 @@ import { RiMapPin2Fill } from "react-icons/ri";
 import { FaSearch } from "react-icons/fa";
 
 
-function NearbyMap({ filter, onConfirmPlace = () => { } }) {
+function NearbyMap({ filter, fields = [], onConfirmPlace = () => {} }) {
 
     const [currentPosition, setCurrentPosition] = useState(null);
     const mapRef = useRef(null);
     const scrollRef = useRef(null);
 
-    const places = [
-        { name: "羽球場一號", type: "羽球場", lat: 25.0137, lng: 121.5405, distance: "距離約0.3公里" },
-        { name: "新羽力_羽球場", type: "羽球場", lat: 25.02437, lng: 121.5505, distance: "距離約1.0公里" },
-        { name: "北新_羽球場", type: "羽球場", lat: 25.02437, lng: 121.5805, distance: "距離約2.2公里" },
-        { name: "新店國小_羽球場", type: "羽球場", lat: 24.967, lng: 121.537, distance: "距離約2.8公里" },
-        { name: "康軒文教_羽球場", type: "羽球場", lat: 24.95437, lng: 121.5205, distance: "距離約3.2公里" },
-    ];
+    const calcDistanceKm = (lat1, lng1, lat2, lng2) => {
+      const R = 6371; // 地球半徑（公里）
+      const toRad = (v) => (v * Math.PI) / 180;
+      const dLat = toRad(lat2 - lat1);
+      const dLng = toRad(lng2 - lng1);
+      const a =
+        Math.sin(dLat / 2) ** 2 +
+        Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+        Math.sin(dLng / 2) ** 2;
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    };
 
     useEffect(() => {
         const saved = localStorage.getItem("currentPosition");
@@ -38,6 +43,26 @@ function NearbyMap({ filter, onConfirmPlace = () => { } }) {
         }
     }, []);
 
+    const placesFromFields = currentPosition
+      ? fields.map((f, idx) => {
+          const distanceKm = calcDistanceKm(
+            currentPosition.lat,
+            currentPosition.lng,
+            f.latitude,
+            f.longitude
+          );
+
+          return {
+            ...f,
+            lat: f.latitude,
+            lng: f.longitude,
+            index: idx,
+            distanceKm,
+            distanceText: `距離約 ${distanceKm.toFixed(2)} 公里`,
+          };
+        })
+      : [];
+
     const pinColor = [
         "#E74C3C",
         "#E67E22",
@@ -49,7 +74,10 @@ function NearbyMap({ filter, onConfirmPlace = () => { } }) {
     ];
 
     const getDistinctColor = (index) => pinColor[index % pinColor.length];
-    const placesWithColor = places.map((p, i) => ({ ...p, color: getDistinctColor(i) }));
+    const placesWithColor = placesFromFields.map((p, i) => ({
+      ...p,
+      color: getDistinctColor(i),
+    }));
 
     const handleRecenter = () => {
         if (currentPosition && mapRef.current) {
@@ -58,9 +86,14 @@ function NearbyMap({ filter, onConfirmPlace = () => { } }) {
     };
 
     const handleClickLocation = (idx) => {
-        const newPos = { lat: (placesWithColor[idx].lat + currentPosition.lat) / 2, lng: (placesWithColor[idx].lng + currentPosition.lng) / 2 };
-        mapRef.current.panTo(newPos);
-    }
+      if (!currentPosition || !mapRef.current) return;
+      const target = placesWithColor[idx];
+      const newPos = {
+        lat: (target.lat + currentPosition.lat) / 2,
+        lng: (target.lng + currentPosition.lng) / 2,
+      };
+      mapRef.current.panTo(newPos);
+    };
 
     const handleClick = (index) => {
         scrollRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -78,7 +111,7 @@ function NearbyMap({ filter, onConfirmPlace = () => { } }) {
     return (
         <div>
             <div className="map-list" >
-                <ul class="flex flex-row gap-1 w-auto h-5rem mb-5 overflow-x-auto snap-x snap-mandatory md:justify-center">
+                <ul class="flex flex-row w-auto h-5rem mb-5 overflow-x-auto snap-x snap-mandatory">
                     {placesWithColor.map((place, idx) => (
                         <li
                             key={idx}
@@ -90,7 +123,7 @@ function NearbyMap({ filter, onConfirmPlace = () => { } }) {
                                 </div>
                             )}
                             <span class="name" style={{ color: place.color }}>{place.name}</span>
-                            <span class="distance">{place.distance}</span>
+                            <span class="distance">{place.distanceText}</span>
                             <button
                                 onClick={() => handleClickLocation(idx)}
                                 class="absolute bottom-2 right-20 bg-blue-400 text-white hover:bg-blue-600 text-base font-semibold px-2 py-1 rounded-md shadow"
@@ -148,7 +181,7 @@ function NearbyMap({ filter, onConfirmPlace = () => { } }) {
                             )}
                             {placesWithColor.map((place, i) => (
                                 <OverlayView
-                                    key={i}
+                                    key={place.uuid ?? i}
                                     position={{ lat: place.lat, lng: place.lng }}
                                     mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
                                     getPixelPositionOffset={() => ({ x: -12, y: -24 })}
