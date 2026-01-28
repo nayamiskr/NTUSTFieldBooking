@@ -21,27 +21,22 @@ function Bookpage() {
     const [isOpen, setIsOpen] = useState(true);
     const [selectedField, setSelectedField] = useState(null);
 
-    // 單場地七日：選取狀態（用 fieldKey + times 來支援連選）
     const [selectedSlots, setSelectedSlots] = useState({ fieldKey: null, times: [] });
 
-    // 依場地決定可選球場數量（先用 1~4；之後可改成由 API capacity 生成）
-    const courts = [1, 2, 3, 4];
+    const courts = [1, 2, 3];
 
     const toggleSlot = (fieldKey, timeIndex) => {
         setSelectedSlots((prev) => {
             const { fieldKey: prevKey, times } = prev;
 
-            // 換到另一個 key：直接改成新的一筆
             if (!prevKey || prevKey !== fieldKey) {
                 return { fieldKey, times: [timeIndex] };
             }
 
-            // 點已選：取消
             if (times.includes(timeIndex)) {
                 return { fieldKey, times: times.filter((t) => t !== timeIndex) };
             }
 
-            // 只允許連續擴展（跟你原本邏輯一致）
             const min = Math.min(...times);
             const max = Math.max(...times);
             const isAdjacent = timeIndex === min - 1 || timeIndex === max + 1;

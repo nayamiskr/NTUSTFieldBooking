@@ -1,6 +1,7 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
 import api from "../baseApi";
+import Loading from "../components/loading";
 
 
 function LoginPage() {
@@ -8,6 +9,15 @@ function LoginPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const typeMap = {
+    "全部": "all",
+    "羽球": "badminton",
+    "網球": "tennis",
+    "籃球": "basketball",
+    "排球": "volleyball",
+    "其他": "other"
+  }
+
   const handleLogin = async (e, type) => {
     e.preventDefault();
 
@@ -35,9 +45,7 @@ function LoginPage() {
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("userId", JSON.stringify(res.data.user.id));
       localStorage.setItem("type", filter);
-      navigate(`/home/${type}`, {
-        state: { selectedType: type },
-      });
+      navigate(`/home/${typeMap[type]}`);
     } catch (error) {
       console.error("登入失敗:", error);
       setErrorMessage("登入失敗，請檢查您的帳號和密碼。");
@@ -47,7 +55,8 @@ function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-300">
+    <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-100 to-blue-300">
+      <Loading isLoading={loading} text="登入中..."/>
       <div className="bg-white shadow-lg rounded-xl p-8 w-[90%] max-w-md">
         <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">登入</h2>
         <form className="space-y-5" onSubmit={(e) => handleLogin(e, filter)}>

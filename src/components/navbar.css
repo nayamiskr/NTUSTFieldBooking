@@ -2,7 +2,7 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0px 50px;
+    padding: 0px 4.5rem;
     background-color: #ffffff;
 }
 
@@ -103,6 +103,18 @@
 
 .dropdown:hover .dropdown-content {
     display: block;
+}
+
+.dropdown:focus-within .dropdown-content {
+    display: block;
+}
+
+.dropdown:active .dropdown-content {
+    display: block;
+}
+
+.icon-container {
+    cursor: pointer;
 }
 
 @media (max-width: 970px) {

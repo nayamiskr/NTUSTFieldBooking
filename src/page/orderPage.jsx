@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import api from "../baseApi"
 import Navbar from "../components/navbar";
+import Loading from "../components/loading";
 
 function OrderPage() {
     const [orders, setOrders] = useState(null);
@@ -20,7 +21,7 @@ function OrderPage() {
     return (
         <div>
             <Navbar/>
-            {loading && <p>取得訂單資料中...</p>}
+            <Loading isLoading={loading} text="取得訂單資料中..."/>
             {error && <p>取得訂單資料失敗: {error.message}</p>}
             {!loading && orders &&
             (
@@ -28,7 +29,7 @@ function OrderPage() {
                     <h1 class="text-3xl font-bold text-center my-8">我的預約</h1>
                     <ul>
                         {orders.items.map((order) => (
-                            <li key={order.id} class="relative w-[80%] h-[130px] mx-auto border border-blue-200 rounded-md">
+                            <li key={order.id} class="relative w-[80%] h-[130px] mx-auto my-3 border border-blue-200 rounded-md">
                                 <p class="absolute top-3 left-6 text-2xl font-bold">場地: {order.resource.name}</p>
                                 <p class="absolute bottom-10 left-6 text-lg text-gray-400">日期：{new Date(order.start_time).toLocaleDateString("zh-TW")} {" "}</p>
                                 <p class="absolute bottom-3 left-6 text-lg text-gray-400">時間：{new Date(order.start_time).toLocaleTimeString("zh-TW", { hour: '2-digit', minute: '2-digit' })} - {new Date(order.end_time).toLocaleTimeString("zh-TW", { hour: '2-digit', minute: '2-digit' })}</p>

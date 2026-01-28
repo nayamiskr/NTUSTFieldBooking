@@ -54,8 +54,11 @@
 
 .day-picker td.rdp-selected {
   background-color: #3b82f6;
-  color: white;
   border-radius: 8px;
+}
+
+.day-picker td.rdp-selected button {
+  color: #F6FAFF;
 }
 
 .day-picker nav {

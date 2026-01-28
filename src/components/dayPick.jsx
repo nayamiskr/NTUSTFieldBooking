@@ -3,7 +3,7 @@ import { useState } from "react";
 import "./dayPick.css";
 
 function getWeekday(date) {
-  const weekdays = ["週一", "週二", "週三", "週四", "週五", "週六", "週日"]
+  const weekdays = ["日", "一", "二", "三", "四", "五", "六"]
   return weekdays[date.getDay()];
 }
 
@@ -55,9 +55,9 @@ function Calendar({ onDayPicked = () => { } }) {
           onSelect={handleSelect}
           className="day-picker"
           disabled={[
-            new Date(2025, 7, 1),
+            new Date(2026, 1, 20),
             new Date(2025, 7, 18),
-          ]}
+          ]}//這邊可以放哪天不行
         />
       </div>
 
