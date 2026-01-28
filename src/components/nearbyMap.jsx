@@ -35,9 +35,8 @@ function NearbyMap({ filter, fields = [], onConfirmPlace = () => { } }) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed.lat === "number" && typeof parsed.lng === "number") {
           setCurrentPosition(parsed);
-          return;
         }
-      } catch (_) { }
+      } catch (_) {}
     }
 
     if (!navigator.geolocation) {

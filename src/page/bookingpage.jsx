@@ -153,7 +153,7 @@ function Bookpage() {
                         </div>
                     )}
                 </div>
-                {/* 右側 */}
+                {/* 預約section */}
                 <div className="right-panel">
                     <h4>場地時段金額總覽</h4>
                     <p>選擇日期與時間進行預約</p>

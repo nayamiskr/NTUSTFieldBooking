@@ -26,7 +26,7 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate})
     return `${m}/${day}（${week}）`;
   };
 
-  useEffect(() => {
+  const scrollToField = () => {
     const idx = fieldChecked?.idx;
     if (idx === null || idx === undefined) return;
 
@@ -43,6 +43,43 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate})
     container.scrollTo({ left: Math.max(0, nextScrollLeft), behavior: 'smooth' });
     setViewMode("byPlace");
 
+  };
+
+  useEffect(() => {
+    const idx = fieldChecked?.idx;
+    if (idx === null || idx === undefined) return;
+
+    // 確認場地後：強制切換到七日單場地
+    setViewMode("byPlace");
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const container = tableRef.current;
+        const middleDayHeader = document.getElementById("day-column-3");
+        if (!container || !middleDayHeader) return;
+
+                const containerRect = container.getBoundingClientRect();
+        const targetRect = middleDayHeader.getBoundingClientRect();
+
+        // 左側 sticky 時段欄會蓋住內容：把置中的參考點改成「扣掉 sticky 後的可視區域中心」
+        const stickyEl = container.querySelector('[data-sticky-time="true"]');
+        const stickyW = stickyEl ? stickyEl.getBoundingClientRect().width : 0;
+
+        const currentScrollLeft = container.scrollLeft;
+        const targetCenterX =
+          (targetRect.left - containerRect.left) + currentScrollLeft + targetRect.width / 2;
+
+        // 可視區域(扣掉 sticky) 的中心點座標（相對 container 左側）
+        const visibleCenterX = stickyW + (container.clientWidth - stickyW) / 2;
+
+        const nextScrollLeft = targetCenterX - visibleCenterX;
+
+        container.scrollTo({
+          left: Math.max(0, nextScrollLeft) - 80,
+          behavior: "smooth",
+        });
+      });
+    });
   }, [fieldChecked?.idx]);
 
   const handleFieldClick = (fieldName, isSchool, field_img) => {
@@ -180,7 +217,7 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate})
   {/* 七日單場地表格 */}
   function tableByPlace() {
     return (
-      <div className="overflow-x-auto rounded-2xl ">
+      <div ref={tableRef} className="overflow-x-auto rounded-2xl ">
         <table className="min-w-full border-collapse shadow-sm text-center text-sm">
           <thead>
             <tr>
@@ -191,6 +228,7 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate})
               {sevenDays.map((day, idx) => {
                 return (
                   <th
+                    id={`day-column-${idx}`}
                     key={idx}
                     className={`px-4 py-2 border whitespace-nowrap cursor-pointer border-gray-300 ${idx === 3 ? "bg-blue-400" : "bg-blue-100"}`}
                   >

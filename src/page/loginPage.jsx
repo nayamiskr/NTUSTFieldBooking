@@ -36,7 +36,7 @@ function LoginPage() {
       const password = e.target.password?.value;
 
       if (!email || !password) {
-        setErrorMessage("請輸入電子郵件與密碼");
+        setErrorMessage("請輸入電子郵件與密碼"); 
         setLoading(false);
         return;
       }
@@ -45,7 +45,7 @@ function LoginPage() {
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("userId", JSON.stringify(res.data.user.id));
       localStorage.setItem("type", filter);
-      navigate(`/home/${typeMap[type]}`);
+      navigate(`/home/${filter}`);
     } catch (error) {
       console.error("登入失敗:", error);
       setErrorMessage("登入失敗，請檢查您的帳號和密碼。");
@@ -58,10 +58,11 @@ function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-100 to-blue-300">
       <Loading isLoading={loading} text="登入中..."/>
       <div className="bg-white shadow-lg rounded-xl p-8 w-[90%] max-w-md">
+        <img src="/icon/logo.png" alt="Logo" className="mx-auto mb-4 w-12 h-12" />
         <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">登入</h2>
         <form className="space-y-5" onSubmit={(e) => handleLogin(e, filter)}>
           <div>
-            <label className="block text-gray-600 mb-1" htmlFor="email">電子郵件</label>
+            <label className="block text-start text-gray-600 mb-1" htmlFor="email">電子郵件</label>
             <input
               name="email"
               type="email"
@@ -70,7 +71,7 @@ function LoginPage() {
             />
           </div>
           <div>
-            <label className="block text-gray-600 mb-1" htmlFor="password">密碼</label>
+            <label className="block text-start text-gray-600 mb-1" htmlFor="password">密碼</label>
             <input
               name="password"
               type="password"
@@ -83,8 +84,8 @@ function LoginPage() {
               <button
                 type="button"
                 key={type}
-                onClick={() => setFilter(type)}
-                className={`px-4 py-2 mt-3 rounded-md text-white transition ${filter === type ? "bg-blue-700" : "bg-blue-400 hover:bg-blue-600"
+                onClick={() => setFilter(typeMap[type])}
+                className={`px-4 py-2 mt-3 rounded-md text-white transition ${filter === typeMap[type] ? "bg-blue-700" : "bg-blue-400 hover:bg-blue-600"
                   }`}
               >
                 {type}
