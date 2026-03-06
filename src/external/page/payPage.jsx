@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import api from "../baseApi";
+import api from "../../baseApi";
 
 function PayPage() {
   const location = useLocation();
@@ -219,7 +219,7 @@ function PayPage() {
                   銀行代碼
                 </label>
                 <input
-                  type="text"
+                  type="code"
                   placeholder="代碼"
                   className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -230,7 +230,7 @@ function PayPage() {
                   卡號
                 </label>
                 <input
-                  type="text"
+                  type="card"
                   placeholder="請輸入卡號"
                   className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -243,7 +243,7 @@ function PayPage() {
                   到期日
                 </label>
                 <input
-                  type="text"
+                  type="month"
                   placeholder="MM / YY"
                   className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
@@ -254,7 +254,7 @@ function PayPage() {
                   CVC / CVV
                 </label>
                 <input
-                  type="password"
+                  type="CVV"
                   placeholder="123"
                   className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />

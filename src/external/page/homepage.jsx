@@ -1,11 +1,11 @@
 import { useEffect, useState, useRef } from "react";
-import Loading from "../components/loading";
+import Loading from "../../components/loading";
 import Navbar from "../components/navbar";
 import { useParams } from "react-router-dom";
 import SelectFieldSection from "../components/SelectFieldSection";
-import Calendar from "../components/dayPick";
+import Calendar from "../../components/dayPick";
 import NearbyMap from "../components/nearbyMap";
-import api from "../baseApi";
+import api from "../../baseApi";
 
 function Homepage() {
   const { fieldType } = useParams();
@@ -80,7 +80,7 @@ function Homepage() {
       {/* TODO 將確認場地按鈕加入檢視兩地功能 */}
       <NearbyMap filter={fieldType} onConfirmPlace={handleScrollToColumn} fields={filteredFields} />
       <div ref={tableRef}>
-        <SelectFieldSection token={token} fields={filteredFields} fieldChecked={confirmIdx} selectedDate={selectedDate} />
+        <SelectFieldSection fields={filteredFields} fieldChecked={confirmIdx} selectedDate={selectedDate} />
       </div>
     </div>
   );

@@ -1,0 +1,24 @@
+.field-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+}
+
+.field-area {
+  padding: 10px 16px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.field-area:hover {
+  background-color: #e0eaff;
+}
+
+.field-area:active {
+  transform: scale(0.96);
+}

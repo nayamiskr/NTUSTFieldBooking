@@ -9,9 +9,9 @@ function Navbar() {
         <h2>NTUST 場地預約系統</h2>
       </div>
       <ul className="navbar-center">
-        <li><a href={`/home/${localStorage.getItem("type")}`}>場地</a></li>
+        <li><a href={`/ntust/home/`}>場地</a></li>
         <li><a href="#">公告</a></li>
-        <li><a href={`/order`}>我的預約</a></li>
+        <li><a href={`/ntust/order`}>我的預約</a></li>
       </ul>
       <div className="navbar-right dropdown">
         <div className="icon-container">
@@ -19,9 +19,9 @@ function Navbar() {
           <IoPersonCircle className="person-icon" />
         </div>
         <div className="dropdown-content">
-          <a href={`/home/${localStorage.getItem("type")}`}>場地</a>
+          <a href={`/ntust/home/`}>場地</a>
           <a href="#">公告</a>
-          <a href={`/order`}>我的預約</a>
+          <a href={`/ntust/order`}>我的預約</a>
           <a href="#">個人資料</a>
           <a href="#">設定</a>
           <a href="/">登出</a>

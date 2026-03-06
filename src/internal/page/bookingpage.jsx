@@ -1,11 +1,10 @@
 import Navbar from "../components/navbar";
 import { FaArrowLeft } from "react-icons/fa";
 import "./bookingpage.css";
-import Calendar from "../components/dayPick";
+import Calendar from "../../components/dayPick";
 import { useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
-import FieldPicker from "../components/fieldPicker";
-import TimeSelect from "../components/timeSelect";
+import FieldPicker from "../../components/fieldPicker";
 
 const OPEN_HOUR = 8;
 const CLOSE_HOUR = 22;

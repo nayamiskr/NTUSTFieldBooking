@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../baseApi";
+import api from "../../baseApi";
+import { de } from "react-day-picker/locale";
 
-function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate, viewMode}) {
+function SelectFieldSection({ fields, fieldChecked = null, selectedDate, defaultViewMode }) {
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState(viewMode || "byDate");
+  const [viewMode, setViewMode] = useState(defaultViewMode || "byDate");
   const [selectedSlots, setSelectedSlots] = useState(null);
   const tableRef = useRef(null);
   const OPEN_HOUR = 8;
@@ -12,8 +13,9 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate, 
   const HOURS = Array.from({ length: CLOSE_HOUR - OPEN_HOUR }, (_, i) => OPEN_HOUR + i);
 
   const baseDate = selectedDate ? new Date(selectedDate) : new Date();
+  
 
-  const sevenDays = Array.from({ length: 7}, (_, i) => {
+  const sevenDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(baseDate);
     d.setDate(baseDate.getDate() + i - 3);
     return d;
@@ -24,25 +26,6 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate, 
     const day = d.getDate();
     const week = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
     return `${m}/${day} (${week})`;
-  };
-
-  const scrollToField = () => {
-    const idx = fieldChecked?.idx;
-    if (idx === null || idx === undefined) return;
-
-    const container = tableRef.current;
-    const target = document.getElementById(`field-column-${idx}`);
-    if (!container || !target) return;
-
-    const containerRect = container.getBoundingClientRect();
-    const targetRect = target.getBoundingClientRect();
-    const currentScrollLeft = container.scrollLeft;
-    const targetCenter = (targetRect.left - containerRect.left) + (currentScrollLeft) + (targetRect.width / 2);
-
-    const nextScrollLeft = targetCenter - (containerRect.width / 2) - 60;
-    container.scrollTo({ left: Math.max(0, nextScrollLeft), behavior: 'smooth' });
-    setViewMode("byPlace");
-
   };
 
   useEffect(() => {
@@ -58,10 +41,9 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate, 
         const middleDayHeader = document.getElementById("day-column-3");
         if (!container || !middleDayHeader) return;
 
-                const containerRect = container.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
         const targetRect = middleDayHeader.getBoundingClientRect();
 
-        // 左側 sticky 時段欄會蓋住內容：把置中的參考點改成「扣掉 sticky 後的可視區域中心」
         const stickyEl = container.querySelector('[data-sticky-time="true"]');
         const stickyW = stickyEl ? stickyEl.getBoundingClientRect().width : 0;
 
@@ -69,7 +51,6 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate, 
         const targetCenterX =
           (targetRect.left - containerRect.left) + currentScrollLeft + targetRect.width / 2;
 
-        // 可視區域(扣掉 sticky) 的中心點座標（相對 container 左側）
         const visibleCenterX = stickyW + (container.clientWidth - stickyW) / 2;
 
         const nextScrollLeft = targetCenterX - visibleCenterX;
@@ -82,8 +63,8 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate, 
     });
   }, [fieldChecked?.idx]);
 
-  const handleFieldClick = (fieldName, isSchool, field_img) => {
-    navigate(`/${fieldName}/${isSchool}`);
+  const handleFieldClick = (fieldId) => {
+    navigate(`/external/${fieldId}`);
   };
 
   //判斷是否為連續時段
@@ -147,7 +128,7 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate, 
                   <th
                     id={`field-column-${idx}`}
                     key={field.id ?? idx}
-                    onClick={() => handleFieldClick(field.name, field.isSchool, field.pict)}
+                    onClick={() => handleFieldClick(field.id)}
                     className="px-4 py-2 border whitespace-nowrap cursor-pointer border-gray-300 bg-blue-100"
                   >
                     <div
@@ -214,7 +195,7 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate, 
     );
   }
 
-  {/* 七日單場地表格 */}
+  {/* 七日單場地表格 */ }
   function tableByPlace() {
     return (
       <div ref={tableRef} className="overflow-x-auto rounded-2xl ">
@@ -284,17 +265,16 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate, 
                                     date: day,
                                   })
                                 }
-                                className={`${
-                                  selectedSlots?.fieldIdx === fieldChecked.idx &&
-                                  selectedSlots?.resourceIdx === i &&
-                                  selectedSlots?.date === day.toISOString().slice(0, 10) &&
-                                  Array.isArray(selectedSlots?.hours) &&
-                                  selectedSlots.hours.includes(h)
+                                className={`${selectedSlots?.fieldIdx === fieldChecked.idx &&
+                                    selectedSlots?.resourceIdx === i &&
+                                    selectedSlots?.date === day.toISOString().slice(0, 10) &&
+                                    Array.isArray(selectedSlots?.hours) &&
+                                    selectedSlots.hours.includes(h)
                                     ? "bg-blue-600 text-white"
                                     : isLunch
-                                    ? "bg-gray-200 text-gray-500"
-                                    : "bg-blue-100 text-blue-600 hover:bg-blue-200"
-                                } w-8 h-10 rounded-full font-semibold flex items-center justify-center transition`}
+                                      ? "bg-gray-200 text-gray-500"
+                                      : "bg-blue-100 text-blue-600 hover:bg-blue-200"
+                                  } w-8 h-10 rounded-full font-semibold flex items-center justify-center transition`}
                               >
                                 {i + 1}
                               </button>
@@ -316,12 +296,14 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate, 
   return (
     <>
       <div className="flex justify-center">
-        <button
+        {(defaultViewMode)? null : (
+          <button
           onClick={() => setViewMode(viewMode === "byDate" ? "byPlace" : "byDate")}
           className="bg-blue-500 md:bg-blue-300 my-4 px-4 py-1 rounded text-white hover:bg-blue-500 transition"
         >
           切換為 {viewMode === "byDate" ? "單場地七日" : "單日多場地"}
         </button>
+        )}
       </div>
       <div className="mx-2 md:mx-18">
         {viewMode === "byDate" ? tableByDate() : tableByPlace()}
@@ -347,8 +329,9 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate, 
               const startHour = Math.min(...selectedSlots.hours);
               const endHour = Math.max(...selectedSlots.hours) + 1;
 
-              navigate(`/pay`, {
+              navigate(`/external/pay`, {
                 state: {
+                  fieldName: fields[selectedSlots.fieldIdx].name,
                   fieldIdx: selectedSlots.fieldIdx,
                   resourceIdx: selectedSlots.resourceIdx,
                   date: new Date().toLocaleDateString("zh-TW"),

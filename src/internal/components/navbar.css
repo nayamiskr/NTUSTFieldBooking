@@ -1,0 +1,142 @@
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0px 4.5rem;
+    background-color: #ffffff;
+}
+
+
+.navbar-left {
+    display: flex;
+    font-size: 20px;
+}
+
+.navbar-center {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    gap: 24px;
+    font-size: 20px;
+}
+
+.navbar-center li {
+    position: relative;
+    list-style: none;
+    
+}
+
+.navbar-center li a {
+    color: #7b7b7b;
+    transition: color 0.3s ease;
+}
+
+.navbar-center li a:hover {
+    color: black;
+}
+
+.navbar-center li::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    bottom: -4px; /* 底線與文字的間距 */
+    width: 0%;
+    height: 2px;
+    background-color: black;
+    transition: width 0.3s ease;
+}
+
+.navbar-center li:hover::after {
+    width: 100%;
+}
+
+.icon-container {
+    width: 80px;
+    height: 40px;  
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    font-size: 24px;
+    align-items: center;
+    gap: 4px;
+    border: 2px solid #7b7b7b;
+    border-radius: 50px;
+}
+
+.person-icon{
+    font-size: 32px;
+}
+
+.icon-container:hover {
+    background-color: #f0f0f0;
+}
+
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 100%;
+    background-color: white;
+    min-width: 150px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 99;
+}
+
+.dropdown-content a {
+    color: #333;
+    padding: 10px 14px;
+    text-decoration: none;
+    display: block;
+}
+
+.dropdown-content a:hover {
+    background-color: #f5f5f5;
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}
+
+.dropdown:focus-within .dropdown-content {
+    display: block;
+}
+
+.dropdown:active .dropdown-content {
+    display: block;
+}
+
+.icon-container {
+    cursor: pointer;
+}
+
+@media (max-width: 970px) {
+    .navbar {
+        flex-wrap: wrap;
+        padding: 10px 20px;
+    }
+
+    .navbar-left {
+        font-size: 16px;
+        max-width: 50%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .navbar-center {
+        display: none; /* 隱藏中間選單 */
+    }
+
+    .navbar-right {
+        width: auto;
+        padding: 4px 8px;
+    }
+}
