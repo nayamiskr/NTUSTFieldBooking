@@ -9,7 +9,6 @@ function PayPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
 
-  // Form fields (UI only for now)
   const [purpose, setPurpose] = useState("");
   const [needs, setNeeds] = useState("");
   const [participants, setParticipants] = useState("");

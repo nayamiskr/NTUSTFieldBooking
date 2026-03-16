@@ -16,14 +16,13 @@ function Bookpage() {
     const { id } = useParams();
     const imgUrl = '/field_img/';
     const [activeTab, setActiveTab] = useState("info");
-    const [isOpen, setIsOpen] = useState(true);
     const [fieldInfo, setFieldInfo] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [rule, setRule] = useState([]);
+    const [facilities, setFacilities] = useState([]);
     const [selectedSlots, setSelectedSlots] = useState(null);
     const [selectedDate, setSelectedDate] = useState(new Date());
-    const OPEN_HOUR = 8;
-    const CLOSE_HOUR = 22;
-    const HOURS = Array.from({ length: CLOSE_HOUR - OPEN_HOUR }, (_, i) => OPEN_HOUR + i);
+    const HOURS = Array.from({ length: 22 - 8 }, (_, i) => 8 + i);
     const hasData = !!fieldInfo;
     const baseDate = selectedDate ? new Date(selectedDate) : new Date();
     const sevenDays = Array.from({ length: 7 }, (_, i) => {
@@ -41,7 +40,6 @@ function Bookpage() {
 
     useEffect(() => {
         let isMounted = true;
-
         const fetchLocation = async () => {
             setLoading(true);
             try {
@@ -50,6 +48,9 @@ function Bookpage() {
                 if (isMounted) {
                     setFieldInfo(res.data);
                     console.log("location data:", res.data);
+                    setRule(res.data?.rule.split(",") || null);
+                    setFacilities(res.data?.facility.split(",") || null);
+                    console.log("facilities:", facilities);
                 }
             } catch (err) {
                 console.error("fail fetch location", err);
@@ -120,7 +121,7 @@ function Bookpage() {
 
                 {/* 左側 */}
                 <div className="left-panel w-full">
-                    
+
                     <div className="md:px-[50px]">
                         <h2 className="flex justify-self-start text-3xl font-medium">{fieldInfo?.name ?? "載入中..."}</h2>
                         <p className="field-description">
@@ -153,14 +154,14 @@ function Bookpage() {
                     {activeTab === 'info' && hasData && (
                         <div className="info-section">
                             <div className="flex flex-row w-[200px] border border-gray-300 rounded-xl items-center justify-center p-2.5 gap-4 shadow-lg">
-                                <IoMdPeople className="text-4xl text-blue-600"/>
+                                <IoMdPeople className="text-4xl text-blue-600" />
                                 <div className="text">
                                     <div className="label">容納人數</div>
                                     <div className="font-medium text-lg">{fieldInfo?.capacity ?? "-"}</div>
                                 </div>
                             </div>
                             <div className="flex flex-row w-[200px] border border-gray-300 rounded-xl items-center justify-center p-2.5 gap-4 shadow-lg">
-                                <FaClock className="text-2xl text-blue-600"/>
+                                <FaClock className="text-2xl text-blue-600" />
                                 <div className="text">
                                     <div className="label">開放時間</div>
                                     <div className="font-medium text-lg">
@@ -175,46 +176,41 @@ function Bookpage() {
                                 </div>
                             </div>
                             <div className="flex flex-row w-[200px] border border-gray-300 rounded-xl items-center justify-center p-2.5 gap-4 shadow-lg">
-                                <FaMapPin className="text-2xl text-blue-600"/>
+                                <FaMapPin className="text-2xl text-blue-600" />
                                 <div className="text">
                                     <div className="label">位置</div>
-                                    <div className="value">T4教學大樓旁</div>
+                                    <div className="value">{fieldInfo?.location_info ?? "-"}</div>
                                 </div>
                             </div>
                             <div className="flex flex-row w-[200px] border border-gray-300 rounded-xl items-center justify-center p-2.5 gap-6 shadow-lg">
-                                <GrStatusInfo className="text-2xl font-bold text-blue-600"/>
+                                <GrStatusInfo className="text-2xl font-bold text-blue-600" />
                                 <div className="text">
-                                    <div className="label">場地狀態</div>
-                                    <div
-                                        className={`value ${isOpen ? 'status-open' : 'status-closed'}`}
-                                        onClick={() => setIsOpen(!isOpen)}
-                                        style={{ cursor: 'pointer' }}
-                                    >
-                                        {isOpen ? '開放' : '關閉'}
+                                    <div className="m-0 text-gray-400">場地狀態</div>
+                                    <div className={`${fieldInfo?.opening ? 'text-green-500 font-bold' : 'text-red-500'} text-lg text-gray-400 m-0`}>
+                                        {fieldInfo?.opening ? '開放' : '關閉'}
                                     </div>
                                 </div>
                             </div>
                         </div>
                     )}
                     {activeTab === 'rule' && (
-                        <div className="rule-section">
-                            <ol className="rule-list">
-                                <li>禁止在場地內飲食，只允許飲用水</li>
-                                <li>請保持場地清潔，離開時帶走所有個人物品和垃圾</li>
-                                <li>預約後請準時到場，遲到超過15分鐘視為棄權</li>
-                                <li>雨天或場地維修時，場地可能會臨時關閉</li>
-                            </ol>
+                        <div className="flex flex-col w-full md:w-[60%] m-5 p-5 justify-self-center border border-gray-300 rounded-[10px] shadow-lg">
+                            <ul className="list-disc text-[24px] pl-5 justify-self-start text-gray-600 text-left">
+                                {rule?.map((r, idx) => (
+                                    <li key={idx}>{r}</li>
+                                ))}
+                            </ul>
                         </div>
                     )}
 
                     {activeTab === 'facility' && (
-                        <div className="facility-section">
-                            <div className="facility-list">
-                                <div className="facility-card">籃球架 x2</div>
-                                <div className="facility-card">觀眾席</div>
-                                <div className="facility-card">更衣室</div>
-                                <div className="facility-card">淋浴間</div>
-                                <div className="facility-card">無障礙設施</div>
+                        <div className="facility-section w-full md:w-[60%] mx-auto mt-5">
+                            <div className="grid gap-4 justify-center grid-cols-[repeat(auto-fit,minmax(200px,250px))]">
+                                {facilities?.map((f, idx) => (
+                                    <div key={idx} className="border border-gray-300 rounded-[10px] p-4 shadow-lg text-center font-bold">
+                                        {f}
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     )}

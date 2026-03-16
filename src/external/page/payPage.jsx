@@ -11,8 +11,7 @@ function PayPage() {
 
   const {
     fieldName,
-    fieldKey,
-    resourceId,
+    resourceIdx,
     date,
     timeRange,
     hours,
@@ -32,27 +31,18 @@ function PayPage() {
     );
   }
 
-  const extractFirstUuid = (s) => {
-    if (typeof s !== "string") return null;
-    const m = s.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-    return m ? m[0] : null;
-  };
-
   const parseTimeRange = (range) => {
     if (range == null) return null;
     const s = String(range).replaceAll("～", "~");
 
-    // Extract first two HH:mm tokens anywhere in the string
     const matches = s.match(/\b\d{1,2}:\d{2}\b/g);
     if (!matches || matches.length < 2) return null;
 
     return { start: matches[0], end: matches[1] };
   };
-
   const normalizeYmd = (d) => {
     if (!d) return null;
 
-    // If it's a Date object
     if (d instanceof Date && !Number.isNaN(d.getTime())) {
       const y = d.getFullYear();
       const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -62,7 +52,6 @@ function PayPage() {
 
     const s = String(d).trim();
 
-    // Try to extract YYYY-MM-DD or YYYY/MM/DD anywhere in the string
     const m = s.match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
     if (!m) return null;
 
@@ -93,12 +82,10 @@ function PayPage() {
     return dt.toISOString();
   };
 
-  const resolvedResourceId = resourceId ?? extractFirstUuid(fieldKey);
-
   async function handlePayment() {
     setSubmitError(null);
 
-    if (!resolvedResourceId) {
+    if (!resourceIdx) {
       setSubmitError("找不到 resource_id（請重新選擇場地/球場後再試一次）");
       return;
     }
@@ -106,16 +93,6 @@ function PayPage() {
     const tr = parseTimeRange(timeRange);
     const start_time = toIsoUtc(date, tr?.start);
     const end_time = toIsoUtc(date, tr?.end);
-
-    console.log({
-      resolvedResourceId,
-      rawDate: date,
-      rawTimeRange: timeRange,
-      parsedDate: normalizeYmd(date),
-      parsedTimeRange: tr,
-      start_time,
-      end_time,
-    });
 
     if (!start_time || !end_time) {
       setSubmitError("時段格式無法解析（請返回修改預約）");
@@ -130,7 +107,7 @@ function PayPage() {
       const res = await api.post(
         "/bookings",
         {
-          resource_id: resolvedResourceId,
+          resource_id: resourceIdx,
           start_time,
           end_time,
         },

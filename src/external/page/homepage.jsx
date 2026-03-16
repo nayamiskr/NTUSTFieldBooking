@@ -77,7 +77,6 @@ function Homepage() {
           setSelectedDate(date);
         }}/>
       </div>
-      {/* TODO 將確認場地按鈕加入檢視兩地功能 */}
       <NearbyMap filter={fieldType} onConfirmPlace={handleScrollToColumn} fields={filteredFields} />
       <div ref={tableRef}>
         <SelectFieldSection fields={filteredFields} fieldChecked={confirmIdx} selectedDate={selectedDate} />

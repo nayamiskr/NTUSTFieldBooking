@@ -1,7 +1,5 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../baseApi";
-import { de } from "react-day-picker/locale";
 
 function SelectFieldSection({ fields, fieldChecked = null, selectedDate, defaultViewMode }) {
   const navigate = useNavigate();
@@ -11,9 +9,7 @@ function SelectFieldSection({ fields, fieldChecked = null, selectedDate, default
   const OPEN_HOUR = 8;
   const CLOSE_HOUR = 22;
   const HOURS = Array.from({ length: CLOSE_HOUR - OPEN_HOUR }, (_, i) => OPEN_HOUR + i);
-
   const baseDate = selectedDate ? new Date(selectedDate) : new Date();
-  
 
   const sevenDays = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(baseDate);
@@ -26,6 +22,12 @@ function SelectFieldSection({ fields, fieldChecked = null, selectedDate, default
     const day = d.getDate();
     const week = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
     return `${m}/${day} (${week})`;
+  };
+
+  const getSelectedTotalPrice = () => {
+    if (!selectedSlots?.hours?.length) return 0;
+
+    return fields[selectedSlots.fieldIdx]?.resources?.[selectedSlots.resourceIdx]?.price * selectedSlots.hours.length;
   };
 
   useEffect(() => {
@@ -320,6 +322,8 @@ function SelectFieldSection({ fields, fieldChecked = null, selectedDate, default
             })()}
             <br />
             {`場地：${fields[selectedSlots.fieldIdx].name} / 第 ${selectedSlots.resourceIdx + 1} 面`}
+            <br />
+            {`總金額：NT$ ${getSelectedTotalPrice()}`}
           </div>
 
           <div className="flex-1" />
@@ -329,14 +333,18 @@ function SelectFieldSection({ fields, fieldChecked = null, selectedDate, default
               const startHour = Math.min(...selectedSlots.hours);
               const endHour = Math.max(...selectedSlots.hours) + 1;
 
+              console.log(fields[selectedSlots.fieldIdx].resources[selectedSlots.resourceIdx].id);
               navigate(`/external/pay`, {
                 state: {
                   fieldName: fields[selectedSlots.fieldIdx].name,
                   fieldIdx: selectedSlots.fieldIdx,
-                  resourceIdx: selectedSlots.resourceIdx,
-                  date: new Date().toLocaleDateString("zh-TW"),
+                  resourceIdx: fields[selectedSlots.fieldIdx].resources[selectedSlots.resourceIdx].id,
+                  date: selectedSlots.date
+                    ? new Date(selectedSlots.date).toLocaleDateString("zh-TW")
+                    : new Date().toLocaleDateString("zh-TW"),
                   timeRange: `${startHour}:00 - ${endHour}:00`,
                   hours: selectedSlots.hours.length,
+                  totalPrice: getSelectedTotalPrice(),
                 },
               });
             }}
