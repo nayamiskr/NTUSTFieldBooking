@@ -114,24 +114,25 @@ function OrderPage() {
                     <div>
                         <h1 class="text-3xl font-bold text-center my-8">我的預約</h1>
                         <ul>
-                            {sortedItems.map((order) => (
-                                <li key={order.id} className={`flex flex-row sm:justify-between w-full md:w-[60%] h-[130px] mx-auto my-3 border border-blue-200 rounded-md ${order.status === "cancelled" ? "opacity-40" : ""}`}>
+                            {sortedItems.map((order, index) => (
+                                <li key={order.id} className={`flex flex-row justify-between w-full md:w-[60%] h-[130px] mx-auto my-3 border border-blue-200 rounded-md ${order.status === "cancelled" ? "opacity-40" : ""}`}>
                                     <div className="flex flex-col justify-between p-4">
-                                        <p className="text-start text-2xl font-semibold ">
-                                            {order.location.name} {order?.resource?.name ? `- ${order.resource.name}` : ""}
-                                        </p>
+                                        <div className="flex flex-row items-center gap-2">
+                                            <p className="text-lg font-semibold">{order.location.name} {order.resource ? `- ${order.resource.name}` : ""}</p>
+                                            <div className="text-sm text-gray-500 border border-blue-300 rounded-md px-2 py-1">{(index === 2) ? "臨打團" : "場地預約"}</div>
+                                        </div>
                                         <p className="text-start text-md text-gray-400">預約時間：{order.start_time ? new Date(order.start_time).toLocaleDateString("zh-TW") : ""} {order.start_time ? " " : ""}{order.start_time ? `${new Date(order.start_time).toLocaleTimeString("zh-TW", { hour: '2-digit', minute: '2-digit', hour12: false })} - ${new Date(order.end_time).toLocaleTimeString("zh-TW", { hour: '2-digit', minute: '2-digit', hour12: false })}` : ""}</p>
                                     </div>
 
                                     <div className=" flex flex-col h-auto items-end justify-between p-4">
-                                        <p className="text-lg font-semibold" >
+                                        <p className="text-md font-semibold" >
                                             <span className={statusStyle[order.status].class + " px-2 py-1 rounded-md ml-2 font-normal"}>
                                                 {statusStyle[order.status].label}
                                             </span>
                                         </p>
                                         {!cancellingIds.has(order.id) && order.status !== "cancelled" && !order._cancelRequested && (
                                             <button
-                                                className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md"
+                                                className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2 px-4 rounded-md"
                                                 onClick={() => openCancelModal(order)}
                                             >
                                                 取消預約

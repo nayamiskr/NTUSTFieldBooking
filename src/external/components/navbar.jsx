@@ -10,6 +10,7 @@ function Navbar() {
       </div>
       <ul className="navbar-center">
         <li><a href={`/external/home/${localStorage.getItem("type")}`}>場地</a></li>
+        <li><a href="/external/group">臨打</a></li>
         <li><a href="#">公告</a></li>
         <li><a href="/external/order">我的預約</a></li>
       </ul>
@@ -20,10 +21,10 @@ function Navbar() {
         </div>
         <div className="dropdown-content">
           <a href={`/external/home/${localStorage.getItem("type")}`}>場地</a>
+        <li><a href="/external/group">臨打</a></li>
           <a href="#">公告</a>
           <a href="/external/order">我的預約</a>
           <a href="#">個人資料</a>
-          <a href="#">設定</a>
           <a href="/">登出</a>
         </div>
       </div>

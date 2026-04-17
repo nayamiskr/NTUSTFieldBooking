@@ -11,6 +11,25 @@ const instance = axios.create({
   },
 });
 
+instance.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // 檢查錯誤狀態碼是否為 401 
+    if (error.response && error.response.status === 401) {
+      alert("登入逾時或尚未登入，請重新登入");
+      
+      // 清除本地過期的 token 
+      localStorage.removeItem('token'); 
+      
+      // 強制跳轉到登入頁面
+      window.location.href = '/'; 
+    }
+    return Promise.reject(error);
+  }
+);
+
 instance.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
 
