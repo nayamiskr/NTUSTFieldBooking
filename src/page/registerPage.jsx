@@ -1,8 +1,10 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
 import api from "../baseApi";
+import { registerService } from "../service/registerService";
+import { InputElement } from "../components/inputElement";
 
-function RegistPage() {
+function RegisterPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -30,14 +32,7 @@ function RegistPage() {
         return;
       }
 
-      // 依後端需求調整欄位：若後端不需要 name，會被忽略
-      const payload = {
-        email,
-        password,
-        ...(name ? { name } : {}),
-      };
-
-      await api.post("/auth/register", payload);
+      await registerService.registerAccount({ email, password, display_name: name || undefined });
 
       // 註冊成功後導回登入
       navigate("/");
@@ -55,53 +50,33 @@ function RegistPage() {
         <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">註冊</h2>
 
         <form className="space-y-5" onSubmit={handleRegister}>
-          <div>
-            <label className="block text-gray-600 mb-1" htmlFor="name">
-              名稱（選填）
-            </label>
-            <input
-              name="name"
-              type="text"
-              placeholder="輸入你的名稱"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
+          <InputElement 
+            label="名稱（選填）"
+            name="name"
+            type="text"
+            placeholder="輸入你的名稱"
+          /> 
 
-          <div>
-            <label className="block text-gray-600 mb-1" htmlFor="email">
-              電子郵件
-            </label>
-            <input
-              name="email"
-              type="email"
-              placeholder="輸入你的電子郵件"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
+          <InputElement 
+            label="電子郵件"
+            name="email"
+            type="email"
+            placeholder="輸入你的電子郵件"
+          />
 
-          <div>
-            <label className="block text-gray-600 mb-1" htmlFor="password">
-              密碼
-            </label>
-            <input
-              name="password"
-              type="password"
-              placeholder="輸入你的密碼"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
+          <InputElement 
+            label="密碼"
+            name="password"
+            type="password"
+            placeholder="輸入你的密碼"
+          />
 
-          <div>
-            <label className="block text-gray-600 mb-1" htmlFor="confirmPassword">
-              確認密碼
-            </label>
-            <input
-              name="confirmPassword"
-              type="password"
-              placeholder="再次輸入你的密碼"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-            />
-          </div>
+          <InputElement 
+            label="確認密碼"
+            name="confirmPassword"
+            type="password"
+            placeholder="再次輸入你的密碼"
+          />
 
           {errorMessage && (
             <p className="text-red-500 text-sm text-center">{errorMessage}</p>
@@ -129,4 +104,4 @@ function RegistPage() {
   );
 }
 
-export default RegistPage;
+export default RegisterPage;

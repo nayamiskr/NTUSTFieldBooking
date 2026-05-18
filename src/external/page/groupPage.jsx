@@ -32,7 +32,7 @@ export function GroupPage() {
             {!loading && groups.length === 0 && <p className="text-center text-gray-500">暫無可預約的團</p>}
             <div>
                 {groups.map((group) => {
-                    const isFull = group.currentParticipants >= group.maxParticipants;
+                    const isFull = group.current_enrolled >= group.capacity;
                     const isExpanded = expandedGroups[group.id] || false;
                     
                     return (
@@ -47,7 +47,7 @@ export function GroupPage() {
                                 {/* 動態展開容器 */}
                                 <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                                     <div className="overflow-hidden">
-                                        <p className="text-sm text-gray-500">負責人: 我 | 負責人電話: 0978712894</p>
+                                        <p className="text-sm text-gray-500">負責人: {group.host_name} | 負責人電話: {group.host_phone}</p>
                                         <div className="flex flex-row gap-4 pt-4">
                                             <div className="p-2 border border-blue-300 ">
                                                 <p className="text-md font-semibold text-gray-900">費用: {group.fee}</p>
@@ -63,7 +63,7 @@ export function GroupPage() {
                                 <p className="text-lg font-semibold text-gray-900">
                                     報名人數
                                     <p className={isFull ? "text-red-500" : "text-blue-500"}>
-                                        (0/{group.capacity})
+                                        ({group.current_enrolled}/{group.capacity})
                                     </p>
                                 </p>
                                 <button

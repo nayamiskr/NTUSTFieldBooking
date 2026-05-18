@@ -1,7 +1,7 @@
 import './App.css';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import LoginPage from './page/loginPage';
-import RegistPage from './page/registPage';
+import RegisterPage from './page/registerPage';
 import ScrollToTop from './page/scrollToTop';
 import NTUSTApp from './route/InternalRoute';
 import OutsideApp from './route/ExternalRoute';
@@ -13,7 +13,7 @@ function App() {
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<LoginPage />} />
-          <Route path="/register" element={<RegistPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/ntust/*" element={<NTUSTApp />} />
           <Route path="/external/*" element={<OutsideApp />} />
 
