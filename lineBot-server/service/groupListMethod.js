@@ -1,4 +1,4 @@
-import { client } from "./apiService.js";
+const { client } = require("./apiService");
 
 const calculateDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371;
@@ -43,7 +43,7 @@ const getLocationById = async (id) => {
 };
 
 // 實作取得臨打團資料
-export const getGroups = async (userLat, userLon, hostName = null) => {
+const getGroups = async (userLat, userLon, hostName = null) => {
   const response = await client.get("/pickup-groups");
   let items = response.data.items;
 
@@ -79,7 +79,7 @@ export const getGroups = async (userLat, userLon, hostName = null) => {
   return groups;
 };
 
-export const getHostLists = async () => {
+const getHostLists = async () => {
   const response = await client.get("/pickup-groups");
   const groups = response.data.items;
   const hostList = groups.reduce((acc, group) => {
@@ -95,7 +95,7 @@ export const getHostLists = async () => {
   return hostList;
 };
 
-export const addGroup = async (groupId) => {
+const addGroup = async (groupId) => {
   try {
     const response = await client.post(`/pickup-groups/${groupId}/orders`);
     return response.data;
@@ -104,3 +104,5 @@ export const addGroup = async (groupId) => {
     throw error;
   }
 };
+
+module.exports = { getGroups, getHostLists, addGroup };

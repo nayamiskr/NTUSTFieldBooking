@@ -1,5 +1,6 @@
 import { useNavigate, Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect, use } from "react";
+import liff from "@line/liff";
 import api from "../baseApi";
 import Loading from "../components/loading";
 
@@ -7,9 +8,18 @@ import Loading from "../components/loading";
 function LoginPage() {
   const [filter, setFilter] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [forSchool, setForSchool] = useState(false);
+  const [forLine, setForLine] = useState(false);
   const [isFilpping, setIsFlipping] = useState(false);
+
+  useEffect(() => {
+    liff.init({ liffId: "你的_LIFF_ID" }) // 記得填入你的 LIFF ID
+      .catch((err) => console.error("LIFF 初始化失敗", err));
+    if (liff.isInClient()) {
+      setForLine(true);
+    }
+  }, []);
 
   const navigate = useNavigate();
   const typeMap = {
@@ -34,7 +44,7 @@ function LoginPage() {
 
     if (loading) return;
 
-    if (!type && !forSchool) {
+    if (!type && !forSchool && !liff.isInClient()) {
       setErrorMessage("請先選擇場地類型");
       return;
     }
@@ -56,7 +66,15 @@ function LoginPage() {
       localStorage.setItem("token", res.data.access_token);
       localStorage.setItem("userId", JSON.stringify(res.data.user.id));
       localStorage.setItem("type", filter);
-      navigate(`${forSchool ? "ntust" : "external"}/home/${forSchool ? "" : filter}`);
+
+      if (liff.isInClient()) {
+        liff.closeWindow();
+        return;
+      }
+      else {
+        navigate(`${forSchool ? "ntust" : "external"}/home/${forSchool ? "" : filter}`);
+      }
+
     } catch (error) {
       console.error("登入失敗:", error);
       setErrorMessage("登入失敗，請檢查您的帳號和密碼。");
@@ -80,7 +98,7 @@ function LoginPage() {
               場地租借系統
             </h1>
             <span className="text-sm text-gray-500 mt-1 tracking-wide">
-              {forSchool ? "學校版" : "校外版"}
+              {forSchool ? "學校版" : forLine ? "Line 登入" : "校外版"}
             </span>
           </div>
           <div>
@@ -111,20 +129,20 @@ function LoginPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
-            { !forSchool && (
+            {(!forSchool || !forLine) && (
               <div className="w-full flex justify-center flex-wrap gap-5 my-4">
-              {["全部", "羽球", "網球", "籃球", "排球", "其他"].map(type => (
-                <button
-                  type="button"
-                  key={type}
-                  onClick={() => setFilter(typeMap[type])}
-                  className={`px-4 py-2 mt-3 rounded-md text-white transition ${filter === typeMap[type] ? "bg-blue-700" : "bg-blue-400 hover:bg-blue-600"
-                    }`}
-                >
-                  {type}
-                </button>
-              ))}
-            </div>)}
+                {["全部", "羽球", "網球", "籃球", "排球", "其他"].map(type => (
+                  <button
+                    type="button"
+                    key={type}
+                    onClick={() => setFilter(typeMap[type])}
+                    className={`px-4 py-2 mt-3 rounded-md text-white transition ${filter === typeMap[type] ? "bg-blue-700" : "bg-blue-400 hover:bg-blue-600"
+                      }`}
+                  >
+                    {type}
+                  </button>
+                ))}
+              </div>)}
             {errorMessage && !forSchool && (
               <p className="text-red-500 text-sm text-center">{errorMessage}</p>
             )}

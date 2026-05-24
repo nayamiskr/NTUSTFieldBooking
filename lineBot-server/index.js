@@ -69,9 +69,9 @@ async function handleEvent(event) {
     }
 
     if (event.message.type == "location") {
-      const hostList = await getHostLists();
-      const hostNames = Object.keys(hostList);
       try {
+        const hostList = await getHostLists();
+        const hostNames = Object.keys(hostList);
         groups = await getGroups(
           event.message.latitude,
           event.message.longitude,
@@ -96,7 +96,7 @@ async function handleEvent(event) {
         });
       } catch (error) {
         //抓是不是沒有token，並跳轉至登入介面
-        if (error.response.status === 401)
+        if (error.response && error.response.status === 401)
         {
           return client.replyMessage({
             replyToken: event.replyToken,
