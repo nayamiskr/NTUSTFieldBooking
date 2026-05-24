@@ -8,7 +8,7 @@ import Loading from "../components/loading";
 function LoginPage() {
   const [filter, setFilter] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [forSchool, setForSchool] = useState(false);
   const [forLine, setForLine] = useState(false);
   const [isFilpping, setIsFlipping] = useState(false);
@@ -129,7 +129,7 @@ function LoginPage() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
-            {(!forSchool || !forLine) && (
+            {!forSchool && !forLine && (
               <div className="w-full flex justify-center flex-wrap gap-5 my-4">
                 {["全部", "羽球", "網球", "籃球", "排球", "其他"].map(type => (
                   <button
