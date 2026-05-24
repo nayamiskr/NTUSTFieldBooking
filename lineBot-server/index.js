@@ -95,6 +95,31 @@ async function handleEvent(event) {
           ],
         });
       } catch (error) {
+        //抓是不是沒有token，並跳轉至登入介面
+        if (error.response.status === 401)
+        {
+          return client.replyMessage({
+            replyToken: event.replyToken,
+            messages: [
+              {
+                type: "template",
+                altText: "請登入以使用功能",
+                template: {
+                  type: "buttons",
+                  text: "請登入以使用功能",
+                  actions: [
+                    {
+                      type: "uri",
+                      label: "點我登入",
+                      uri: "https://liff.line.me/2010177405-eZLEE6hK"
+                    }
+                  ]
+                }
+              }
+            ]
+          })
+        }
+
         console.error("Error fetching pickup groups:", error);
         return client.replyMessage({
           replyToken: event.replyToken,
