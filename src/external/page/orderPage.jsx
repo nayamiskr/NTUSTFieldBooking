@@ -64,11 +64,7 @@ function OrderPage() {
         });
 
         try {
-            await api.patch(`/bookings/${orderId}`, {
-                status: "pending",
-            });
-
-
+            
             setCancelModalOpen(false);
             setSelectedCancelOrder(null);
         } catch (err) {
