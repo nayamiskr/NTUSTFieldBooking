@@ -5,7 +5,7 @@ import api from "../baseApi";
 import Loading from "../components/loading";
 
 
-function LoginPage() {
+function LoginPage(isFromLine = false) {
   const [filter, setFilter] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -101,15 +101,19 @@ function LoginPage() {
               {forSchool ? "學校版" : forLine ? "Line 登入" : "校外版"}
             </span>
           </div>
-          <div>
-            <button
-              onClick={() => handleVersionFilp()}
-              className="absolute top-8 right-8 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition flex flex-col items-center leading-tight"
-            >
-              <span className="text-sm font-semibold">切換版本</span>
 
-            </button>
-          </div>
+          {!isFromLine && (
+            <div>
+              <button
+                onClick={() => handleVersionFilp()}
+                className="absolute top-8 right-8 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition flex flex-col items-center leading-tight"
+              >
+                <span className="text-sm font-semibold">切換版本</span>
+
+              </button>
+            </div>
+          )}
+
           <form className="space-y-5" onSubmit={(e) => handleLogin(e, filter)}>
             <div>
               <label className="block text-start text-gray-600 mb-1" htmlFor="email">電子郵件</label>

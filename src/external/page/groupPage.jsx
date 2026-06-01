@@ -1,4 +1,3 @@
-import { Nav } from "react-day-picker";
 import Navbar from "../components/navbar";
 import { useState, useEffect } from "react";
 import { pickUpService } from "../../service/pickUpService";
@@ -6,17 +5,26 @@ import { formatDateTime } from "../../components/dateTimeFormat";
 
 export function GroupPage() {
     const [expandedGroups, setExpandedGroups] = useState({}); // { groupId: boolean }
-    const [groups, setGroups] = useState([]); 
+    const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [joiningGroupId, setJoiningGroupId] = useState(null);
+    const [message, setMessage] = useState(null);
+
+    const getErrorMessage = (error) => {
+        const errorData = error.response?.data;
+        if (typeof errorData === "string") return errorData;
+        return errorData?.message || errorData?.detail || "報名失敗，請稍後再試。";
+    };
 
     useEffect(() => {
         const fetchGroups = async () => {
             setLoading(true);
             try {
                 const data = await pickUpService.getPickUpList();
-                setGroups(data.items);
+                setGroups(data.items || []);
             } catch (error) {
                 console.error("Error fetching groups:", error);
+                setMessage({ type: "error", text: "取得臨打團清單失敗，請稍後再試。" });
             } finally {
                 setLoading(false);
             }
@@ -24,17 +32,87 @@ export function GroupPage() {
         fetchGroups();
     }, []);
 
+    const handleJoinGroup = async (groupId) => {
+        setJoiningGroupId(groupId);
+        setMessage(null);
+
+        try {
+            await pickUpService.joinPickUpGroup(groupId);
+            setGroups((prevGroups) =>
+                prevGroups.map((group) =>
+                    group.id === groupId
+                        ? {
+                            ...group,
+                            current_enrolled: Math.min(
+                                Number(group.current_enrolled || 0) + 1,
+                                Number(group.capacity || 0)
+                            ),
+                        }
+                        : group
+                )
+            );
+            setExpandedGroups((prev) => ({
+                ...prev,
+                [groupId]: false,
+            }));
+            setMessage({ type: "success", text: "報名成功，已送出臨打申請。" });
+        } catch (error) {
+            console.error("Error joining group:", error);
+            setMessage({
+                type: "error",
+                text: getErrorMessage(error),
+            });
+        } finally {
+            setJoiningGroupId(null);
+        }
+    };
+
+    const handleGroupButtonClick = (group) => {
+        const isFull = Number(group.current_enrolled || 0) >= Number(group.capacity || 0);
+        if (isFull || joiningGroupId === group.id) return;
+
+        if (expandedGroups[group.id]) {
+            handleJoinGroup(group.id);
+            return;
+        }
+
+        setMessage(null);
+        setExpandedGroups(prev => ({
+            ...prev,
+            [group.id]: true
+        }));
+    };
+
+    const getButtonText = ({ isFull, isExpanded, isJoining }) => {
+        if (isFull) return "報名已滿";
+        if (isJoining) return "報名中...";
+        if (isExpanded) return "立即報名";
+        return "查看詳細";
+    };
+
+    const getLocationText = (location) => {
+        if (!location) return "-";
+        if (typeof location === "string") return location;
+        return location.name || location.location_info || "-";
+    };
+
     return (
         <div>
             <Navbar />
             <h1 className="text-3xl font-bold text-center my-8">已開團的清單</h1>
             {loading && <p className="text-center text-gray-500">加載中...</p>}
+            {message && (
+                <p className={`text-center mb-4 ${message.type === "success" ? "text-green-500" : "text-red-600"}`}>
+                    {message.text}
+                </p>
+            )}
             {!loading && groups.length === 0 && <p className="text-center text-gray-500">暫無可預約的團</p>}
             <div>
                 {groups.map((group) => {
-                    const isFull = group.current_enrolled >= group.capacity;
+                    const isFull = Number(group.current_enrolled || 0) >= Number(group.capacity || 0);
                     const isExpanded = expandedGroups[group.id] || false;
-                    
+                    const isJoining = joiningGroupId === group.id;
+
                     return (
                         <div
                             key={group.id}
@@ -42,8 +120,9 @@ export function GroupPage() {
                         >
                             <div className="flex flex-col text-left">
                                 <p className="text-xl font-semibold text-gray-900">{group.title}</p>
-                                <p className="text-md text-gray-500">位置: {group.location}</p>
-                                <p className="text-sm text-gray-500 mt-8">{formatDateTime(group.start_time)}</p>
+                                <p className="text-md text-gray-500">位置: {getLocationText(group.location)}</p>
+                                <p className="text-sm text-gray-500 mt-8">{formatDateTime(group.start_time).date}</p>
+                                <p className="text-sm text-gray-500">{formatDateTime(group.start_time).time}</p>
                                 {/* 動態展開容器 */}
                                 <div className={`grid transition-[grid-template-rows] duration-300 ease-in-out ${isExpanded ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}>
                                     <div className="overflow-hidden">
@@ -51,7 +130,7 @@ export function GroupPage() {
                                         <div className="flex flex-row gap-4 pt-4">
                                             <div className="p-2 border border-blue-300 ">
                                                 <p className="text-md font-semibold text-gray-900">費用: {group.fee}</p>
-                                            </div>          
+                                            </div>
                                             <div className="p-2 border border-blue-300">
                                                 <p className="text-md font-semibold text-gray-900">程度: {group.skill_level}</p>
                                             </div>
@@ -60,25 +139,18 @@ export function GroupPage() {
                                 </div>
                             </div>
                             <div className="flex flex-col text-right justify-between ml-4">
-                                <p className="text-lg font-semibold text-gray-900">
+                                <div className="text-lg font-semibold text-gray-900">
                                     報名人數
                                     <p className={isFull ? "text-red-500" : "text-blue-500"}>
                                         ({group.current_enrolled}/{group.capacity})
                                     </p>
-                                </p>
+                                </div>
                                 <button
-                                    onClick={() => {
-                                        if (!isFull) {
-                                            setExpandedGroups(prev => ({
-                                                ...prev,
-                                                [group.id]: !prev[group.id]
-                                            }));
-                                        }
-                                    }}
-                                    disabled={isFull}
-                                    className={`text-sm border border-blue-300 rounded-md mt-4 py-2 px-4 ${isFull ? 'text-gray-400 cursor-not-allowed' : 'text-blue-500 hover:bg-gray-100'}`}
+                                    onClick={() => handleGroupButtonClick(group)}
+                                    disabled={isFull || isJoining}
+                                    className={`text-sm border border-blue-300 rounded-md mt-4 py-2 px-4 ${isFull || isJoining ? 'text-gray-400 cursor-not-allowed' : 'text-blue-500 hover:bg-gray-100'}`}
                                 >
-                                    {isFull ? "報名已滿" : isExpanded ? "立即報名" : "查看詳細"}
+                                    {getButtonText({ isFull, isExpanded, isJoining })}
                                 </button>
                             </div>
                         </div>
