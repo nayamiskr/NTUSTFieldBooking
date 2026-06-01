@@ -44,31 +44,6 @@ async function handleEvent(event) {
   if (event.type === "message") {
     //先讓使用者分享位置去做定位，之後才顯示最近臨打團
     if (event.message.text === "顯示最近臨打") {
-      if (!(event.message.latitude && event.message.longitude)) {
-        return client.replyMessage({
-          replyToken: event.replyToken,
-          messages: [
-            {
-              type: "text",
-              text: "請點擊下方按鈕並點選位置資訊提供您的位置。",
-              quickReply: {
-                items: [
-                  {
-                    type: "action",
-                    action: {
-                      type: "location",
-                      label: "分享位置",
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        });
-      }
-    }
-
-    if (event.message.type == "location") {
       try {
         const hostList = await getHostLists();
         const hostNames = Object.keys(hostList);
@@ -96,6 +71,7 @@ async function handleEvent(event) {
         });
       } catch (error) {
         //抓是不是沒有token，並跳轉至登入介面
+        console.error("Error fetching pickup groups:", error);
         if (error.response && error.response.status === 401)
         {
           return client.replyMessage({
@@ -119,8 +95,6 @@ async function handleEvent(event) {
             ]
           })
         }
-
-        console.error("Error fetching pickup groups:", error);
         return client.replyMessage({
           replyToken: event.replyToken,
           messages: [
@@ -137,7 +111,7 @@ async function handleEvent(event) {
     const params = new URLSearchParams(data);
     const action = params.get("action");
 
-    //透過前一步選的主辦人名稱顯示臨打團
+    //以主辦人名稱顯示臨打團
     if (action === "searchGroup") {
       const params = new URLSearchParams(data);
       const hostName = params.get("host");
@@ -152,6 +126,7 @@ async function handleEvent(event) {
       });
     }
 
+    //加入臨打團
     if (action === "joinGroup") {
       const data = event.postback.data;
       const params = new URLSearchParams(data);
@@ -174,6 +149,18 @@ async function handleEvent(event) {
           ],
         });
       }
+    }
+
+    //加入我的最愛
+    if (action ===  "addFavorite") {
+      const params = new URLSearchParams(data);
+      const hostName = params.get("host");
+      return client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          { type: "text", text: `${hostName}已加入我的最愛！如果此團有空缺將定時通知您。` },
+        ]
+      })
     }
   }
 }
