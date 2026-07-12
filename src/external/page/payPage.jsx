@@ -120,7 +120,7 @@ function PayPage() {
       );
 
       alert("訂單已送出！請耐心等候審核。");
-      navigate(`/order`);
+      navigate(`/external/order`);
     } catch (e) {
       const msg =
         e?.response?.data?.message ||

@@ -2,29 +2,24 @@ import Navbar from "../components/navbar";
 import { useState, useEffect } from "react";
 import { pickUpService } from "../../service/pickUpService";
 import { formatDateTime } from "../../components/dateTimeFormat";
+import Loading from "../../components/loading";
 
 export function GroupPage() {
-    const [expandedGroups, setExpandedGroups] = useState({}); // { groupId: boolean }
+    const [expandedGroups, setExpandedGroups] = useState({});
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(false);
     const [joiningGroupId, setJoiningGroupId] = useState(null);
-    const [message, setMessage] = useState(null);
-
-    const getErrorMessage = (error) => {
-        const errorData = error.response?.data;
-        if (typeof errorData === "string") return errorData;
-        return errorData?.message || errorData?.detail || "報名失敗，請稍後再試。";
-    };
 
     useEffect(() => {
         const fetchGroups = async () => {
             setLoading(true);
             try {
                 const data = await pickUpService.getPickUpList();
-                setGroups(data.items || []);
+                setGroups(data || []);
             } catch (error) {
                 console.error("Error fetching groups:", error);
-                setMessage({ type: "error", text: "取得臨打團清單失敗，請稍後再試。" });
+                alert("取得臨打團清單失敗，請稍後再試。");
+
             } finally {
                 setLoading(false);
             }
@@ -34,7 +29,6 @@ export function GroupPage() {
 
     const handleJoinGroup = async (groupId) => {
         setJoiningGroupId(groupId);
-        setMessage(null);
 
         try {
             await pickUpService.joinPickUpGroup(groupId);
@@ -55,13 +49,9 @@ export function GroupPage() {
                 ...prev,
                 [groupId]: false,
             }));
-            setMessage({ type: "success", text: "報名成功，已送出臨打申請。" });
+            alert("報名成功，已送出臨打申請。");
         } catch (error) {
             console.error("Error joining group:", error);
-            setMessage({
-                type: "error",
-                text: getErrorMessage(error),
-            });
         } finally {
             setJoiningGroupId(null);
         }
@@ -76,7 +66,6 @@ export function GroupPage() {
             return;
         }
 
-        setMessage(null);
         setExpandedGroups(prev => ({
             ...prev,
             [group.id]: true
@@ -100,12 +89,7 @@ export function GroupPage() {
         <div>
             <Navbar />
             <h1 className="text-3xl font-bold text-center my-8">已開團的清單</h1>
-            {loading && <p className="text-center text-gray-500">加載中...</p>}
-            {message && (
-                <p className={`text-center mb-4 ${message.type === "success" ? "text-green-500" : "text-red-600"}`}>
-                    {message.text}
-                </p>
-            )}
+            <Loading isLoading={loading} text="取得臨打團資料中..." />
             {!loading && groups.length === 0 && <p className="text-center text-gray-500">暫無可預約的團</p>}
             <div>
                 {groups.map((group) => {
@@ -120,7 +104,7 @@ export function GroupPage() {
                         >
                             <div className="flex flex-col text-left">
                                 <p className="text-xl font-semibold text-gray-900">{group.title}</p>
-                                <p className="text-md text-gray-500">位置: {getLocationText(group.location)}</p>
+                                <p className="text-md text-gray-500">位置: {getLocationText(group.location.name)}</p>
                                 <p className="text-sm text-gray-500 mt-8">{formatDateTime(group.start_time).date}</p>
                                 <p className="text-sm text-gray-500">{formatDateTime(group.start_time).time}</p>
                                 {/* 動態展開容器 */}

@@ -1,35 +1,21 @@
 import { useNavigate, Link } from "react-router-dom";
 import { useState, useEffect, use } from "react";
-import liff from "@line/liff";
+
 import api from "../baseApi";
 import Loading from "../components/loading";
+import { loginService } from "../service/authService";
+import { VENUE_TYPE } from "../constant/VenueType";
 
 
-function LoginPage(isFromLine = false) {
+function LoginPage() {
   const [filter, setFilter] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [forSchool, setForSchool] = useState(false);
   const [forLine, setForLine] = useState(false);
-  const [isFilpping, setIsFlipping] = useState(false);
-
-  useEffect(() => {
-    liff.init({ liffId: "你的_LIFF_ID" }) // 記得填入你的 LIFF ID
-      .catch((err) => console.error("LIFF 初始化失敗", err));
-    if (liff.isInClient()) {
-      setForLine(true);
-    }
-  }, []);
+  const [isFlipping, setIsFlipping] = useState(false);
 
   const navigate = useNavigate();
-  const typeMap = {
-    "全部": "all",
-    "羽球": "badminton",
-    "網球": "tennis",
-    "籃球": "basketball",
-    "排球": "volleyball",
-    "其他": "other"
-  }
 
   const handleVersionFilp = () => {
     setIsFlipping(true);
@@ -39,12 +25,12 @@ function LoginPage(isFromLine = false) {
     }, 300);
   }
 
-  const handleLogin = async (e, type) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
 
     if (loading) return;
 
-    if (!type && !forSchool && !liff.isInClient()) {
+    if (!filter && !forSchool) {
       setErrorMessage("請先選擇場地類型");
       return;
     }
@@ -53,8 +39,9 @@ function LoginPage(isFromLine = false) {
     setErrorMessage("");
 
     try {
-      const email = e.target.email?.value?.trim();
-      const password = e.target.password?.value;
+      const form = new FormData(e.target);
+      const email = form.get("email")?.trim();
+      const password = form.get("password");
 
       if (!email || !password) {
         setErrorMessage("請輸入電子郵件與密碼");
@@ -62,18 +49,12 @@ function LoginPage(isFromLine = false) {
         return;
       }
 
-      const res = await api.post("/auth/login", { email, password });
-      localStorage.setItem("token", res.data.access_token);
-      localStorage.setItem("userId", JSON.stringify(res.data.user.id));
-      localStorage.setItem("type", filter);
+      await loginService(email, password);
 
-      if (liff.isInClient()) {
-        liff.closeWindow();
-        return;
-      }
-      else {
-        navigate(`${forSchool ? "ntust" : "external"}/home/${forSchool ? "" : filter}`);
-      }
+      const baseUrl = forSchool ? "ntust" : "external";
+      const typePath = forSchool ? "" : filter;
+
+      navigate(`${baseUrl}/home/${typePath}`);
 
     } catch (error) {
       console.error("登入失敗:", error);
@@ -87,7 +68,7 @@ function LoginPage(isFromLine = false) {
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-100 to-blue-300">
       <Loading isLoading={loading} text="登入中..." />
       <div className="w-[80%] max-w-md" style={{ perspective: "1200px" }}>
-        <div className={`relative bg-white shadow-lg rounded-xl p-8 w-full max-w-md transition-transform duration-500 ease-in-out ${isFilpping ? "rotate-y-180" : ""}`}>
+        <div className={`relative bg-white shadow-lg rounded-xl p-8 w-full max-w-md transition-transform duration-500 ease-in-out ${isFlipping ? "rotate-y-180" : ""}`}>
           <div className="flex flex-col items-center mb-4">
             <img
               src="/icon/logo.png"
@@ -102,19 +83,19 @@ function LoginPage(isFromLine = false) {
             </span>
           </div>
 
-          {!isFromLine && (
-            <div>
-              <button
-                onClick={() => handleVersionFilp()}
-                className="absolute top-8 right-8 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition flex flex-col items-center leading-tight"
-              >
-                <span className="text-sm font-semibold">切換版本</span>
 
-              </button>
-            </div>
-          )}
+          <div>
+            <button
+              onClick={() => handleVersionFilp()}
+              className="absolute top-8 right-8 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition flex flex-col items-center leading-tight"
+            >
+              <span className="text-sm font-semibold">切換版本</span>
 
-          <form className="space-y-5" onSubmit={(e) => handleLogin(e, filter)}>
+            </button>
+          </div>
+
+
+          <form className="space-y-5" onSubmit={(e) => handleLogin(e)}>
             <div>
               <label className="block text-start text-gray-600 mb-1" htmlFor="email">電子郵件</label>
               <input
@@ -135,13 +116,12 @@ function LoginPage(isFromLine = false) {
             </div>
             {!forSchool && !forLine && (
               <div className="w-full flex justify-center flex-wrap gap-5 my-4">
-                {["全部", "羽球", "網球", "籃球", "排球", "其他"].map(type => (
+                {Object.keys(VENUE_TYPE).map(type => (
                   <button
                     type="button"
                     key={type}
-                    onClick={() => setFilter(typeMap[type])}
-                    className={`px-4 py-2 mt-3 rounded-md text-white transition ${filter === typeMap[type] ? "bg-blue-700" : "bg-blue-400 hover:bg-blue-600"
-                      }`}
+                    onClick={() => setFilter(VENUE_TYPE[type])}
+                    className={`px-4 py-2 mt-3 rounded-md text-white transition ${filter === VENUE_TYPE[type] ? "bg-blue-700" : "bg-blue-400 hover:bg-blue-600"}`}
                   >
                     {type}
                   </button>

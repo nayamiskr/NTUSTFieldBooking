@@ -9,7 +9,7 @@ import OutsideApp from './route/ExternalRoute';
 function App() {
   return (
     <BrowserRouter>
-      <div className="App">
+      <div className="min-h-screen">
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<LoginPage />} />

@@ -196,7 +196,7 @@ function NearbyMap({ filter, fields = [], onConfirmPlace = () => { } }) {
               key={idx}
               className={`relative flex justify-between shrink-0 max-w-[400px] h-19 snap-center text-center border rounded-xl p-2 shadow ${selectedPlaceIdx === idx ? "bg-green-50 border-green-400" : "bg-white"}`}
             >
-              {idx === 0 && (
+              {idx === -1 && (
                 <div className="absolute bottom-2 left-2 bg-red-100 text-red-600 text-xs font-medium px-2 py-0.5 rounded-full">
                   上次預約
                 </div>

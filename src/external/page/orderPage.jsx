@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import api from "../../baseApi"
 import Navbar from "../components/navbar";
 import Loading from "../../components/loading";
+import { bookingService } from "../../service/bookingService";
+import { pickUpService } from "../../service/pickUpService";
 
 function OrderPage() {
     const [orders, setOrders] = useState(null);
@@ -31,15 +33,22 @@ function OrderPage() {
         }
     }
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const res = await api.get("/bookings");
-                setOrders(res.data);
+        const fetchOrder = async () => {
+            const userId = JSON.parse(localStorage.getItem("userId"));
+            const query = {
+                user_id: userId,
             }
-            catch (err) { setError(err); }
-            finally { setLoading(false); }
+            try {
+                const bookingRes = await bookingService.getBookingList(query);
+                const pickUpRes = await pickUpService.getMyPickUpList();
+                setOrders({ booking: bookingRes, pickUp: pickUpRes });
+            } catch (err) {
+                setError(err);
+            } finally {
+                setLoading(false);
+            }
         };
-        fetchData();
+        fetchOrder();
     }, []);
 
     const openCancelModal = (order) => {
@@ -64,7 +73,7 @@ function OrderPage() {
         });
 
         try {
-            
+
             setCancelModalOpen(false);
             setSelectedCancelOrder(null);
         } catch (err) {
@@ -85,19 +94,6 @@ function OrderPage() {
         cancelled: 4,
     };
 
-    const sortedItems = (orders?.items ? [...orders.items] : []).sort((a, b) => {
-        const aEffectiveStatus = (cancellingIds.has(a.id) || a._cancelRequested) ? "cancel_requested" : a.status;
-        const bEffectiveStatus = (cancellingIds.has(b.id) || b._cancelRequested) ? "cancel_requested" : b.status;
-
-        const aP = statusPriority[aEffectiveStatus] ?? 99;
-        const bP = statusPriority[bEffectiveStatus] ?? 99;
-        if (aP !== bP) return aP - bP;
-
-        const aT = a?.start_time ? new Date(a.start_time).getTime() : 0;
-        const bT = b?.start_time ? new Date(b.start_time).getTime() : 0;
-        return aT - bT;
-    });
-
     return (
         <div>
             <Navbar />
@@ -110,7 +106,7 @@ function OrderPage() {
                     <div>
                         <h1 class="text-3xl font-bold text-center my-8">我的預約</h1>
                         <ul>
-                            {sortedItems.map((order, index) => (
+                            {orders.booking?.items?.map((order, index) => (
                                 <li key={order.id} className={`flex flex-row justify-between w-full md:w-[60%] h-[130px] mx-auto my-3 border border-blue-200 rounded-md ${order.status === "cancelled" ? "opacity-40" : ""}`}>
                                     <div className="flex flex-col justify-between p-4">
                                         <div className="flex flex-row items-center gap-2">
