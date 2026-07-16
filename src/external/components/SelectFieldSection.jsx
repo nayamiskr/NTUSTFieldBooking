@@ -116,7 +116,7 @@ function SelectFieldSection({ fields, fieldChecked = null, selectedDate, default
 
     return (
       <div ref={tableRef} className="overflow-x-auto rounded-2xl ">
-        <table className="min-w-full border-collapse shadow-sm text-center text-sm">
+        <table className="min-w-full md:w-[80%] border-collapse shadow-sm text-center text-sm">
           <thead>
             <tr>
               <th className="sticky left-0 w-32 z-30 px-4 py-2 border whitespace-nowrap border-gray-300 bg-blue-100">

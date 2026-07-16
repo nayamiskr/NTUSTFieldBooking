@@ -188,6 +188,8 @@ function NearbyMap({ filter, fields = [], onConfirmPlace = () => { } }) {
   }, [currentPosition, placesWithColor.length]);
 
   return (
+
+
     <div>
       <div className="map-list md:mx-18" >
         <ul className="flex flex-row w-auto h-5rem mb-5 gap-3 overflow-x-auto snap-x snap-mandatory">
@@ -222,8 +224,10 @@ function NearbyMap({ filter, fields = [], onConfirmPlace = () => { } }) {
           ))}
         </ul>
       </div>
+
+
       <div className="content flex flex-col justify-center md:flex-row gap-4">
-        <div className="w-full md:w-[90%] h-[350px] rounded-[10px] overflow-hidden relative">
+        <div className="w-full md:w-[80%] h-[350px] rounded-[10px] overflow-hidden relative mb-4">
           <LoadScript
             googleMapsApiKey={'AIzaSyBNCKN0oogWugXNw5hgo1Ml7anOAbmNfMQ'}
             onError={(e) => {

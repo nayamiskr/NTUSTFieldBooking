@@ -1,13 +1,12 @@
 import Navbar from "../components/navbar";
+import Loading from "../../components/loading";
+
+import { facilityMap } from "../../constant/IconMap";
 import { useState, useEffect } from "react";
 import { pickUpService } from "../../service/pickUpService";
 import { formatDateTime } from "../../components/dateTimeFormat";
-import Loading from "../../components/loading";
-
-import {
-    Droplet, ShowerHead, Shirt, Users,
-    LampCeiling, Volleyball, AirVent, Wifi
-} from "lucide-react";
+import { zhTWDictionary as dictionary } from "../../locale/zh-TW/translate";
+import NearbyMap from "../components/nearbyMap";
 
 export function GroupPage() {
     const [expandedGroups, setExpandedGroups] = useState({});
@@ -77,13 +76,6 @@ export function GroupPage() {
         }));
     };
 
-    const getButtonText = ({ isFull, isExpanded, isJoining }) => {
-        if (isFull) return "報名已滿";
-        if (isJoining) return "報名中...";
-        if (isExpanded) return "立即報名";
-        return "查看詳細";
-    };
-
     const getLocationText = (location) => {
         if (!location) return "-";
         if (typeof location === "string") return location;
@@ -95,12 +87,32 @@ export function GroupPage() {
             <Navbar />
             <h1 className="text-3xl font-bold text-center my-8">已開團的清單</h1>
             <Loading isLoading={loading} text="取得臨打團資料中..." />
+            <NearbyMap fields={groups.location} />
             {!loading && groups.length === 0 && <p className="text-center text-gray-500">暫無可預約的團</p>}
             <div>
                 {groups.map((group) => {
                     const isFull = Number(group.current_enrolled || 0) >= Number(group.capacity || 0);
                     const isExpanded = expandedGroups[group.id] || false;
                     const isJoining = joiningGroupId === group.id;
+
+                    const status = group.enrolledStatus;
+
+                    // 預設值：還沒報名 (null) 的狀態
+                    let buttonText = dictionary.pickUp.status.null;
+                    let buttonClass = "bg-blue-500 hover:bg-blue-600";
+                    let isDisabled = status !== null;
+
+                    if (status) {
+                        buttonText = dictionary.pickUp.status[status]; // 從翻譯檔拿字，拿不到就印原本的
+
+                        if (status === 'pending') {
+                            buttonClass = "bg-yellow-500 cursor-not-allowed opacity-80";
+                        } else if (status === 'confirmed') {
+                            buttonClass = "bg-green-500 cursor-not-allowed opacity-80";
+                        } else {
+                            buttonClass = "bg-gray-400 cursor-not-allowed";
+                        }
+                    }
 
                     return (
                         <div className="w-[95%] md:w-[80%] mx-auto mb-4 p-5 border border-gray-200 rounded-xl shadow-sm bg-white">
@@ -124,23 +136,19 @@ export function GroupPage() {
                             <div className="mb-5">
                                 <p className="text-sm font-medium text-gray-700 mb-2">設施</p>
 
-                                <div className="w-full md:w-fit flex flex-wrap gap-2 p-1 border border-gray-200 rounded-md bg-white relative ">
+                                <div className="w-fit flex flex-wrap gap-2 p-1 border border-gray-200 rounded-md bg-white relative ">
 
-                                    {[
-                                        { name: '飲水機', icon: <Droplet /> },
-                                        { name: '淋浴間', icon: <ShowerHead /> },
-                                        { name: '更衣室', icon: <Shirt /> },
-                                        { name: '廁所', icon: <Users /> },
-                                        { name: '照明設備', icon: <LampCeiling /> },
-                                        { name: '冷氣', icon: <AirVent /> }
-                                    ].map((facility, index) => (
-                                        <span
-                                            key={index}
-                                            className="flex items-center gap-1.6 bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm border border-gray-200"
-                                        >
-                                            <span className="opacity-60">{facility.icon}</span>
-                                        </span>
-                                    ))}
+                                    {group.facilities?.map((facilityKey, index) => {
+                                        const facility = facilityMap[facilityKey];
+                                        return (
+                                            <span
+                                                key={index}
+                                                className="flex items-center gap-1.6 bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm border border-gray-200"
+                                            >
+                                                <span className="opacity-60">{facility?.icon}</span>
+                                            </span>
+                                        )
+                                    })}
 
                                 </div>
                             </div>
@@ -154,8 +162,12 @@ export function GroupPage() {
                                 </div>
 
                                 {/* 手機版按鈕寬度 100%，更好按 */}
-                                <button className="w-full sm:w-auto bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition font-medium tracking-wide">
-                                    立即報名
+                                <button
+                                    disabled={isDisabled}
+                                    onClick={() => handleGroupButtonClick(group)}
+                                    className={`w-full sm:w-auto px-6 py-2 rounded-lg transition font-medium tracking-wide text-white ${buttonClass}`}
+                                >
+                                    {dictionary.pickUp.status[group.enrolledStatus] || dictionary.pickUp.status.null}
                                 </button>
                             </div>
 
