@@ -7,6 +7,7 @@ import { pickUpService } from "../../service/pickUpService";
 import { formatDateTime } from "../../components/dateTimeFormat";
 import { zhTWDictionary as dictionary } from "../../locale/zh-TW/translate";
 import NearbyMap from "../components/nearbyMap";
+import { statusMap } from "../../constant/statusMap";
 
 export function GroupPage() {
     const [expandedGroups, setExpandedGroups] = useState({});
@@ -29,7 +30,7 @@ export function GroupPage() {
             }
         }
         fetchGroups();
-    }, []);
+    }, [setGroups]);
 
     const handleJoinGroup = async (groupId) => {
         setJoiningGroupId(groupId);
@@ -37,18 +38,11 @@ export function GroupPage() {
         try {
             await pickUpService.joinPickUpGroup(groupId);
             setGroups((prevGroups) =>
-                prevGroups.map((group) =>
-                    group.id === groupId
-                        ? {
-                            ...group,
-                            current_enrolled: Math.min(
-                                Number(group.current_enrolled || 0) + 1,
-                                Number(group.capacity || 0)
-                            ),
-                        }
-                        : group
-                )
+                prevGroups.map((group) => group.id === groupId ? {
+                    ...group, enrolledStatus: "pending"
+                } : group)
             );
+            
             setExpandedGroups((prev) => ({
                 ...prev,
                 [groupId]: false,
@@ -94,28 +88,10 @@ export function GroupPage() {
                     const isFull = Number(group.current_enrolled || 0) >= Number(group.capacity || 0);
                     const isExpanded = expandedGroups[group.id] || false;
                     const isJoining = joiningGroupId === group.id;
-
                     const status = group.enrolledStatus;
 
-                    // 預設值：還沒報名 (null) 的狀態
-                    let buttonText = dictionary.pickUp.status.null;
-                    let buttonClass = "bg-blue-500 hover:bg-blue-600";
-                    let isDisabled = status !== null;
-
-                    if (status) {
-                        buttonText = dictionary.pickUp.status[status]; // 從翻譯檔拿字，拿不到就印原本的
-
-                        if (status === 'pending') {
-                            buttonClass = "bg-yellow-500 cursor-not-allowed opacity-80";
-                        } else if (status === 'confirmed') {
-                            buttonClass = "bg-green-500 cursor-not-allowed opacity-80";
-                        } else {
-                            buttonClass = "bg-gray-400 cursor-not-allowed";
-                        }
-                    }
-
                     return (
-                        <div className="w-[95%] md:w-[80%] mx-auto mb-4 p-5 border border-gray-200 rounded-xl shadow-sm bg-white">
+                        <div key={group.id} className="w-[95%] md:w-[80%] mx-auto mb-4 p-5 border border-gray-200 rounded-xl shadow-sm bg-white">
 
                             {/* 標題與人數狀態 */}
                             <div className="flex justify-between items-start mb-3">
@@ -128,7 +104,7 @@ export function GroupPage() {
                             {/* 詳細資訊*/}
                             <div className="text-sm text-gray-600 space-y-1.5 mb-5">
                                 <p>{group.location.name || "-"}</p>
-                                <p>{group.date} {group.time}</p>
+                                <p>{formatDateTime(group.start_time).date} | {formatDateTime(group.start_time).time}</p>
                                 <p>{group.host_name} | {group.host_phone}</p>
                             </div>
 
@@ -143,7 +119,7 @@ export function GroupPage() {
                                         return (
                                             <span
                                                 key={index}
-                                                className="flex items-center gap-1.6 bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm border border-gray-200"
+                                                className="flex items-center gap-1.5 bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm border border-gray-200"
                                             >
                                                 <span className="opacity-60">{facility?.icon}</span>
                                             </span>
@@ -163,11 +139,11 @@ export function GroupPage() {
 
                                 {/* 手機版按鈕寬度 100%，更好按 */}
                                 <button
-                                    disabled={isDisabled}
-                                    onClick={() => handleGroupButtonClick(group)}
-                                    className={`w-full sm:w-auto px-6 py-2 rounded-lg transition font-medium tracking-wide text-white ${buttonClass}`}
+                                    disabled={status !== null}
+                                    onClick={() => handleJoinGroup(group.id)}
+                                    className={`w-full sm:w-auto px-6 py-2 rounded-lg transition font-medium tracking-wide text-white ${statusMap[status]?.class || statusMap.default.class}`}
                                 >
-                                    {dictionary.pickUp.status[group.enrolledStatus] || dictionary.pickUp.status.null}
+                                    {statusMap[status]?.label || statusMap.default.label}
                                 </button>
                             </div>
 
