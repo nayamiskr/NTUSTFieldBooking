@@ -21,7 +21,7 @@ export const zhTWDictionary = {
       pending: "審核中",
       confirmed: "已報名",
       rejected: "已拒絕",
-      null: "立即報名",
+      default: "立即報名",
     },
   },
   common: {
