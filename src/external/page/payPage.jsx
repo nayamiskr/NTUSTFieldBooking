@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
+import dateTimeFormat from "../../components/dateTimeFormat"
 import api from "../../baseApi";
 
 function PayPage() {
@@ -8,6 +9,7 @@ function PayPage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [expiry, setExpiry] = useState("");
 
   const {
     fieldName,
@@ -133,6 +135,15 @@ function PayPage() {
     }
   }
 
+  const handleExpiryChange = (e) => {
+    let value = e.target.value.replace(/\D/g, "");
+    if (value.length > 4) value = value.slice(0, 4);
+    if (value.length > 2) {
+      value = `${value.slice(0, 2)} / ${value.slice(2)}`;
+    }
+    setExpiry(value); 
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex justify-center items-start px-4 py-8">
       <div className="w-full max-w-md bg-white rounded-xl shadow-lg p-6 space-y-6">
@@ -197,7 +208,9 @@ function PayPage() {
                 </label>
                 <input
                   type="code"
+                  inputMode="numeric"
                   placeholder="代碼"
+                  maxLength={3}
                   className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -220,9 +233,13 @@ function PayPage() {
                   到期日
                 </label>
                 <input
-                  type="month"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="MM / YY"
+                  maxLength={7}
                   className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={expiry}
+                  onChange={handleExpiryChange}
                 />
               </div>
 
@@ -231,8 +248,10 @@ function PayPage() {
                   CVC / CVV
                 </label>
                 <input
-                  type="CVV"
+                  type="text"
+                  inputMode="numeric"
                   placeholder="123"
+                  maxLength={3}
                   className="w-full border rounded-lg px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>

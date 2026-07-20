@@ -29,11 +29,15 @@ instance.interceptors.response.use(
   (response) => {
     return response;
   },
-  //如果回傳的代碼不是200-299，將處理錯誤
+  //如果回傳的代碼是401且不是處理login的話，將處理錯誤
   (error) => {
     if (error.response && error.response.status === 401) {
-      useAuthStore.getState().setLogout();
-      window.location.href = "/";
+      const url = error.config.url;
+
+      if (!url.includes("auth")) {
+        useAuthStore.getState().setLogout();
+        window.location.href = "/";
+      }
     }
     return Promise.reject(error);
   },

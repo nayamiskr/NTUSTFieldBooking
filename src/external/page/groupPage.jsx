@@ -8,6 +8,7 @@ import { formatDateTime } from "../../components/dateTimeFormat";
 import { zhTWDictionary as dictionary } from "../../locale/zh-TW/translate";
 import NearbyMap from "../components/nearbyMap";
 import { statusMap } from "../../constant/statusMap";
+import GroupNearbyMap from "../components/groupNearbyMap";
 
 export function GroupPage() {
     const [expandedGroups, setExpandedGroups] = useState({});
@@ -70,18 +71,12 @@ export function GroupPage() {
         }));
     };
 
-    const getLocationText = (location) => {
-        if (!location) return "-";
-        if (typeof location === "string") return location;
-        return location.name || location.location_info || "-";
-    };
-
     return (
         <div>
             <Navbar />
             <h1 className="text-3xl font-bold text-center my-8">已開團的清單</h1>
             <Loading isLoading={loading} text="取得臨打團資料中..." />
-            <NearbyMap fields={groups.location} />
+            <GroupNearbyMap groups={groups} />
             {!loading && groups.length === 0 && <p className="text-center text-gray-500">暫無可預約的團</p>}
             <div>
                 {groups.map((group) => {

@@ -48,8 +48,6 @@ function Homepage() {
         if (!cancelled) {
           setLoading(false);
         }
-        console.log("載入場地資料完成", filteredFields);
-
       }
     }
     loadFields();
@@ -78,7 +76,7 @@ function Homepage() {
         }}/>
       </div>
       <NearbyMap filter={fieldType} onConfirmPlace={handleScrollToColumn} fields={filteredFields} />
-      <div ref={tableRef}>
+      <div ref={tableRef} className='md: mb-[140px]'>
         <SelectFieldSection fields={filteredFields} fieldChecked={confirmIdx} selectedDate={selectedDate} />
       </div>
     </div>
