@@ -1,4 +1,4 @@
-import { GoogleMap, LoadScript, OverlayView } from "@react-google-maps/api";
+import { GoogleMap, LoadScript, OverlayView, useJsApiLoader } from "@react-google-maps/api";
 import { useState, useEffect, useRef, useMemo } from "react";
 import { RiMapPinUserFill } from "react-icons/ri";
 import { IoPinSharp } from "react-icons/io5";
@@ -188,6 +188,11 @@ function NearbyMap({ filter, fields = [], onConfirmPlace = () => { } }) {
     ]);
   }, [currentPosition, placesWithColor.length]);
 
+  const { isLoaded } = useJsApiLoader({
+        id: 'google-map-id',
+        googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY
+    });
+
   return (
 
 
@@ -229,17 +234,8 @@ function NearbyMap({ filter, fields = [], onConfirmPlace = () => { } }) {
 
       <div className="content flex flex-col justify-center md:flex-row gap-4">
         <div className="w-full md:w-[90%] h-[350px] rounded-[10px] overflow-hidden relative mb-4">
-          <LoadScript
-            googleMapsApiKey={'AIzaSyBNCKN0oogWugXNw5hgo1Ml7anOAbmNfMQ'}
-            onError={(e) => {
-              console.error("Google Maps script 載入失敗:", e);
-              setMapsLoadError("Google Maps script 載入失敗（請看 Console / Network）");
-            }}
-            onLoad={() => {
-              console.log("Google Maps script 已載入", !!window.google?.maps);
-            }}
-          >
-            {currentPosition ? (
+          
+            {isLoaded && currentPosition ? (
               <GoogleMap
                 mapContainerClassName="w-full h-full rounded-[10px] shadow-lg"
                 center={currentPosition}
@@ -314,7 +310,6 @@ function NearbyMap({ filter, fields = [], onConfirmPlace = () => { } }) {
                 正在取得目前位置...
               </div>
             )}
-          </LoadScript>
         </div>
 
       </div>
