@@ -56,6 +56,7 @@ function NearbyMap({ filter, fields = [], onConfirmPlace = () => { } }) {
       },
       (err) => {
         console.warn("定位失敗:", err);
+        setCurrentPosition({ lat: 25.013, lng: 121.541 });
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
@@ -227,7 +228,7 @@ function NearbyMap({ filter, fields = [], onConfirmPlace = () => { } }) {
 
 
       <div className="content flex flex-col justify-center md:flex-row gap-4">
-        <div className="w-full md:w-[80%] h-[350px] rounded-[10px] overflow-hidden relative mb-4">
+        <div className="w-full md:w-[90%] h-[350px] rounded-[10px] overflow-hidden relative mb-4">
           <LoadScript
             googleMapsApiKey={'AIzaSyBNCKN0oogWugXNw5hgo1Ml7anOAbmNfMQ'}
             onError={(e) => {

@@ -20,6 +20,7 @@ export default function GroupNearbyMap({ groups }) {
         }
         return { lat: 0, lng: 0 };
     });
+    const [mapReady, setMapReady] = useState(false);
     const mapRef = useRef(null);
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-id',
@@ -69,11 +70,11 @@ export default function GroupNearbyMap({ groups }) {
                     ]
                 }
             }
-            onLoad={(map) => mapRef.current = map}
+            onLoad={(map) => { mapRef.current = map; setMapReady(true) }}
             center={currentPosition}
         >
             {/* 顯示自己的位置 */}
-            {currentPosition && (
+            {mapReady && currentPosition && (
                 <OverlayView
                     position={currentPosition}
                     mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
@@ -84,7 +85,7 @@ export default function GroupNearbyMap({ groups }) {
                     </div>
                 </OverlayView>
             )}
-            {groups?.map((group, index) => (
+            {mapReady && groups?.map((group, index) => (
                 <OverlayView
                     key={group.id || index}
                     position={{ lat: group.location.latitude, lng: group.location.longitude }}

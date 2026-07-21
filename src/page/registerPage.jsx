@@ -1,6 +1,7 @@
+import api from "../baseApi";
+import { zhTWDictionary } from "../locale/zh-TW/translate"
 import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
-import api from "../baseApi";
 import { registerService } from "../service/registerService";
 import { InputElement } from "../components/inputElement";
 
@@ -23,12 +24,17 @@ function RegisterPage() {
       const confirmPassword = e.target.confirmPassword?.value;
 
       if (!email || !password || !confirmPassword) {
-        setErrorMessage("請輸入電子郵件與密碼");
+        setErrorMessage(zhTWDictionary.registerPage.errorMessage.requiredFields);
         return;
       }
 
       if (password !== confirmPassword) {
-        setErrorMessage("兩次輸入的密碼不一致");
+        setErrorMessage(zhTWDictionary.registerPage.errorMessage.passwordMismatch);
+        return;
+      }
+
+      if (password.length < 8) {
+        setErrorMessage(zhTWDictionary.registerPage.errorMessage.passwordTooShort);
         return;
       }
 
@@ -37,8 +43,12 @@ function RegisterPage() {
       // 註冊成功後導回登入
       navigate("/");
     } catch (error) {
-      console.error("註冊失敗:", error);
-      setErrorMessage("註冊失敗，請稍後再試或確認資料是否正確。");
+      if (error.status === 409) {
+        setErrorMessage(zhTWDictionary.registerPage.errorMessage.emailExist);
+      } else {
+        console.error("註冊失敗:", error);
+        setErrorMessage(zhTWDictionary.registerPage.errorMessage.registrationFailed);
+      }
     } finally {
       setLoading(false);
     }
@@ -47,35 +57,35 @@ function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-300">
       <div className="bg-white shadow-lg rounded-xl p-8 w-[90%] max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">註冊</h2>
+        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">{zhTWDictionary.registerPage.title}</h2>
 
         <form className="space-y-5" onSubmit={handleRegister}>
           <InputElement 
-            label="名稱（選填）"
+            label={zhTWDictionary.registerPage.input.label.name}
             name="name"
             type="text"
-            placeholder="輸入你的名稱"
+            placeholder={zhTWDictionary.registerPage.input.placeholder.name}
           /> 
 
           <InputElement 
-            label="電子郵件"
+            label={zhTWDictionary.registerPage.input.label.email}
             name="email"
             type="email"
-            placeholder="輸入你的電子郵件"
+            placeholder={zhTWDictionary.registerPage.input.placeholder.email}
           />
 
           <InputElement 
-            label="密碼"
+            label={zhTWDictionary.registerPage.input.label.password}
             name="password"
             type="password"
-            placeholder="輸入你的密碼"
+            placeholder={zhTWDictionary.registerPage.input.placeholder.password}
           />
 
           <InputElement 
-            label="確認密碼"
+            label={zhTWDictionary.registerPage.input.label.confirmPassword}
             name="confirmPassword"
             type="password"
-            placeholder="再次輸入你的密碼"
+            placeholder={zhTWDictionary.registerPage.input.placeholder.confirmPassword}
           />
 
           {errorMessage && (
@@ -89,7 +99,7 @@ function RegisterPage() {
             }`}
             disabled={loading}
           >
-            {loading ? "註冊中..." : "註冊"}
+            {loading ? zhTWDictionary.registerPage.button.registering : zhTWDictionary.registerPage.button.register}
           </button>
         </form>
 
