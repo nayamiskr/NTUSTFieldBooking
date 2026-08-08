@@ -115,13 +115,13 @@ function LoginPage() {
               />
             </div>
             {!forSchool && !forLine && (
-              <div className="w-full flex justify-center flex-wrap gap-5 my-4">
+              <div className="w-full flex justify-center flex-wrap gap-4">
                 {Object.keys(VENUE_TYPE).map(type => (
                   <button
                     type="button"
                     key={type}
                     onClick={() => setFilter(VENUE_TYPE[type])}
-                    className={`px-4 py-2 mt-3 rounded-md text-white transition ${filter === VENUE_TYPE[type] ? "bg-blue-700" : "bg-blue-400 hover:bg-blue-600"}`}
+                    className={`px-4 py-2 rounded-md text-white transition ${filter === VENUE_TYPE[type] ? "bg-blue-700" : "bg-blue-400 hover:bg-blue-600"}`}
                   >
                     {type}
                   </button>

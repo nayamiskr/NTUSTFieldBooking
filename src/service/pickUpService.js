@@ -58,8 +58,23 @@ export const pickUpService = {
     return res.data;
   },
 
-  getMyPickUpList: async () => {
+  getMyPickUpList: async (withDetail = false) => {
     const res = await api.get("/pickup-orders");
-    return res.data;
+    const order = res.data;
+
+    if (!withDetail) return order;
+
+    const orderWithDetial = await Promise.all(
+      order.map(async (order) => {
+        const pickUpdetail = await pickUpService.getPickUpDetail(order.pickup_group_id);
+        return {
+          ...order,
+          title: pickUpdetail.title,
+          start_time: pickUpdetail.start_time,
+          end_time: pickUpdetail.end_time
+        };
+      }),
+    );
+    return orderWithDetial;
   },
 };

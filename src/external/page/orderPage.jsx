@@ -4,34 +4,18 @@ import Navbar from "../components/navbar";
 import Loading from "../../components/loading";
 import { bookingService } from "../../service/bookingService";
 import { pickUpService } from "../../service/pickUpService";
+import { statusMap } from "../../constant/statusMap";
 
 function OrderPage() {
     const [orders, setOrders] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [activeTab, setActiveTab] = useState("booking");
     const [cancelModalOpen, setCancelModalOpen] = useState(false);
-    const [selectedCancelOrder, setSelectedCancelOrder] = useState(null); // { id, resourceName, start, end }
+    const [selectedCancelOrder, setSelectedCancelOrder] = useState(null);
     const [cancellingIds, setCancellingIds] = useState(() => new Set());
     const [cancelActionError, setCancelActionError] = useState(null);
-    const [pdfImportError, setPdfImportError] = useState(null);
-    const statusStyle = {
-        pending: {
-            label: "待審核",
-            class: "bg-amber-100 text-amber-800 border border-amber-300",
-        },
-        confirmed: {
-            label: "已確認",
-            class: "bg-blue-100 text-blue-800 border border-blue-300",
-        },
-        cancelled: {
-            label: "已取消",
-            class: "bg-gray-100 text-gray-800 border border-gray-300"
-        },
-        cancel_requested: {
-            label: "取消申請中",
-            class: "bg-red-100 text-red-800 border border-red-300"
-        }
-    }
+
     useEffect(() => {
         const fetchOrder = async () => {
             const userId = JSON.parse(localStorage.getItem("userId"));
@@ -40,7 +24,7 @@ function OrderPage() {
             }
             try {
                 const bookingRes = await bookingService.getBookingList(query);
-                const pickUpRes = await pickUpService.getMyPickUpList();
+                const pickUpRes = await pickUpService.getMyPickUpList(true);
                 setOrders({ booking: bookingRes, pickUp: pickUpRes });
             } catch (err) {
                 setError(err);
@@ -100,26 +84,55 @@ function OrderPage() {
             <Loading isLoading={loading} text="取得訂單資料中..." />
             {error && <p>取得訂單資料失敗: {error.message}</p>}
             {cancelActionError && <p className="text-red-600 text-center mt-2">取消申請失敗: {cancelActionError.message}</p>}
-            {pdfImportError && <p className="text-red-600 text-center mt-2">匯入 PDF 失敗: {pdfImportError.message}</p>}
             {!loading && orders &&
                 (
                     <div>
                         <h1 class="text-3xl font-bold text-center my-8">我的預約</h1>
+
+                        {/* Tab Buttons */}
+                        <div className="flex justify-center w-full mb-6">
+                            <div className="inline-flex bg-blue-50 p-1 rounded-lg shadow-inner">
+                                <button
+                                    className={`w-32 py-2 text-center rounded-md transition-all duration-200 text-ellipsis font-bold ${activeTab === "booking"
+                                            ? "bg-white text-gray-900 shadow-sm"
+                                            : "text-gray-500 hover:text-gray-700"
+                                        }`}
+                                    onClick={() => setActiveTab("booking")}
+                                >
+                                    場地預約
+                                </button>
+
+                                <button
+                                    className={`w-32 py-2 text-center rounded-md transition-all duration-200 text-ellipsis font-bold ${activeTab === "pickup"
+                                            ? "bg-white text-gray-900 shadow-sm"
+                                            : "text-gray-500 hover:text-gray-700"
+                                        }`}
+                                    onClick={() => setActiveTab("pickup")}
+                                >
+                                    臨打團
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Order List */}
                         <ul>
-                            {orders.booking?.items?.map((order, index) => (
+                            {(activeTab === "booking" ? orders.booking?.items : orders.pickUp)?.map((order, index) => (
                                 <li key={order.id} className={`flex flex-row justify-between w-full md:w-[60%] h-[130px] mx-auto my-3 border border-blue-200 rounded-md ${order.status === "cancelled" ? "opacity-40" : ""}`}>
                                     <div className="flex flex-col justify-between p-4">
                                         <div className="flex flex-row items-center gap-2">
-                                            <p className="text-lg font-semibold">{order.location.name} {order.resource ? `- ${order.resource.name}` : ""}</p>
-                                            <div className="text-sm text-gray-500 border border-blue-300 rounded-md px-2 py-1">{(index === 2) ? "臨打團" : "場地預約"}</div>
+                                            <p className="text-lg font-semibold">
+                                                {activeTab === "booking"
+                                                    ? `${order.location?.name} ${order.resource ? `- ${order.resource.name}` : ""}`
+                                                    : `${order.title}`}
+                                            </p>
                                         </div>
                                         <p className="text-start text-md text-gray-400">預約時間：{order.start_time ? new Date(order.start_time).toLocaleDateString("zh-TW") : ""} {order.start_time ? " " : ""}{order.start_time ? `${new Date(order.start_time).toLocaleTimeString("zh-TW", { hour: '2-digit', minute: '2-digit', hour12: false })} - ${new Date(order.end_time).toLocaleTimeString("zh-TW", { hour: '2-digit', minute: '2-digit', hour12: false })}` : ""}</p>
                                     </div>
 
                                     <div className=" flex flex-col h-auto items-end justify-between p-4">
                                         <p className="text-md font-semibold" >
-                                            <span className={statusStyle[order.status].class + " px-2 py-1 rounded-md ml-2 font-normal"}>
-                                                {statusStyle[order.status].label}
+                                            <span className={statusMap[order.status]?.class + " px-2 py-1 rounded-md ml-2 font-normal"}>
+                                                {statusMap[order.status]?.label || order.status}
                                             </span>
                                         </p>
                                         {!cancellingIds.has(order.id) && order.status !== "cancelled" && !order._cancelRequested && (
