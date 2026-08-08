@@ -11,12 +11,12 @@ function Navbar() {
 
   // 安全登出流程
   const handleLogout = (e) => {
-    e.preventDefault(); // 阻止 <a> 標籤預設的跳頁重整
-    setLogout(); // 清空 Zustand 記憶體裡的 Token 與資料
-    navigate("/"); // 用 SPA 的方式無感導回登入頁
+    e.preventDefault(); 
+    setLogout(); 
+    window.location.href = "/";
+
   };
 
-  // 確保沒抓到 fieldType 時有個預設值 (看你們預設是啥，假設是 badminton)
   const currentType = fieldType || "badminton";
 
   return (
@@ -45,7 +45,7 @@ function Navbar() {
           <Link to="/external/group">臨打</Link>
           <Link to="/external/announce">公告</Link>
           <Link to="/external/order">我的預約</Link>
-          <Link to="#">個人資料</Link>
+          <Link to="/external/user">個人資料</Link>
           <a href="/" onClick={handleLogout}>登出</a>
         </div>
       </div>

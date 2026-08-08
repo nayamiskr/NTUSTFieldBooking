@@ -18,6 +18,7 @@ function RegisterPage() {
 
     try {
       const name = e.target.name?.value?.trim();
+      const username = e.target.username?.value?.trim();
       const email = e.target.email?.value?.trim();
       const password = e.target.password?.value;
       const confirmPassword = e.target.confirmPassword?.value;
@@ -32,7 +33,7 @@ function RegisterPage() {
         return;
       }
 
-      await registerService.registerAccount({ email, password, display_name: name || undefined });
+      await registerService.registerAccount({ email, username, password, display_name: name || undefined });
 
       // 註冊成功後導回登入
       navigate("/");
@@ -51,11 +52,18 @@ function RegisterPage() {
 
         <form className="space-y-5" onSubmit={handleRegister}>
           <InputElement 
-            label="名稱（選填）"
+            label="名稱"
             name="name"
             type="text"
             placeholder="輸入你的名稱"
           /> 
+
+          <InputElement 
+            label="使用者名稱 (只能英文或數字)"
+            name="username"
+            type="text"
+            placeholder="輸入你的使用者名稱"
+          />
 
           <InputElement 
             label="電子郵件"

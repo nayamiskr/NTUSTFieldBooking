@@ -5,6 +5,7 @@ import PayPage from '../external/page/payPage';
 import OrderPage from '../external/page/orderPage';
 import { GroupPage } from '../external/page/groupPage';
 import { AnnouncePage } from '../external/page/announcePage';
+import { UserPage } from '../external/page/userPage';
 
 function OutsideApp() {
   return (
@@ -15,6 +16,7 @@ function OutsideApp() {
       <Route path='/pay' element={<PayPage />} />
       <Route path='/order' element={<OrderPage />} />
       <Route path='/announce' element={<AnnouncePage />} />
+      <Route path='/user' element={<UserPage />} />
     </Routes>
   );
 }

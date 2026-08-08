@@ -31,7 +31,7 @@ instance.interceptors.response.use(
   },
   //如果回傳的代碼不是200-299，將處理錯誤
   (error) => {
-    if (error.response && error.response.status === 401) {
+    if (error.response && error.response.status === 401 && !error.config.url?.includes("login")) {
       useAuthStore.getState().setLogout();
       window.location.href = "/";
     }
