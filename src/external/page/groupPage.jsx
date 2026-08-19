@@ -9,6 +9,7 @@ import { zhTWDictionary as dictionary } from "../../locale/zh-TW/translate";
 import NearbyMap from "../components/nearbyMap";
 import { statusMap } from "../../constant/statusMap";
 import GroupNearbyMap from "../components/groupNearbyMap";
+import { errorPopup, successPopup } from "../../components/pop-up";
 
 export function GroupPage() {
     const [expandedGroups, setExpandedGroups] = useState({});
@@ -24,7 +25,7 @@ export function GroupPage() {
                 setGroups(data || []);
             } catch (error) {
                 console.error("Error fetching groups:", error);
-                alert("取得臨打團清單失敗，請稍後再試。");
+                errorPopup(dictionary.pickUp.errorMessage.error, dictionary.pickUp.errorMessage.fetchFailed);
 
             } finally {
                 setLoading(false);
@@ -40,17 +41,18 @@ export function GroupPage() {
             await pickUpService.joinPickUpGroup(groupId);
             setGroups((prevGroups) =>
                 prevGroups.map((group) => group.id === groupId ? {
-                    ...group, enrolledStatus: "pending"
+                    ...group, enrolledStatus: "pending",
+                    current_enrolled: Number(group.current_enrolled || 0) + 1
                 } : group)
             );
-            
+
             setExpandedGroups((prev) => ({
                 ...prev,
                 [groupId]: false,
             }));
-            alert("報名成功，已送出臨打申請。");
+            successPopup("", dictionary.pickUp.successMessage.registrationSuccess);
         } catch (error) {
-            console.error("Error joining group:", error);
+            errorPopup(dictionary.pickUp.errorMessage.error, dictionary.pickUp.errorMessage.registrationFailed);
         } finally {
             setJoiningGroupId(null);
         }
@@ -91,7 +93,7 @@ export function GroupPage() {
                             {/* 標題與人數狀態 */}
                             <div className="flex justify-between items-start mb-3">
                                 <h2 className="text-xl font-bold text-gray-900">{group.title}</h2>
-                                <div className="text-sm font-semibold text-blue-600 bg-blue-50 px-3 py-1 rounded-full">
+                                <div className={`text-sm font-semibold px-3 py-1 rounded-full ${isFull ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}`}>
                                     {group.current_enrolled || 0}/{group.capacity || 0} 人
                                 </div>
                             </div>
@@ -100,7 +102,7 @@ export function GroupPage() {
                             <div className="text-sm text-gray-600 space-y-1.5 mb-5">
                                 <p>{group.location.name || "-"}</p>
                                 <p>{formatDateTime(group.start_time).date} | {formatDateTime(group.start_time).time}</p>
-                                <p>{group.host_name} | {group.host_phone}</p>
+                                <p>{group.host_display_name}</p>
                             </div>
 
                             {/* 展示設施*/}
@@ -117,6 +119,7 @@ export function GroupPage() {
                                                 className="flex items-center gap-1.5 bg-gray-100 text-gray-700 px-2 py-1 rounded text-sm border border-gray-200"
                                             >
                                                 <span className="opacity-60">{facility?.icon}</span>
+                                                <span className="font-medium">{facility?.name}</span>
                                             </span>
                                         )
                                     })}
@@ -126,17 +129,16 @@ export function GroupPage() {
 
                             {/*費用程度標籤與報名按鈕 */}
                             <div className="flex flex-col sm:flex-row justify-between items-center mt-4 pt-4 border-t border-gray-100 gap-4">
-                                <div className="flex gap-2 w-full sm:w-auto">
-                                    <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-sm font-medium">$150</span>
-                                    <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-sm font-medium">程度: C</span>
+                                <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
+                                    <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-base font-medium">程度: {group.skill_level.name || "未指定"}</span>
+                                    <span className={`px-3 py-1 my-[auto] rounded-md text-base font-bold border ${(group.fee !== 0) ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-700'}`} >$ {group.fee}</span>
 
                                 </div>
 
-                                {/* 手機版按鈕寬度 100%，更好按 */}
                                 <button
                                     disabled={status !== null}
                                     onClick={() => handleJoinGroup(group.id)}
-                                    className={`w-full sm:w-auto px-6 py-2 rounded-lg transition font-medium tracking-wide text-white ${statusMap[status]?.class || statusMap.default.class}`}
+                                    className={`w-full sm:w-auto px-6 py-2 rounded-lg transition font-bold tracking-wide text-white ${statusMap[status]?.class || statusMap.default.class}`}
                                 >
                                     {statusMap[status]?.label || statusMap.default.label}
                                 </button>

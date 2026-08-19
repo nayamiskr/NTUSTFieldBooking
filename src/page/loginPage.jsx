@@ -5,6 +5,8 @@ import api from "../baseApi";
 import Loading from "../components/loading";
 import { loginService } from "../service/authService";
 import { VENUE_TYPE } from "../constant/VenueType";
+import { errorPopup } from "../components/pop-up";
+import { zhTWDictionary } from "../locale/zh-TW/translate";
 
 
 function LoginPage() {
@@ -31,7 +33,7 @@ function LoginPage() {
     if (loading) return;
 
     if (!filter && !forSchool) {
-      setErrorMessage("請先選擇場地類型");
+      errorPopup(zhTWDictionary.loginPage.errorMessage.error, zhTWDictionary.loginPage.errorMessage.requiredFields);
       return;
     }
 
@@ -44,7 +46,7 @@ function LoginPage() {
       const password = form.get("password");
 
       if (!email || !password) {
-        setErrorMessage("請輸入電子郵件與密碼");
+        errorPopup(zhTWDictionary.loginPage.errorMessage.error, zhTWDictionary.loginPage.errorMessage.invalidCredentials);
         setLoading(false);
         return;
       }
@@ -53,12 +55,11 @@ function LoginPage() {
 
       const baseUrl = forSchool ? "ntust" : "external";
       const typePath = forSchool ? "" : filter;
-
-      navigate(`${baseUrl}/home/${typePath}`);
+      
+      navigate(`${baseUrl}/group`);
 
     } catch (error) {
-      console.error("登入失敗:", error);
-      setErrorMessage("登入失敗，請檢查您的帳號和密碼。");
+      errorPopup(zhTWDictionary.loginPage.errorMessage.error, zhTWDictionary.loginPage.errorMessage.invalidCredentials);
     } finally {
       setLoading(false);
     }
@@ -76,7 +77,7 @@ function LoginPage() {
               className="w-14 h-14 mb-2"
             />
             <h1 className="text-2xl font-bold text-gray-800 leading-tight">
-              場地租借系統
+              {zhTWDictionary.loginPage.title}
             </h1>
             <span className="text-sm text-gray-500 mt-1 tracking-wide">
               {forSchool ? "學校版" : forLine ? "Line 登入" : "校外版"}
@@ -84,7 +85,7 @@ function LoginPage() {
           </div>
 
 
-          <div>
+          {/* <div>
             <button
               onClick={() => handleVersionFilp()}
               className="absolute top-8 right-8 bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition flex flex-col items-center leading-tight"
@@ -92,25 +93,25 @@ function LoginPage() {
               <span className="text-sm font-semibold">切換版本</span>
 
             </button>
-          </div>
+          </div> */}
 
 
           <form className="space-y-5" onSubmit={(e) => handleLogin(e)}>
             <div>
-              <label className="block text-start text-gray-600 mb-1" htmlFor="email">電子郵件</label>
+              <label className="block text-start text-gray-600 mb-1" htmlFor="email">{zhTWDictionary.loginPage.input.label.email}</label>
               <input
                 name="email"
                 type="email"
-                placeholder="輸入你的電子郵件"
+                placeholder={zhTWDictionary.loginPage.input.placeholder.email}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>
             <div>
-              <label className="block text-start text-gray-600 mb-1" htmlFor="password">密碼</label>
+              <label className="block text-start text-gray-600 mb-1" htmlFor="password">{zhTWDictionary.loginPage.input.label.password}</label>
               <input
                 name="password"
                 type="password"
-                placeholder="輸入你的密碼"
+                placeholder={zhTWDictionary.loginPage.input.placeholder.password}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
               />
             </div>

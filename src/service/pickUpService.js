@@ -67,8 +67,12 @@ export const pickUpService = {
     const orderWithDetial = await Promise.all(
       order.map(async (order) => {
         const pickUpdetail = await pickUpService.getPickUpDetail(order.pickup_group_id);
+        const locationInfo = await locationService.getLocationInfo(
+            pickUpdetail.location_id,
+        );
         return {
           ...order,
+          location: locationInfo,
           title: pickUpdetail.title,
           start_time: pickUpdetail.start_time,
           end_time: pickUpdetail.end_time

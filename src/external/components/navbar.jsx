@@ -22,13 +22,13 @@ function Navbar() {
   return (
     <nav className="navbar">
       <div className="navbar-left">
-        <h2>NTUST 場地預約系統</h2>
+        <h2>打球租與揪系統</h2>
       </div>
       
-      {/* 中央選單：全部換成 <Link to="..."> */}
+      {/* central menu */}
       <ul className="navbar-center">
-        <li><Link to={`/external/home/${currentType}`}>場地</Link></li>
         <li><Link to="/external/group">臨打</Link></li>
+        <li><Link to={`/external/home/${currentType}`}>場地</Link></li>
         <li><Link to="/external/announce">公告</Link></li>
         <li><Link to="/external/order">我的預約</Link></li>
       </ul>
@@ -39,10 +39,10 @@ function Navbar() {
           <IoPersonCircle className="person-icon" />
         </div>
         
-        {/* RWD 側邊/下拉選單：一樣全部換成 <Link>，並修復原本 <li> 標籤寫錯的語法 */}
+        {/* dropdown content */}
         <div className="dropdown-content">
-          <Link to={`/external/home/${currentType}`}>場地</Link>
           <Link to="/external/group">臨打</Link>
+          <Link to={`/external/home/${currentType}`}>場地</Link>
           <Link to="/external/announce">公告</Link>
           <Link to="/external/order">我的預約</Link>
           <Link to="/external/user">個人資料</Link>

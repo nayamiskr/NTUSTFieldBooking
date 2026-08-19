@@ -11,7 +11,7 @@ export const statusMap = {
     },
     cancelled: {
         label: dictionary.pickUp.status.cancelled,
-        class: "bg-gray-100 text-gray-800 border border-gray-300"
+        class: "bg-gray-500 text-gray-800 border border-gray-300"
     },
     cancel_requested: {
         label: dictionary.pickUp.status.cancel_requested,

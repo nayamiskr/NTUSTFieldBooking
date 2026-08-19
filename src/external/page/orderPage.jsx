@@ -5,12 +5,13 @@ import Loading from "../../components/loading";
 import { bookingService } from "../../service/bookingService";
 import { pickUpService } from "../../service/pickUpService";
 import { statusMap } from "../../constant/statusMap";
+import { formatDateTime } from "../../components/dateTimeFormat";
 
 function OrderPage() {
     const [orders, setOrders] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState("booking");
+    const [activeTab, setActiveTab] = useState("pickup");
     const [cancelModalOpen, setCancelModalOpen] = useState(false);
     const [selectedCancelOrder, setSelectedCancelOrder] = useState(null);
     const [cancellingIds, setCancellingIds] = useState(() => new Set());
@@ -39,7 +40,7 @@ function OrderPage() {
         setCancelActionError(null);
         setSelectedCancelOrder({
             id: order.id,
-            resourceName: order.location.name + " - " + (order?.resource?.name ?? ""),
+            ordereName: activeTab === "booking" ? order.location.name + " - " + (order?.resource?.name ?? "") : order.title,
             start: order?.start_time,
             end: order?.end_time,
         });
@@ -57,7 +58,29 @@ function OrderPage() {
         });
 
         try {
+            setOrders((prev) => {
+                if (activeTab === "booking") {
+                    return {
+                        ...prev,
+                        booking: {
+                            ...prev.booking,
+                            items: prev.booking.items.map(o => o.id === orderId ? { ...o, status: "cancelled" } : o)
+                        }
+                    };
+                } else {
+                    return {
+                        ...prev,
+                        pickUp: prev.pickUp.map(o => o.id === orderId ? { ...o, status: "cancelled" } : o)
+                    };
+                }
+            });
 
+            // 順便把 loading 狀態解掉
+            setCancellingIds((prev) => {
+                const next = new Set(prev);
+                next.delete(orderId);
+                return next;
+            });
             setCancelModalOpen(false);
             setSelectedCancelOrder(null);
         } catch (err) {
@@ -93,23 +116,23 @@ function OrderPage() {
                         <div className="flex justify-center w-full mb-6">
                             <div className="inline-flex bg-blue-50 p-1 rounded-lg shadow-inner">
                                 <button
-                                    className={`w-32 py-2 text-center rounded-md transition-all duration-200 text-ellipsis font-bold ${activeTab === "booking"
-                                            ? "bg-white text-gray-900 shadow-sm"
-                                            : "text-gray-500 hover:text-gray-700"
-                                        }`}
-                                    onClick={() => setActiveTab("booking")}
-                                >
-                                    場地預約
-                                </button>
-
-                                <button
                                     className={`w-32 py-2 text-center rounded-md transition-all duration-200 text-ellipsis font-bold ${activeTab === "pickup"
-                                            ? "bg-white text-gray-900 shadow-sm"
-                                            : "text-gray-500 hover:text-gray-700"
+                                        ? "bg-white text-gray-900 shadow-sm"
+                                        : "text-gray-500 hover:text-gray-700"
                                         }`}
                                     onClick={() => setActiveTab("pickup")}
                                 >
                                     臨打團
+                                </button>
+
+                                <button
+                                    className={`w-32 py-2 text-center rounded-md transition-all duration-200 text-ellipsis font-bold ${activeTab === "booking"
+                                        ? "bg-white text-gray-900 shadow-sm"
+                                        : "text-gray-500 hover:text-gray-700"
+                                        }`}
+                                    onClick={() => setActiveTab("booking")}
+                                >
+                                    場地預約
                                 </button>
                             </div>
                         </div>
@@ -117,33 +140,37 @@ function OrderPage() {
                         {/* Order List */}
                         <ul>
                             {(activeTab === "booking" ? orders.booking?.items : orders.pickUp)?.map((order, index) => (
-                                <li key={order.id} className={`flex flex-row justify-between w-full md:w-[60%] h-[130px] mx-auto my-3 border border-blue-200 rounded-md ${order.status === "cancelled" ? "opacity-40" : ""}`}>
-                                    <div className="flex flex-col justify-between p-4">
-                                        <div className="flex flex-row items-center gap-2">
-                                            <p className="text-lg font-semibold">
-                                                {activeTab === "booking"
-                                                    ? `${order.location?.name} ${order.resource ? `- ${order.resource.name}` : ""}`
-                                                    : `${order.title}`}
-                                            </p>
+                                <li key={order.id} className={`w-[95%] md:w-[80%] mx-auto mb-4 p-5 border border-gray-200 rounded-xl shadow-sm bg-white ${order.status === "cancelled" ? "opacity-40" : ""}`}>
+
+                                    {/* 標題與狀態 */}
+                                    <div className="flex justify-between items-start mb-3 gap-3">
+                                        <h2 className="text-xl font-bold text-gray-900 break-words">
+                                            {activeTab === "booking"
+                                                ? `${order.location?.name} ${order.resource ? `- ${order.resource.name}` : ""}`
+                                                : `${order.title}`}
+                                        </h2>
+                                        <div className={`shrink-0 px-3 py-1 rounded-md font-bold text-white font-medium ${statusMap[order.status]?.class || ""}`}>
+                                            {statusMap[order.status]?.label || order.status}
                                         </div>
-                                        <p className="text-start text-md text-gray-400">預約時間：{order.start_time ? new Date(order.start_time).toLocaleDateString("zh-TW") : ""} {order.start_time ? " " : ""}{order.start_time ? `${new Date(order.start_time).toLocaleTimeString("zh-TW", { hour: '2-digit', minute: '2-digit', hour12: false })} - ${new Date(order.end_time).toLocaleTimeString("zh-TW", { hour: '2-digit', minute: '2-digit', hour12: false })}` : ""}</p>
                                     </div>
 
-                                    <div className=" flex flex-col h-auto items-end justify-between p-4">
-                                        <p className="text-md font-semibold" >
-                                            <span className={statusMap[order.status]?.class + " px-2 py-1 rounded-md ml-2 font-normal"}>
-                                                {statusMap[order.status]?.label || order.status}
-                                            </span>
-                                        </p>
+                                    {/* 詳細資訊 */}
+                                    <div className="text-sm text-gray-600 mb-4">
+                                        <p>日期：{formatDateTime(order.start_time).date}</p>
+                                        <p>時間：{formatDateTime(order.start_time).time} - {formatDateTime(order.end_time).time}</p>
+                                        <p>地點：{order.location?.name || "未指定"}</p>
+                                    </div>
+
+                                    {/* 按鈕區塊 */}
+                                    <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
                                         {!cancellingIds.has(order.id) && order.status !== "cancelled" && !order._cancelRequested && (
                                             <button
-                                                className="bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2 px-4 rounded-md"
+                                                className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2 px-6 rounded-lg transition"
                                                 onClick={() => openCancelModal(order)}
                                             >
                                                 取消預約
                                             </button>
                                         )}
-
                                     </div>
                                 </li>
                             ))}
@@ -157,14 +184,11 @@ function OrderPage() {
                     <div className="relative w-[92%] max-w-md rounded-xl bg-white p-6 shadow-xl">
                         <h2 className="text-xl font-bold text-gray-900">確認取消預約？</h2>
                         <p className="mt-2 text-gray-600">
-                            你確定要取消「{selectedCancelOrder?.resourceName || ""}」這筆預約嗎？
+                            你確定要取消「{selectedCancelOrder?.ordereName || ""}」這筆預約嗎？
                         </p>
                         <p className="mt-1 text-sm text-gray-500">
-                            {selectedCancelOrder?.start ? new Date(selectedCancelOrder.start).toLocaleDateString("zh-TW") : ""}
-                            {selectedCancelOrder?.start ? " " : ""}
-                            {selectedCancelOrder?.start
-                                ? `${new Date(selectedCancelOrder.start).toLocaleTimeString("zh-TW", { hour: '2-digit', minute: '2-digit' })} - ${new Date(selectedCancelOrder.end).toLocaleTimeString("zh-TW", { hour: '2-digit', minute: '2-digit' })}`
-                                : ""}
+                            <p>日期：{formatDateTime(selectedCancelOrder.start).date}</p>
+                            <p>時間：{formatDateTime(selectedCancelOrder.start).time} - {formatDateTime(selectedCancelOrder.end).time}</p>
                         </p>
 
                         <div className="mt-6 flex gap-3">

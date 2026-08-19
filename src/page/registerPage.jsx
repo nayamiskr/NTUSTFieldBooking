@@ -4,6 +4,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
 import { registerService } from "../service/registerService";
 import { InputElement } from "../components/inputElement";
+import { errorPopup } from "../components/pop-up";
+import { validateRegister } from "../utils/validator";
 
 function RegisterPage() {
   const [errorMessage, setErrorMessage] = useState("");
@@ -18,37 +20,38 @@ function RegisterPage() {
     setErrorMessage("");
 
     try {
-      const name = e.target.name?.value?.trim();
-      const username = e.target.username?.value?.trim();
-      const email = e.target.email?.value?.trim();
-      const password = e.target.password?.value;
-      const confirmPassword = e.target.confirmPassword?.value;
+      const formData = {
+        name: e.target.name?.value?.trim(),
+        username: e.target.username?.value?.trim(),
+        email: e.target.email?.value?.trim(),
+        password: e.target.password?.value,
+        confirmPassword: e.target.confirmPassword?.value,
+      };
 
-      if (!email || !password || !confirmPassword) {
-        setErrorMessage(zhTWDictionary.registerPage.errorMessage.requiredFields);
+      const validationError = validateRegister(formData);
+
+
+      if (validationError) {
+        console.log("Validation Error:", validationError); // Log the validation error for debugging
+        errorPopup(zhTWDictionary.registerPage.errorMessage.error, validationError);
+        setLoading(false);
         return;
       }
 
-      if (password !== confirmPassword) {
-        setErrorMessage(zhTWDictionary.registerPage.errorMessage.passwordMismatch);
-        return;
-      }
-
-      if (password.length < 8) {
-        setErrorMessage(zhTWDictionary.registerPage.errorMessage.passwordTooShort);
-        return;
-      }
-
-      await registerService.registerAccount({ email, username, password, display_name: name || undefined });
+      await registerService.registerAccount({
+        email: formData.email,
+        username: formData.username,
+        password: formData.password,
+        display_name: formData.name
+      });
 
       // 註冊成功後導回登入
       navigate("/");
     } catch (error) {
       if (error.status === 409) {
-        setErrorMessage(zhTWDictionary.registerPage.errorMessage.emailExist);
+        errorPopup(zhTWDictionary.registerPage.errorMessage.error, zhTWDictionary.registerPage.errorMessage.emailExist);
       } else {
-        console.error("註冊失敗:", error);
-        setErrorMessage(zhTWDictionary.registerPage.errorMessage.registrationFailed);
+        errorPopup(zhTWDictionary.registerPage.errorMessage.error, zhTWDictionary.registerPage.errorMessage.registrationFailed);
       }
     } finally {
       setLoading(false);
@@ -61,28 +64,35 @@ function RegisterPage() {
         <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">{zhTWDictionary.registerPage.title}</h2>
 
         <form className="space-y-5" onSubmit={handleRegister}>
-          <InputElement 
+          <InputElement
             label={zhTWDictionary.registerPage.input.label.name}
             name="name"
             type="text"
             placeholder={zhTWDictionary.registerPage.input.placeholder.name}
-          /> 
+          />
 
-          <InputElement 
+          <InputElement
+            label={zhTWDictionary.registerPage.input.label.username}
+            name="username"
+            type="text"
+            placeholder={zhTWDictionary.registerPage.input.placeholder.username}
+          />
+
+          <InputElement
             label={zhTWDictionary.registerPage.input.label.email}
             name="email"
             type="email"
             placeholder={zhTWDictionary.registerPage.input.placeholder.email}
           />
 
-          <InputElement 
+          <InputElement
             label={zhTWDictionary.registerPage.input.label.password}
             name="password"
             type="password"
             placeholder={zhTWDictionary.registerPage.input.placeholder.password}
           />
 
-          <InputElement 
+          <InputElement
             label={zhTWDictionary.registerPage.input.label.confirmPassword}
             name="confirmPassword"
             type="password"
@@ -95,9 +105,8 @@ function RegisterPage() {
 
           <button
             type="submit"
-            className={`w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition ${
-              loading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            className={`w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition ${loading ? "opacity-50 cursor-not-allowed" : ""
+              }`}
             disabled={loading}
           >
             {loading ? zhTWDictionary.registerPage.button.registering : zhTWDictionary.registerPage.button.register}

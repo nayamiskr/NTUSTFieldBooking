@@ -5,7 +5,6 @@ import { IoPinSharp } from "react-icons/io5";
 
 
 const containerStyle = {
-    width: "80%",
     height: "350px",
     borderRadius: "10px",
     margin: "10px auto"
@@ -55,6 +54,7 @@ export default function GroupNearbyMap({ groups }) {
     return (
         <GoogleMap
             mapContainerStyle={containerStyle}
+            mapContainerClassName="w-[95%] md:w-[80%]"
             zoom={15}
             options={
                 {
@@ -90,7 +90,6 @@ export default function GroupNearbyMap({ groups }) {
                     key={group.id || index}
                     position={{ lat: group.location.latitude, lng: group.location.longitude }}
                     mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-                    // 這個 offset 你可能要自己微調，讓他置中偏上，不擋到確切的座標點
                     getPixelPositionOffset={() => ({ x: -40, y: -60 })}
                 >
                     <div className="flex flex-col items-center cursor-pointer group relative z-10 hover:z-50">
