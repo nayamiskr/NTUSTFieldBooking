@@ -2,7 +2,7 @@ import {
     Droplet, ShowerHead, Shirt, Users, RestRoom,
     LampCeiling, Volleyball, AirVent, Wifi, BriefcaseMedical, Accessibility
 } from "lucide-react";
-import { FaRestroom } from "react-icons/fa";
+import { FaRestroom, FaPlus } from "react-icons/fa";
 
 export const facilityMap = {
     waterdis: { name: '飲水機', icon: <Droplet /> },
@@ -16,3 +16,7 @@ export const facilityMap = {
     firstAid: { name: '急救設施', icon: <BriefcaseMedical /> },
     accessible: { name: '無障礙設施', icon: <Accessibility /> }
 };
+
+export const functionIconMap = {
+    add: { name: '新增', icon: <FaPlus /> },
+}

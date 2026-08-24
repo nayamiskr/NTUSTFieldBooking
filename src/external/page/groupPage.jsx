@@ -1,12 +1,11 @@
 import Navbar from "../components/navbar";
 import Loading from "../../components/loading";
 
-import { facilityMap } from "../../constant/IconMap";
+import { facilityMap, functionIconMap } from "../../constant/IconMap";
 import { useState, useEffect } from "react";
 import { pickUpService } from "../../service/pickUpService";
 import { formatDateTime } from "../../components/dateTimeFormat";
 import { zhTWDictionary as dictionary } from "../../locale/zh-TW/translate";
-import NearbyMap from "../components/nearbyMap";
 import { statusMap } from "../../constant/statusMap";
 import GroupNearbyMap from "../components/groupNearbyMap";
 import { errorPopup, successPopup } from "../../components/pop-up";
@@ -16,6 +15,7 @@ export function GroupPage() {
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(false);
     const [joiningGroupId, setJoiningGroupId] = useState(null);
+    const [createGroupModalOpen, setCreateGroupModalOpen] = useState(false);
 
     useEffect(() => {
         const fetchGroups = async () => {
@@ -80,7 +80,7 @@ export function GroupPage() {
             <Loading isLoading={loading} text="取得臨打團資料中..." />
             <GroupNearbyMap groups={groups} />
             {!loading && groups.length === 0 && <p className="text-center text-gray-500">暫無可預約的團</p>}
-            <div>
+            <div className="pb-16">
                 {groups.map((group) => {
                     const isFull = Number(group.current_enrolled || 0) >= Number(group.capacity || 0);
                     const isExpanded = expandedGroups[group.id] || false;
@@ -147,6 +147,15 @@ export function GroupPage() {
                         </div>
                     );
                 })}
+
+                {/* 申請加入臨打團按鈕 */}
+                <button
+                    onClick={() => setCreateGroupModalOpen(true)}
+                    className="fixed bottom-4 left-4 z-50 flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
+                >
+                    {functionIconMap.add.icon}
+                    <span className="font-bold tracking-wider">申請創團</span>
+                </button>
             </div>
         </div>
     )
