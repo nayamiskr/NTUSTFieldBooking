@@ -9,13 +9,15 @@ import { zhTWDictionary as dictionary } from "../../locale/zh-TW/translate";
 import { statusMap } from "../../constant/statusMap";
 import GroupNearbyMap from "../components/groupNearbyMap";
 import { errorPopup, successPopup } from "../../components/pop-up";
+import { useNavigate } from "react-router-dom";
 
 export function GroupPage() {
     const [expandedGroups, setExpandedGroups] = useState({});
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(false);
     const [joiningGroupId, setJoiningGroupId] = useState(null);
-    const [createGroupModalOpen, setCreateGroupModalOpen] = useState(false);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const fetchGroups = async () => {
@@ -32,7 +34,7 @@ export function GroupPage() {
             }
         }
         fetchGroups();
-    }, [setGroups]);
+    }, [setGroups, refreshTrigger]);
 
     const handleJoinGroup = async (groupId) => {
         setJoiningGroupId(groupId);
@@ -53,24 +55,10 @@ export function GroupPage() {
             successPopup("", dictionary.pickUp.successMessage.registrationSuccess);
         } catch (error) {
             errorPopup(dictionary.pickUp.errorMessage.error, dictionary.pickUp.errorMessage.registrationFailed);
+            setRefreshTrigger((pre) => pre + 1);
         } finally {
             setJoiningGroupId(null);
         }
-    };
-
-    const handleGroupButtonClick = (group) => {
-        const isFull = Number(group.current_enrolled || 0) >= Number(group.capacity || 0);
-        if (isFull || joiningGroupId === group.id) return;
-
-        if (expandedGroups[group.id]) {
-            handleJoinGroup(group.id);
-            return;
-        }
-
-        setExpandedGroups(prev => ({
-            ...prev,
-            [group.id]: true
-        }));
     };
 
     return (
@@ -136,11 +124,18 @@ export function GroupPage() {
                                 </div>
 
                                 <button
-                                    disabled={status !== null}
+                                    disabled={status !== null || isFull}
                                     onClick={() => handleJoinGroup(group.id)}
-                                    className={`w-full sm:w-auto px-6 py-2 rounded-lg transition font-bold tracking-wide text-white ${statusMap[status]?.class || statusMap.default.class}`}
+                                    className={`w-full sm:w-auto px-6 py-2 rounded-lg transition font-bold tracking-wide text-white 
+                                        ${(status !== null || isFull) ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"} 
+                                        ${isFull && status === null ? "bg-gray-400" : (statusMap[status]?.class || statusMap.default.class)}
+                                    `}
                                 >
-                                    {statusMap[status]?.label || statusMap.default.label}
+                                    {status !== null
+                                        ? (statusMap[status]?.label || statusMap.default.label)
+                                        : isFull
+                                            ? "已額滿"
+                                            : statusMap.default.label}
                                 </button>
                             </div>
 
@@ -150,7 +145,7 @@ export function GroupPage() {
 
                 {/* 申請加入臨打團按鈕 */}
                 <button
-                    onClick={() => setCreateGroupModalOpen(true)}
+                    onClick={() => navigate("/external/apply-host")}
                     className="fixed bottom-4 left-4 z-50 flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
                 >
                     {functionIconMap.add.icon}

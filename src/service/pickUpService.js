@@ -2,11 +2,13 @@ import api from "../baseApi.js";
 import { locationService } from "./locationService.js";
 
 export const pickUpService = {
+  // 取得臨打團細節
   getPickUpDetail: async (groupId) => {
     const res = await api.get(`/pickup-groups/${groupId}`);
     return res.data;
   },
 
+  // 取得臨打團清單
   getPickUpList: async (params = {}) => {
     const [res, myOrders] = await Promise.all([
       api.get("/pickup-groups", { params }),
@@ -53,11 +55,13 @@ export const pickUpService = {
     return pickupWithLocation;
   },
 
+  // 報名臨打團
   joinPickUpGroup: async (groupId) => {
     const res = await api.post(`/pickup-groups/${groupId}/orders`);
     return res.data;
   },
 
+  // 取得我的臨打團預約清單
   getMyPickUpList: async (withDetail = false) => {
     const res = await api.get("/pickup-orders");
     const order = res.data;
@@ -66,19 +70,26 @@ export const pickUpService = {
 
     const orderWithDetial = await Promise.all(
       order.map(async (order) => {
-        const pickUpdetail = await pickUpService.getPickUpDetail(order.pickup_group_id);
+        const pickUpdetail = await pickUpService.getPickUpDetail(
+          order.pickup_group_id,
+        );
         const locationInfo = await locationService.getLocationInfo(
-            pickUpdetail.location_id,
+          pickUpdetail.location_id,
         );
         return {
           ...order,
           location: locationInfo,
           title: pickUpdetail.title,
           start_time: pickUpdetail.start_time,
-          end_time: pickUpdetail.end_time
+          end_time: pickUpdetail.end_time,
         };
       }),
     );
     return orderWithDetial;
+  },
+
+  cancelPickUpOrder: async (orderId) => {
+    const res = await api.patch(`/pickup-orders/${orderId}`, { status: "cancel_request" });
+    return res.data;
   },
 };

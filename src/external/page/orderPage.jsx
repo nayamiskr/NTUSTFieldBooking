@@ -58,19 +58,24 @@ function OrderPage() {
         });
 
         try {
+            if (activeTab === "pickup") {
+                await pickUpService.cancelPickUpOrder(orderId);
+            } else {
+            }
+
             setOrders((prev) => {
                 if (activeTab === "booking") {
                     return {
                         ...prev,
                         booking: {
                             ...prev.booking,
-                            items: prev.booking.items.map(o => o.id === orderId ? { ...o, status: "cancelled" } : o)
+                            items: prev.booking.items.map(o => o.id === orderId ? { ...o, status: "cancel_request" } : o)
                         }
                     };
                 } else {
                     return {
                         ...prev,
-                        pickUp: prev.pickUp.map(o => o.id === orderId ? { ...o, status: "cancelled" } : o)
+                        pickUp: prev.pickUp.map(o => o.id === orderId ? { ...o, status: "cancel_request" } : o)
                     };
                 }
             });
@@ -91,14 +96,6 @@ function OrderPage() {
             });
             setCancelActionError(err);
         }
-    };
-
-    const statusPriority = {
-        pending: 0,
-        confirmed: 1,
-        completed: 2,
-        cancel_requested: 3,
-        cancelled: 4,
     };
 
     return (
@@ -163,9 +160,9 @@ function OrderPage() {
 
                                     {/* 按鈕區塊 */}
                                     <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
-                                        {!cancellingIds.has(order.id) && order.status !== "cancelled" && !order._cancelRequested && (
+                                        {!cancellingIds.has(order.id) && (order.status !== "cancelled" && order.status !== "cancel_request") && !order._cancelRequested && (
                                             <button
-                                                className="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white text-sm font-semibold py-2 px-6 rounded-lg transition"
+                                                className="w-full sm:w-auto border border-red-500 text-red-600 bg-white hover:bg-red-50 text-sm font-semibold py-2 px-6 rounded-lg transition"
                                                 onClick={() => openCancelModal(order)}
                                             >
                                                 取消預約

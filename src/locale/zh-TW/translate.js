@@ -55,6 +55,7 @@ export const zhTWDictionary = {
       pending: "審核中",
       confirmed: "已報名",
       cancelled: "已取消",
+      cancel_request: "取消申請中",
       rejected: "已拒絕",
       default: "立即報名",
     },
