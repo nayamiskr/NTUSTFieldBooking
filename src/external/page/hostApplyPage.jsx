@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import Navbar from "../components/navbar"; // 記得引入你的 Navbar
-import { successPopup, errorPopup } from "../../components/pop-up"; // 假設你用 SweetAlert
+import Navbar from "../components/navbar"; 
+import { successPopup, errorPopup } from "../../components/pop-up"; 
 
 function HostApplyPage() {
   const navigate = useNavigate();

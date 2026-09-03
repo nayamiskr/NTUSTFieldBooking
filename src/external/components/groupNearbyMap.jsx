@@ -78,7 +78,7 @@ export default function GroupNearbyMap({ groups }) {
                 <OverlayView
                     position={currentPosition}
                     mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-                    getPixelPositionOffset={() => ({ x: -12, y: -24 })}
+                    getPixelPositionOffset={(width, height) => ({ x: -(width / 2), y: -height })}
                 >
                     <div className="text-blue-500 text-3xl drop-shadow-md">
                         <RiMapPinUserFill />
@@ -90,7 +90,7 @@ export default function GroupNearbyMap({ groups }) {
                     key={group.id || index}
                     position={{ lat: group.location.latitude, lng: group.location.longitude }}
                     mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-                    getPixelPositionOffset={() => ({ x: -40, y: -60 })}
+                    getPixelPositionOffset={(width, height) => ({ x: -(width / 2), y: -height })}
                 >
                     <div className="flex flex-col items-center cursor-pointer group relative z-10 hover:z-50">
                         {/* 資訊框 */}
@@ -98,7 +98,7 @@ export default function GroupNearbyMap({ groups }) {
                             {group.title} ({group.current_enrolled || 0}/{group.capacity || 0}人)
                         </div>
                         {/* 圖標 */}
-                        <div className="text-3xl text-red-500 drop-shadow-md rounded-full flex items-center justify-center">
+                        <div className="text-3xl text-red-500 drop-shadow-md rounded-full flex items-center justify-center align-middle">
                             <RiMapPin2Fill />
                         </div>
                     </div>

@@ -1,12 +1,12 @@
 import { Routes, Route } from 'react-router-dom';
-import Homepage from '../external/page/homepage';
-import Bookingpage from '../external//page/bookingpage';
-import PayPage from '../external/page/payPage';
-import OrderPage from '../external/page/orderPage';
-import { GroupPage } from '../external/page/groupPage';
-import { AnnouncePage } from '../external/page/announcePage';
-import { UserPage } from '../external/page/userPage';
-import HostApplyPage from "../external/page/hostApplyPage";
+import Homepage from '../external/page/Homepage';
+import Bookingpage from '../external//page/Bookingpage';
+import PayPage from '../external/page/PayPage';
+import OrderPage from '../external/page/OrderPage';
+import { GroupPage } from '../external/page/GroupPage';
+import { AnnouncePage } from '../external/page/AnnouncePage';
+import { UserPage } from '../external/page/UserPage';
+import HostApplyPage from "../external/page/HostApplyPage";
 
 function OutsideApp() {
   return (
