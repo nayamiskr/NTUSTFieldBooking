@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Homepage from '../external/page/Homepage';
-import Bookingpage from '../external//page/Bookingpage';
+import Bookingpage from '../external/page/Bookingpage';
 import PayPage from '../external/page/PayPage';
 import OrderPage from '../external/page/OrderPage';
 import { GroupPage } from '../external/page/GroupPage';
