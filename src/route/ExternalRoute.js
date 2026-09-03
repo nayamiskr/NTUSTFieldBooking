@@ -1,6 +1,6 @@
 import { Routes, Route } from 'react-router-dom';
 import Homepage from '../external/page/Homepage';
-import Bookingpage from '../external/page/Bookingpage';
+import BookingPage from '../external/page/BookingPage';
 import PayPage from '../external/page/PayPage';
 import OrderPage from '../external/page/OrderPage';
 import { GroupPage } from '../external/page/GroupPage';
@@ -12,7 +12,7 @@ function OutsideApp() {
   return (
     <Routes>
       <Route path="/home/:fieldType" element={<Homepage />} />
-      <Route path="/:id/" element={<Bookingpage />} />
+      <Route path="/:id/" element={<BookingPage />} />
       <Route path="/group" element={<GroupPage />} />
       <Route path='/pay' element={<PayPage />} />
       <Route path='/order' element={<OrderPage />} />
