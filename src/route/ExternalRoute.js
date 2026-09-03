@@ -1,5 +1,5 @@
 import { Routes, Route } from 'react-router-dom';
-import Homepage from '../external/page/Homepage';
+import Homepage from '../external/page/HomePage';
 import BookingPage from '../external/page/BookingPage';
 import PayPage from '../external/page/PayPage';
 import OrderPage from '../external/page/OrderPage';
