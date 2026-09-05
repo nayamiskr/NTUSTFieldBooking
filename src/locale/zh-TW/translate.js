@@ -1,6 +1,7 @@
 export const zhTWDictionary = {
   loginPage: {
     title: "場地租借系統",
+    loadingMessage: "登入中...",
     input: {
       label: {
         email: "電子郵件",
@@ -50,8 +51,25 @@ export const zhTWDictionary = {
       register: "註冊",
     },
   },
+
+  groupPage: {
+    title: "臨打團清單",
+    loadingMessage: "取得臨打團資料中...",
+    groupEmpty: "暫無可預約的團",
+    label: {
+      facilities: "場地設施",
+      level: "程度",
+      levelNull: "未指定",
+    },
+    button: {
+      refresh: "重新整理",
+      hostApply: "我要開團",
+    }
+  },
+
   pickUp: {
     status: {
+      full: "已額滿",
       pending: "審核中",
       confirmed: "已報名",
       cancelled: "已取消",
@@ -70,12 +88,14 @@ export const zhTWDictionary = {
       registrationFailed: "報名已額滿",
     },
   },
+
   common: {
     null: "無",
     range: "範圍",
     more: "更多",
     loading: "載入中...",
   },
+
   facilities: {
     waterdis: "飲水機",
     airconditioner: "冷氣",

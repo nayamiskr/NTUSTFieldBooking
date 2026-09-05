@@ -2,14 +2,18 @@ import Navbar from "../components/navbar";
 import Loading from "../../components/loading";
 
 import { facilityMap, functionIconMap } from "../../constant/IconMap";
+import { zhTWDictionary } from "../../locale/zh-TW/translate";
 import { useState, useEffect } from "react";
 import { pickUpService } from "../../service/pickUpService";
 import { formatDateTime } from "../../components/dateTimeFormat";
 import { zhTWDictionary as dictionary } from "../../locale/zh-TW/translate";
 import { statusMap } from "../../constant/statusMap";
-import GroupNearbyMap from "../components/groupNearbyMap";
 import { errorPopup, successPopup } from "../../components/pop-up";
 import { useNavigate } from "react-router-dom";
+
+import DayPicker from "../../components/dayPick";
+import GroupNearbyMap from "../components/groupNearbyMap";
+
 
 export function GroupPage() {
     const [expandedGroups, setExpandedGroups] = useState({});
@@ -64,10 +68,12 @@ export function GroupPage() {
     return (
         <div>
             <Navbar />
-            <h1 className="text-3xl font-bold text-center my-8">已開團的清單</h1>
-            <Loading isLoading={loading} text="取得臨打團資料中..." />
+            <h1 className="text-3xl font-bold text-center my-8">{zhTWDictionary.groupPage.title}</h1>
+            <Loading isLoading={loading} text={zhTWDictionary.groupPage.loadingMessage} />
             <GroupNearbyMap groups={groups} />
-            {!loading && groups.length === 0 && <p className="text-center text-gray-500">暫無可預約的團</p>}
+            <DayPicker selectedDate={null} onDateChange={() => { }} />
+
+            {!loading && groups.length === 0 && <p className="text-center text-gray-500">{zhTWDictionary.groupPage.groupEmpty}</p>}
             <div className="pb-16">
                 {groups.map((group) => {
                     const isFull = Number(group.current_enrolled || 0) >= Number(group.capacity || 0);
@@ -95,7 +101,7 @@ export function GroupPage() {
 
                             {/* 展示設施*/}
                             <div className="mb-5">
-                                <p className="text-sm font-medium text-gray-700 mb-2">設施</p>
+                                <p className="text-sm font-medium text-gray-700 mb-2">{zhTWDictionary.groupPage.label.facilities}:</p>
 
                                 <div className="w-fit flex flex-wrap gap-2 p-1 border border-gray-200 rounded-md bg-white relative ">
 
@@ -118,7 +124,7 @@ export function GroupPage() {
                             {/*費用程度標籤與報名按鈕 */}
                             <div className="flex flex-col sm:flex-row justify-between items-center mt-4 pt-4 border-t border-gray-100 gap-4">
                                 <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
-                                    <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-base font-medium">程度: {group.skill_level.name || "未指定"}</span>
+                                    <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-base font-medium">{zhTWDictionary.groupPage.label.level}: {group.skill_level.name || zhTWDictionary.groupPage.label.levelNull}</span>
                                     <span className={`px-3 py-1 my-[auto] rounded-md text-base font-bold border ${(group.fee !== 0) ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-700'}`} >$ {group.fee}</span>
 
                                 </div>
@@ -128,13 +134,13 @@ export function GroupPage() {
                                     onClick={() => handleJoinGroup(group.id)}
                                     className={`w-full sm:w-auto px-6 py-2 rounded-lg transition font-bold tracking-wide text-white 
                                         ${(status !== null || isFull) ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"} 
-                                        ${isFull && status === null ? "bg-gray-400" : (statusMap[status]?.class || statusMap.default.class)}
+                                        ${isFull && status === null ? statusMap.full.class : (statusMap[status]?.class || statusMap.default.class)}
                                     `}
                                 >
                                     {status !== null
                                         ? (statusMap[status]?.label || statusMap.default.label)
                                         : isFull
-                                            ? "已額滿"
+                                            ? statusMap.full.label
                                             : statusMap.default.label}
                                 </button>
                             </div>
@@ -150,7 +156,7 @@ export function GroupPage() {
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
                     </svg>
-                    <span className="font-bold tracking-wider">重整</span>
+                    <span className="font-bold tracking-wider">{zhTWDictionary.groupPage.button.refresh}</span>
                 </button>
 
                 {/* 申請加入臨打團按鈕 */}
@@ -159,7 +165,7 @@ export function GroupPage() {
                     className="fixed bottom-4 left-4 z-50 flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
                 >
                     {functionIconMap.add.icon}
-                    <span className="font-bold tracking-wider">申請創團</span>
+                    <span className="font-bold tracking-wider">{zhTWDictionary.groupPage.button.hostApply}</span>
                 </button>
             </div>
         </div>

@@ -1,7 +1,6 @@
 import { useNavigate, Link } from "react-router-dom";
-import { useState, useEffect, use } from "react";
+import { useState } from "react";
 
-import api from "../baseApi";
 import Loading from "../components/loading";
 import { loginService } from "../service/authService";
 import { VENUE_TYPE } from "../constant/VenueType";
@@ -19,13 +18,13 @@ function LoginPage() {
 
   const navigate = useNavigate();
 
-  const handleVersionFilp = () => {
-    setIsFlipping(true);
-    setTimeout(() => {
-      setForSchool(!forSchool);
-      setIsFlipping(false);
-    }, 300);
-  }
+  // const handleVersionFilp = () => {
+  //   setIsFlipping(true);
+  //   setTimeout(() => {
+  //     setForSchool(!forSchool);
+  //     setIsFlipping(false);
+  //   }, 300);
+  // }
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -53,10 +52,10 @@ function LoginPage() {
 
       await loginService(email, password);
 
-      const baseUrl = forSchool ? "ntust" : "external";
-      const typePath = forSchool ? "" : filter;
+      // const baseUrl = forSchool ? "ntust" : "external";
+      // const typePath = forSchool ? "" : filter;
       
-      navigate(`${baseUrl}/group`);
+      navigate(`external/group`);
 
     } catch (error) {
       errorPopup(zhTWDictionary.loginPage.errorMessage.error, zhTWDictionary.loginPage.errorMessage.invalidCredentials);
@@ -67,7 +66,7 @@ function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-100 to-blue-300">
-      <Loading isLoading={loading} text="登入中..." />
+      <Loading isLoading={loading} text={zhTWDictionary.loginPage.loadingMessage} />
       <div className="w-[80%] max-w-md" style={{ perspective: "1200px" }}>
         <div className={`relative bg-white shadow-lg rounded-xl p-8 w-full max-w-md transition-transform duration-500 ease-in-out ${isFlipping ? "rotate-y-180" : ""}`}>
           <div className="flex flex-col items-center mb-4">

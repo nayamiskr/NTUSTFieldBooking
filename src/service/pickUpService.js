@@ -34,7 +34,6 @@ export const pickUpService = {
             pickup.location_id,
           );
           const facilities = locationInfo?.facility.split("_") || [];
-          console.log(`抓到 ${pickup.id} 的location info:`, facilities);
 
           return {
             ...pickupInfo,
