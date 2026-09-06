@@ -70,15 +70,30 @@ export function GroupPage() {
             <Navbar />
             <h1 className="text-3xl font-bold text-center my-8">{zhTWDictionary.groupPage.title}</h1>
             <Loading isLoading={loading} text={zhTWDictionary.groupPage.loadingMessage} />
+
+            {/* {filter區塊} */}
+            <div>
+                <div className="w-[95%] md:w-[80%] mx-auto mb-4 p-5 border border-gray-200 rounded-xl shadow-sm bg-white">
+                    <p className="text-lg font-bold text-gray-900 mb-3">篩選場次</p>
+                    <div className="flex flex-wrap gap-3">
+                        <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
+                            All Groups
+                        </button>
+                        <button className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300">
+                            My Groups
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <GroupNearbyMap groups={groups} />
+
             <DayPicker selectedDate={null} onDateChange={() => { }} />
 
             {!loading && groups.length === 0 && <p className="text-center text-gray-500">{zhTWDictionary.groupPage.groupEmpty}</p>}
             <div className="pb-16">
                 {groups.map((group) => {
                     const isFull = Number(group.current_enrolled || 0) >= Number(group.capacity || 0);
-                    const isExpanded = expandedGroups[group.id] || false;
-                    const isJoining = joiningGroupId === group.id;
                     const status = group.enrolledStatus;
 
                     return (
