@@ -14,7 +14,6 @@ export default function GroupNearbyMap({ groups }) {
     const [currentPosition, setCurrentPosition] = useState(() => {
         const savedPosition = localStorage.getItem('currentPosition');
         if (savedPosition) {
-
             return JSON.parse(savedPosition);
         }
         return { lat: 0, lng: 0 };

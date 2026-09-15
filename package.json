@@ -4,10 +4,12 @@
   "private": true,
   "dependencies": {
     "@ant-design/icons": "^6.3.2",
+    "@headlessui/react": "^2.2.10",
     "@line/liff": "^2.29.0",
     "@react-google-maps/api": "^2.20.7",
     "@supabase/supabase-js": "^2.49.4",
     "@tailwindcss/cli": "^4.1.16",
+    "@tailwindplus/elements": "^1.0.22",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
     "@testing-library/react": "^16.3.0",

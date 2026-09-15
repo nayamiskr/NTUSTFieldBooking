@@ -8,7 +8,7 @@ function getWeekday(date) {
 }
 
 function Calendar({ onDayPicked = () => { } }) {
-  const [selected, setSelected] = useState(new Date());
+  const [selected, setSelected] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
 
   const openCalendar = () => {
@@ -33,8 +33,8 @@ function Calendar({ onDayPicked = () => { } }) {
   };
 
   return (
-    <div>
-      <button onClick={openCalendar} className="calendar-button">
+    <div className="flex flex-col relative">
+      <button onClick={openCalendar} className="relative inline-block w-full sm:w-auto border border-gray-300 rounded-lg px-6 py-2 bg-white hover:bg-gray-100 focus:border-lg focus:border-blue-500">
         {selected
           ? selected.toLocaleDateString("zh-TW", {
             year: "numeric",
@@ -54,13 +54,8 @@ function Calendar({ onDayPicked = () => { } }) {
           selected={selected}
           onSelect={handleSelect}
           className="day-picker"
-          disabled={[
-            new Date(2026, 1, 20),
-            new Date(2025, 7, 18),
-          ]}//這邊可以放哪天不行
         />
       </div>
-
     </div>
 
 

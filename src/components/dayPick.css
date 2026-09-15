@@ -1,6 +1,5 @@
-.calendar-button {
+/* .calendar-button {
   display: flex;
-  margin: 8px auto;
   align-items: center;
   justify-content: center;
   width: 140px;
@@ -10,10 +9,13 @@
   border-radius: 10px;
   border: 0.5px solid #bcbfc3;
   cursor: pointer;
-}
+} */
 
 .day-picker {
   position: absolute;
+  
+  left: 0; 
+  transform: none; 
   display: flex;
   justify-content: center;
   align-items: center;
@@ -21,21 +23,21 @@
   padding: 16px;
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-  margin-top: 20px;
+  margin-top: 12px;
 }
 
 .calendar-container {
   position: relative;
   display: flex;
   justify-content: center;
-  max-height: 0;
+  max-height: 0px;
+  width: 100px;
   opacity: 0;
   z-index: 100;
   transition: all 0.5s ease;
 }
 
 .calendar-container.active {
-
   opacity: 1;
 }
 
@@ -97,4 +99,32 @@
 .day-picker button.rdp-button_next:hover,
 .day-picker button.rdp-button_previous:hover {
   background-color: #e5e7eb;
+}
+
+.rdp-nav {
+  margin: 0 !important;
+}
+
+.rdp-month_caption {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.rdp-caption_label {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+@media (min-width: 640px) {
+  .day-picker {
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .calendar-container {
+    width: 100%;
+    height: 300px;
+  }
 }

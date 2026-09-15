@@ -11,17 +11,59 @@ import { statusMap } from "../../constant/statusMap";
 import { errorPopup, successPopup } from "../../components/pop-up";
 import { useNavigate } from "react-router-dom";
 
-import DayPicker from "../../components/dayPick";
+import Calendar from "../../components/dayPick";
 import GroupNearbyMap from "../components/groupNearbyMap";
+import { Dropdown } from "../../components/dropdown";
+import { useMemo } from "react";
+
+function getDistance(lat1, lon1, lat2, lon2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+        Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 
 export function GroupPage() {
-    const [expandedGroups, setExpandedGroups] = useState({});
+    const navigate = useNavigate();
+
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [joiningGroupId, setJoiningGroupId] = useState(null);
+    const [activeFilter, setActiveFilter] = useState("location");
     const [refreshTrigger, setRefreshTrigger] = useState(0);
-    const navigate = useNavigate();
+    const [selectedDate, setSelectedDate] = useState(null);
+
+    const userPosition = localStorage.getItem('currentPosition');
+    const options = [
+        { value: 'location', label: '距離近' },
+        { value: 'time', label: '快開始' },]
+
+    const sortedGroups = useMemo(() => {
+        if (!groups || groups.length === 0) return [];
+
+        const copyGroups = [...groups];
+
+        if (activeFilter === 'time') {
+            return copyGroups.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
+        }
+
+        console.log("date", selectedDate);
+
+        if (activeFilter === 'location') {
+            return copyGroups.sort((a, b) => {
+                if (!a.location || !b.location) return 0;
+                const distA = getDistance(userPosition.lat, userPosition.lng, a.location.lat, a.location.lng);
+                const distB = getDistance(userPosition.lat, userPosition.lng, b.location.lat, b.location.lng);
+                return distA - distB;
+            });
+        }
+
+        return copyGroups;
+    }, [groups, activeFilter]);
 
     useEffect(() => {
         const fetchGroups = async () => {
@@ -41,8 +83,6 @@ export function GroupPage() {
     }, [setGroups, refreshTrigger]);
 
     const handleJoinGroup = async (groupId) => {
-        setJoiningGroupId(groupId);
-
         try {
             await pickUpService.joinPickUpGroup(groupId);
             setGroups((prevGroups) =>
@@ -52,16 +92,10 @@ export function GroupPage() {
                 } : group)
             );
 
-            setExpandedGroups((prev) => ({
-                ...prev,
-                [groupId]: false,
-            }));
             successPopup("", dictionary.pickUp.successMessage.registrationSuccess);
         } catch (error) {
             errorPopup(dictionary.pickUp.errorMessage.error, dictionary.pickUp.errorMessage.registrationFailed);
             setRefreshTrigger((pre) => pre + 1);
-        } finally {
-            setJoiningGroupId(null);
         }
     };
 
@@ -72,27 +106,61 @@ export function GroupPage() {
             <Loading isLoading={loading} text={zhTWDictionary.groupPage.loadingMessage} />
 
             {/* {filter區塊} */}
-            <div>
-                <div className="w-[95%] md:w-[80%] mx-auto mb-4 p-5 border border-gray-200 rounded-xl shadow-sm bg-white">
-                    <p className="text-lg font-bold text-gray-900 mb-3">篩選場次</p>
-                    <div className="flex flex-wrap gap-3">
-                        <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600">
-                            All Groups
-                        </button>
-                        <button className="bg-gray-200 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-300">
-                            My Groups
-                        </button>
+            <div className="w-[95%] md:w-[80%] mx-auto mb-4 p-5 border border-gray-200 rounded-xl shadow-sm bg-white">
+                <div className="flex items-center justify-between mb-4">
+                    <p className="text-lg font-bold text-gray-900">篩選場次</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 items-end">
+
+                    {/* Filter 1: 排序 */}
+                    <div className="flex flex-col gap-1.5">
+                        <label className="text-xs text-gray-500 font-bold tracking-wider">排序方式</label>
+                        <div className="flex bg-gray-100 p-1 rounded-lg w-full md:w-[80%]">
+                            {options.map((opt) => (
+                                <button
+                                    key={opt.value}
+                                    onClick={() => setActiveFilter(opt.value)}
+                                    className={`flex-1 px-4 py-1.5 rounded-md text-sm font-bold transition-all ${activeFilter === opt.value
+                                            ? "bg-white text-blue-600 shadow-sm"
+                                            : "text-gray-500 hover:text-gray-700"
+                                        }`}
+                                >
+                                    {opt.label}
+                                </button>
+                            ))}
+                        </div>
                     </div>
+
+                    <div className="flex flex-col gap-1.5 w-fit">
+                        <label className="text-xs text-gray-500 font-bold tracking-wider">選擇日期</label>
+                        <div className="flex flex-row w-full gap-1.5">
+                            <Calendar onDayPicked={(day) => setSelectedDate(day.date)} />
+                            <button
+                                onClick={() => setSelectedDate(null)}
+                                className="w-full sm:w-auto text-red-600 bg-white rounded-lg hover:bg-red-50 text-sm font-semibold py-2 px-4 transition"
+                            >
+                                清除
+                            </button>
+                        </div>
+
+                    </div>
+
+                
                 </div>
             </div>
 
             <GroupNearbyMap groups={groups} />
 
-            <DayPicker selectedDate={null} onDateChange={() => { }} />
-
+            {/* {顯示臨打團清單} */}
             {!loading && groups.length === 0 && <p className="text-center text-gray-500">{zhTWDictionary.groupPage.groupEmpty}</p>}
             <div className="pb-16">
-                {groups.map((group) => {
+                {sortedGroups.filter((group) => {
+                    if (!selectedDate) return true;
+                    const groupDate = formatDateTime(group.start_time).date;
+                    console.log("groupDate", groupDate, "selectedDate", formatDateTime(selectedDate).date);
+                    return groupDate === formatDateTime(selectedDate).date;
+                }).map((group) => {
                     const isFull = Number(group.current_enrolled || 0) >= Number(group.capacity || 0);
                     const status = group.enrolledStatus;
 
