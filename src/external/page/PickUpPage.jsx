@@ -108,6 +108,24 @@ export default function PickUpPage() {
         }, 200);
     };
 
+    const handleContactHost = (host) => {
+        const contactUrl = host.contact_url || host.line_url || host.lineUrl;
+
+        if (contactUrl) {
+            window.open(contactUrl, "_blank", "noopener,noreferrer");
+            return;
+        }
+
+        if (host.email) {
+            window.location.href = `mailto:${host.email}`;
+            return;
+        }
+
+        if (host.phone) {
+            window.location.href = `tel:${host.phone}`;
+        }
+    };
+
     const renderFilters = (isMobile = false) => (
         <section aria-label="篩選場次" className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between">
@@ -119,7 +137,7 @@ export default function PickUpPage() {
                         onClick={() => setIsMobileFilterOpen(false)}
                         className="grid h-9 w-9 place-items-center rounded-full text-xl text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
                     >
-                        x
+                        {functionIconMap.cancel.icon}
                     </button>
                 )}
             </div>
@@ -174,13 +192,13 @@ export default function PickUpPage() {
             <Loading isLoading={loading} text={zhTWDictionary.pickUpPage.loadingMessage} />
 
             <div className="mx-auto mb-8 w-[95%] max-w-7xl lg:flex lg:items-start lg:gap-6">
-                {/* 桌面版：固定在列表左側 */}
+                {/* 桌面版Filter Section */}
                 <aside className="sticky top-4 hidden w-72 shrink-0 lg:block">
                     {renderFilters()}
                 </aside>
 
                 <main className="min-w-0 flex-1">
-                    {/* 手機／平板：用 icon 展開位於內容上方的篩選欄 */}
+                    {/* 手機板Filter Section */}
                     <div className="mb-4 lg:hidden">
                         <button
                             type="button"
@@ -188,17 +206,22 @@ export default function PickUpPage() {
                             aria-controls="mobile-pickup-filters"
                             onClick={() => setIsMobileFilterOpen((isOpen) => !isOpen)}
                             aria-label={isMobileFilterOpen ? "收合篩選" : "展開篩選"}
-                            className="ml-auto grid h-11 w-11 place-items-center rounded-lg border border-blue-200 bg-white text-blue-700 shadow-sm transition hover:bg-blue-50"
+                            className="ml-auto grid h-11 w-11 place-items-center rounded-lg border border-blue-200 bg-white text-blue-700 shadow-sm transition-opacity duration-300 hover:bg-blue-50"
                         >
                             <div>{functionIconMap.filter.icon}</div>
                         </button>
                     </div>
 
-                    {isMobileFilterOpen && (
-                        <div id="mobile-pickup-filters" className="mb-4 lg:hidden">
+                    <div
+                        className={`grid overflow-hidden transition-[grid-template-rows,opacity,transform] duration-200 ease-out ${isMobileFilterOpen
+                                ? "grid-rows-[1fr] translate-y-0 opacity-100"
+                                : "grid-rows-[0fr] -translate-y-2 opacity-0 pointer-events-none"
+                            }`}
+                    >
+                        <div className="overflow-hidden">
                             {renderFilters(true)}
                         </div>
-                    )}
+                    </div>
 
                     <GroupNearbyMap groups={groups} />
 
@@ -322,7 +345,7 @@ export default function PickUpPage() {
                 {/* 臨打團詳細資訊浮動視窗 */}
                 {selectedGroup && (
                     <div
-                        className={`fixed inset-0 z-[60] flex items-end bg-black/45 p-0 sm:items-center sm:justify-center sm:p-6 ${isDetailModalClosing ? "pickup-modal-backdrop-leave" : "pickup-modal-backdrop-enter"}`}
+                        className={`fixed inset-0 z-[60] flex items-end bg-black/45 p-0 sm:items-center sm:justify-center sm:p-6 transition-opacity duration-300`}
                         role="presentation"
                         onMouseDown={closeDetailModal}
                     >
@@ -331,6 +354,7 @@ export default function PickUpPage() {
                             handleJoinGroup={handleJoinGroup}
                             closeDetailModal={closeDetailModal}
                             isClosing={isDetailModalClosing}
+                            onContactHost={handleContactHost}
                         />
                     </div>
                 )}

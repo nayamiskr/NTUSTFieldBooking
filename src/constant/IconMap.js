@@ -15,7 +15,8 @@ import {
   EyeOff,
   SlidersHorizontal,
   SquareParking,
-  rotateCw,
+  RotateCw,
+  X
 } from "lucide-react";
 import {
   MdSportsBasketball,
@@ -44,7 +45,8 @@ export const facilityMap = {
 
 export const functionIconMap = {
   add: { name: "新增", icon: <FaPlus /> },
-  refresh: { name: "重新整理", icon: <rotateCw /> },
+  refresh: { name: "重新整理", icon: <RotateCw /> },
+  cancel: { name: "取消", icon: <X /> },
   show: { name: "顯示", icon: <Eye /> },
   hide: { name: "隱藏", icon: <EyeOff /> },
   filter: { name: "篩選", icon: <SlidersHorizontal /> },
