@@ -7,7 +7,9 @@ import { IoPinSharp } from "react-icons/io5";
 const containerStyle = {
     height: "350px",
     borderRadius: "10px",
-    margin: "10px auto"
+    margin: "10px auto",
+    position: "relative",
+    zIndex: 0,
 }
 
 export default function GroupNearbyMap({ groups }) {
@@ -51,6 +53,7 @@ export default function GroupNearbyMap({ groups }) {
     }
 
     return (
+        <div className="relative z-0">
         <GoogleMap
             mapContainerStyle={containerStyle}
             zoom={15}
@@ -111,5 +114,6 @@ export default function GroupNearbyMap({ groups }) {
                 <IoPinSharp size={24} color="#333" />
             </button>
         </GoogleMap>
+        </div>
     );
 }

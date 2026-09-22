@@ -213,12 +213,12 @@ export default function PickUpPage() {
                     </div>
 
                     <div
-                        className={`grid overflow-hidden transition-[grid-template-rows,opacity,transform] duration-200 ease-out ${isMobileFilterOpen
-                                ? "grid-rows-[1fr] translate-y-0 opacity-100"
-                                : "grid-rows-[0fr] -translate-y-2 opacity-0 pointer-events-none"
+                        className={`relative z-20 grid transition-[grid-template-rows,opacity,transform] duration-200 ease-out ${isMobileFilterOpen
+                            ? "grid-rows-[1fr] translate-y-0 overflow-visible opacity-100"
+                            : "grid-rows-[0fr] -translate-y-2 overflow-hidden opacity-0 pointer-events-none"
                             }`}
                     >
-                        <div className="overflow-hidden">
+                        <div className={isMobileFilterOpen ? "overflow-visible" : "overflow-hidden"}>
                             {renderFilters(true)}
                         </div>
                     </div>

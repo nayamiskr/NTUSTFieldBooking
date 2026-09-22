@@ -12,7 +12,7 @@ function Calendar({ onDayPicked = () => { } }) {
   const [showCalendar, setShowCalendar] = useState(false);
 
   const openCalendar = () => {
-    setShowCalendar(!showCalendar);
+    setShowCalendar((isOpen) => !isOpen);
   }
 
   const handleSelect = (date) => {
@@ -34,7 +34,13 @@ function Calendar({ onDayPicked = () => { } }) {
 
   return (
     <div className="flex flex-col relative">
-      <button onClick={openCalendar} className="relative inline-block w-full sm:w-auto border border-gray-300 rounded-lg px-6 py-2 bg-white hover:bg-gray-100 focus:border-lg focus:border-blue-500">
+      <button
+        type="button"
+        onClick={openCalendar}
+        aria-expanded={showCalendar}
+        aria-haspopup="dialog"
+        className="relative inline-block w-full rounded-lg border border-gray-300 bg-white px-6 py-2 hover:bg-gray-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 sm:w-auto"
+      >
         {selected
           ? selected.toLocaleDateString("zh-TW", {
             year: "numeric",
