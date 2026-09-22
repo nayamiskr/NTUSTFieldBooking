@@ -16,7 +16,11 @@ import {
   SlidersHorizontal,
   SquareParking,
   RotateCw,
-  X
+  X,
+  VenusAndMars,
+  Mail,
+  Phone,
+  User,
 } from "lucide-react";
 import {
   MdSportsBasketball,
@@ -56,6 +60,10 @@ export const InfoIconMap = {
   location: { name: "地點", icon: <MapPinned /> },
   host: { name: "主辦人", icon: <Users /> },
   time: { name: "時間", icon: <Clock2 /> },
+  gender: { name: "性別", icon: <VenusAndMars /> },
+  email: { name: "電子郵件", icon: <Mail /> },
+  phone: { name: "電話", icon: <Phone /> },
+  age: { name: "年齡", icon: <User /> },
 };
 
 export const sportIconMap = {
