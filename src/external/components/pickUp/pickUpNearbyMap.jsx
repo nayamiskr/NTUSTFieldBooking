@@ -53,7 +53,6 @@ export default function GroupNearbyMap({ groups }) {
     return (
         <GoogleMap
             mapContainerStyle={containerStyle}
-            mapContainerClassName="w-[95%] md:w-[80%]"
             zoom={15}
             options={
                 {

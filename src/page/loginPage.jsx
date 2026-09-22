@@ -1,20 +1,24 @@
 import { useNavigate, Link } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import Loading from "../components/loading";
 import { loginService } from "../service/authService";
-import { VENUE_TYPE } from "../constant/VenueType";
+import { sportService } from "../service/sportService";
 import { errorPopup } from "../components/pop-up";
 import { zhTWDictionary } from "../locale/zh-TW/translate";
+import { functionIconMap } from "../constant/IconMap";
 
 
 function LoginPage() {
   const [filter, setFilter] = useState("");
+  const [password, setPassword] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+  const [sport, setSport] = useState([]);
   const [loading, setLoading] = useState(false);
   const [forSchool, setForSchool] = useState(false);
   const [forLine, setForLine] = useState(false);
   const [isFlipping, setIsFlipping] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
 
@@ -26,13 +30,29 @@ function LoginPage() {
   //   }, 300);
   // }
 
+  useEffect(() => {
+    setLoading(true);
+    const getSportList = async () => {
+      try {
+        const data = await sportService.getSportList();
+        setSport(data.items);
+      } catch (error) {
+        console.error("Error fetching sport list:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    getSportList();
+  }, []);
+
   const handleLogin = async (e) => {
     e.preventDefault();
 
     if (loading) return;
 
-    if (!filter && !forSchool) {
-      errorPopup(zhTWDictionary.loginPage.errorMessage.error, zhTWDictionary.loginPage.errorMessage.requiredFields);
+    if (!filter) {
+      errorPopup(zhTWDictionary.loginPage.errorMessage.error, zhTWDictionary.loginPage.errorMessage.requiredSportsType);
       return;
     }
 
@@ -51,14 +71,14 @@ function LoginPage() {
       }
 
       await loginService(email, password);
-
       // const baseUrl = forSchool ? "ntust" : "external";
       // const typePath = forSchool ? "" : filter;
-      
+      localStorage.setItem("sportType", filter);
       navigate(`external/group`);
 
     } catch (error) {
-      errorPopup(zhTWDictionary.loginPage.errorMessage.error, zhTWDictionary.loginPage.errorMessage.invalidCredentials);
+      errorPopup(zhTWDictionary.loginPage.errorMessage.error, zhTWDictionary.loginPage.errorMessage.externalLoginError);
+      console.error("Login error:", error);
     } finally {
       setLoading(false);
     }
@@ -107,26 +127,45 @@ function LoginPage() {
             </div>
             <div>
               <label className="block text-start text-gray-600 mb-1" htmlFor="password">{zhTWDictionary.loginPage.input.label.password}</label>
-              <input
-                name="password"
-                type="password"
-                placeholder={zhTWDictionary.loginPage.input.placeholder.password}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
-              />
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type={showPassword ? "text" : "password"}
+                  placeholder={zhTWDictionary.loginPage.input.placeholder.password}
+                  className="w-full px-4 py-2 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((isVisible) => !isVisible)}
+                  aria-label={showPassword ? "隱藏密碼" : "顯示密碼"}
+                  aria-pressed={showPassword}
+                  className="absolute inset-y-0 right-0 grid w-11 place-items-center text-gray-500 transition hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-inset rounded-r-lg"
+                >
+                  {(password.length > 0) ? (showPassword ? (
+                    <div>{functionIconMap.hide.icon}</div>
+                  ) : (
+                    <div>{functionIconMap.show.icon}</div>
+                  )) : null}
+                </button>
+              </div>
             </div>
-            {!forSchool && !forLine && (
-              <div className="w-full flex justify-center flex-wrap gap-4">
-                {Object.keys(VENUE_TYPE).map(type => (
-                  <button
-                    type="button"
-                    key={type}
-                    onClick={() => setFilter(VENUE_TYPE[type])}
-                    className={`px-4 py-2 rounded-md text-white transition ${filter === VENUE_TYPE[type] ? "bg-blue-700" : "bg-blue-400 hover:bg-blue-600"}`}
-                  >
-                    {type}
-                  </button>
-                ))}
-              </div>)}
+
+            {/* 球類選擇 */}
+            <div className="w-full flex justify-center flex-wrap gap-4">
+              {sport.map(sport => (
+                <button
+                  type="button"
+                  key={sport.id}
+                  onClick={() => setFilter(sport.id)}
+                  className={`px-4 py-2 rounded-md text-white transition ${filter === sport.id ? "bg-blue-700" : "bg-blue-400 hover:bg-blue-600"}`}
+                >
+                  {sport.name}
+                </button>
+              ))}
+            </div>
             {errorMessage && !forSchool && (
               <p className="text-red-500 text-sm text-center">{errorMessage}</p>
             )}

@@ -1,5 +1,5 @@
 import './fieldPicker.css';
-import layouts from './outFieldLayout.json';
+import layouts from '../outFieldLayout.json';
 
 function FieldPicker({ fieldId, onSelectField, selectedId }) {
     let layout = null;

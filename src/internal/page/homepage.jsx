@@ -3,7 +3,7 @@ import Loading from "../../components/loading";
 import Navbar from "../components/navbar";
 import { useParams } from "react-router-dom";
 import SelectFieldSection from "../components/SelectFieldSection";
-import Calendar from "../../components/dayPick";
+import Calendar from "../../components/dayPicker/dayPick";
 import NearbyMap from "../components/nearbyMap";
 import api from "../../baseApi";
 

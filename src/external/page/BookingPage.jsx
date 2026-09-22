@@ -1,8 +1,8 @@
 import Navbar from "../components/navbar";
-import Calendar from "../../components/dayPick";
+import Calendar from "../../components/dayPicker/dayPick";
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import FieldPicker from "../components/fieldPicker";
+import FieldPicker from "../components/fieldPicker/fieldPicker";
 import api from "../../baseApi"
 import Loading from "../../components/loading";
 import { IoMdPeople } from "react-icons/io";

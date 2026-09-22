@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
-import api from "../../baseApi"
 import Navbar from "../components/navbar";
 import Loading from "../../components/loading";
 import { bookingService } from "../../service/bookingService";
 import { pickUpService } from "../../service/pickUpService";
 import { statusMap } from "../../constant/statusMap";
-import { formatDateTime } from "../../components/dateTimeFormat";
+import { formatDateTime } from "../../utils/dateTimeFormat";
 
-function OrderPage() {
+export default function OrderPage() {
     const [orders, setOrders] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -223,5 +222,3 @@ function OrderPage() {
         </div>
     )
 }
-
-export default OrderPage;

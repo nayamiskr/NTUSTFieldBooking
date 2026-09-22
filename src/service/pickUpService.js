@@ -1,5 +1,6 @@
 import api from "../baseApi.js";
 import { locationService } from "./locationService.js";
+import { sportService } from "./sportService.js";
 
 export const pickUpService = {
   // 取得臨打團細節

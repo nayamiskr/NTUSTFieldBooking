@@ -1,6 +1,6 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
-import dateTimeFormat from "../../components/dateTimeFormat"
+import dateTimeFormat from "../../utils/dateTimeFormat"
 import api from "../../baseApi";
 
 function PayPage() {

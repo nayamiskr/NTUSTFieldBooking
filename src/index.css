@@ -1,4 +1,62 @@
 @import "tailwindcss";
+
+@keyframes pickup-modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes pickup-modal-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes pickup-modal-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(1.5rem) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes pickup-modal-panel-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(1.5rem) scale(0.98);
+  }
+}
+
+.pickup-modal-backdrop-enter {
+  animation: pickup-modal-backdrop-in 200ms ease-out both;
+}
+
+.pickup-modal-backdrop-leave {
+  animation: pickup-modal-backdrop-out 200ms ease-in both;
+}
+
+.pickup-modal-panel-enter {
+  animation: pickup-modal-panel-in 200ms ease-out both;
+}
+
+.pickup-modal-panel-leave {
+  animation: pickup-modal-panel-out 200ms ease-in both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pickup-modal-backdrop-enter,
+  .pickup-modal-backdrop-leave,
+  .pickup-modal-panel-enter,
+  .pickup-modal-panel-leave {
+    animation-duration: 1ms;
+  }
+}
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

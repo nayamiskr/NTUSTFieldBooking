@@ -14,8 +14,9 @@ export const zhTWDictionary = {
     },
     errorMessage: {
       error: "登入錯誤",
+      externalLoginError: "請稍後重試",
       invalidCredentials: "電子郵件或密碼錯誤",
-      requiredFields: "請填寫所有必填欄位",
+      requiredSportsType: "請選擇球的類型",
     },
   },
 
@@ -52,30 +53,22 @@ export const zhTWDictionary = {
     },
   },
 
-  groupPage: {
+  pickUpPage: {
     title: "臨打團清單",
     loadingMessage: "取得臨打團資料中...",
     groupEmpty: "暫無可預約的團",
     label: {
+      hostName: "主辦人 : ",
+      location: "地點 : ",
+      time: "時間 : ",
       facilities: "場地設施",
       level: "程度",
       levelNull: "未指定",
     },
     button: {
+      detail: "顯示詳細",
       refresh: "重新整理",
       hostApply: "我要開團",
-    }
-  },
-
-  pickUp: {
-    status: {
-      full: "已額滿",
-      pending: "審核中",
-      confirmed: "已報名",
-      cancelled: "已取消",
-      cancel_request: "取消申請中",
-      rejected: "已拒絕",
-      default: "立即報名",
     },
 
     successMessage: {
@@ -94,6 +87,16 @@ export const zhTWDictionary = {
     range: "範圍",
     more: "更多",
     loading: "載入中...",
+    status: {
+      full: "已額滿",
+      pending: "審核中",
+      confirmed: "已報名",
+      cancelled: "已取消",
+      cancel_request: "取消申請中",
+      rejected: "已拒絕",
+      default: "立即報名",
+    },
+
   },
 
   facilities: {

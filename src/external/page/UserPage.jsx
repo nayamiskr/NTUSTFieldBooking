@@ -1,6 +1,7 @@
 import Navbar from "../components/navbar";
 import { useEffect, useState } from "react";
 import { getUserProfile } from "../../service/userService";
+import Loading from "../../components/loading";
 
 export function UserPage() {
     const [user, setUser] = useState(null);
@@ -9,13 +10,12 @@ export function UserPage() {
         const fetchUserProfile = async () => {
             const user = await getUserProfile();
             setUser(user);
-            console.log("Fetched user profile:", user); // Debugging line
         };
 
         fetchUserProfile();
     }, []);
 
-    if (!user) return <p className="text-center mt-10 text-gray-500">載入中...</p>;
+    if (!user) return <Loading />;
 
     return (
         <div>

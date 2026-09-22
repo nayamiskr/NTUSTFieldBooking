@@ -1,7 +1,7 @@
 import Navbar from "../components/navbar";
 import { FaArrowLeft } from "react-icons/fa";
 import "./bookingpage.css";
-import Calendar from "../../components/dayPick";
+import Calendar from "../../components/dayPicker/dayPick";
 import { useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import FieldPicker from "../../components/fieldPicker";
