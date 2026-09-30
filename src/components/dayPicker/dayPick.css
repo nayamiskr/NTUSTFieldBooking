@@ -118,3 +118,37 @@
   font-weight: 600;
 }
 
+.calendar-birth > button {
+  margin-top: 6px;
+  min-height: 44px;
+  width: 100%;
+  padding: 10px 16px;
+  text-align: left;
+  color: #1f2937;
+}
+
+.calendar-container--birth {
+  right: 0;
+  left: auto;
+  max-width: calc(100vw - 2rem);
+}
+
+.day-picker--birth {
+  max-width: 100%;
+}
+
+.day-picker--birth .rdp-dropdowns {
+  display: flex;
+  gap: 8px;
+}
+
+.day-picker--birth .rdp-dropdown_root {
+  border: 1px solid #dbeafe;
+  border-radius: 8px;
+  background: #f8fbff;
+  padding: 6px 8px;
+}
+
+.day-picker--birth .rdp-dropdown {
+  cursor: pointer;
+}

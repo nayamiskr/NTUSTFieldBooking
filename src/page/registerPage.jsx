@@ -1,124 +1,140 @@
-import api from "../baseApi";
-import { zhTWDictionary } from "../locale/zh-TW/translate"
-import { useNavigate, Link } from "react-router-dom";
 import { useState } from "react";
-import { registerService } from "../service/registerService";
+import { Link, useNavigate } from "react-router-dom";
 import { InputElement } from "../components/inputElement";
-import { errorPopup } from "../components/pop-up";
+import { useAuthPageTransition } from "../components/useAuthPageTransition";
+import { zhTWDictionary } from "../locale/zh-TW/translate";
+import { registerService } from "../service/registerService";
 import { validateRegister } from "../utils/validator";
+import { errorPopup } from "../components/pop-up";
+import Calendar from "../components/dayPicker/dayPick";
+
+const inputClassName = "mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
+
+const formatBirthDate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 function RegisterPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const [birthDate, setBirthDate] = useState("");
   const navigate = useNavigate();
+  const { isLeaving, switchPage } = useAuthPageTransition();
+  const today = new Date();
 
-  const handleRegister = async (e) => {
-    e.preventDefault();
+  const handleRegister = async (event) => {
+    event.preventDefault();
     if (loading) return;
+
+    const values = new FormData(event.currentTarget);
+    const formData = {
+      name: String(values.get("name") || "").trim(),
+      username: String(values.get("username") || "").trim(),
+      gender: String(values.get("gender") || ""),
+      birth_date: String(values.get("birth_date") || ""),
+      email: String(values.get("email") || "").trim(),
+      password: String(values.get("password") || ""),
+      confirmPassword: String(values.get("confirmPassword") || ""),
+    };
+
+    const validationError = validateRegister(formData);
+    if (validationError) {
+      setErrorMessage(validationError);
+      return;
+    }
 
     setLoading(true);
     setErrorMessage("");
-
     try {
-      const formData = {
-        name: e.target.name?.value?.trim(),
-        username: e.target.username?.value?.trim(),
-        email: e.target.email?.value?.trim(),
-        password: e.target.password?.value,
-        confirmPassword: e.target.confirmPassword?.value,
-      };
-
-      const validationError = validateRegister(formData);
-
-
-      if (validationError) {
-        console.log("Validation Error:", validationError); // Log the validation error for debugging
-        errorPopup(zhTWDictionary.registerPage.errorMessage.error, validationError);
-        setLoading(false);
-        return;
-      }
-
       await registerService.registerAccount({
         email: formData.email,
         username: formData.username,
         password: formData.password,
-        display_name: formData.name
+        display_name: formData.name,
+        gender: formData.gender,
+        birth_date: formData.birth_date,
       });
-
-      // 註冊成功後導回登入
       navigate("/");
     } catch (error) {
-      if (error.status === 409) {
-        errorPopup(zhTWDictionary.registerPage.errorMessage.error, zhTWDictionary.registerPage.errorMessage.emailExist);
-      } else {
-        errorPopup(zhTWDictionary.registerPage.errorMessage.error, zhTWDictionary.registerPage.errorMessage.registrationFailed);
-      }
+      errorPopup(error?.response?.status === 409
+        ? zhTWDictionary.registerPage.errorMessage.emailExist
+        : zhTWDictionary.registerPage.errorMessage.registrationFailed);
     } finally {
       setLoading(false);
     }
   };
 
+  const labels = zhTWDictionary.registerPage.input.label;
+  const placeholders = zhTWDictionary.registerPage.input.placeholder;
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-100 to-blue-300">
-      <div className="bg-white shadow-lg rounded-xl p-8 w-[90%] max-w-md">
-        <h2 className="text-2xl font-bold text-center mb-6 text-gray-800">{zhTWDictionary.registerPage.title}</h2>
+    <div className="min-h-screen bg-linear-to-br from-blue-100 to-blue-300 px-4 py-6 sm:px-8 sm:py-8">
+      <div className="mx-auto max-w-5xl">
 
-        <form className="space-y-5" onSubmit={handleRegister}>
-          <InputElement
-            label={zhTWDictionary.registerPage.input.label.name}
-            name="name"
-            type="text"
-            placeholder={zhTWDictionary.registerPage.input.placeholder.name}
-          />
+        <main className={`auth-card ${isLeaving ? "auth-card-leaving" : ""} mx-auto mt-6 w-full max-w-lg rounded-2xl border border-blue-100 bg-white p-6 shadow-xl sm:mt-8 sm:p-8`}>
+          <h1 className="text-center text-2xl font-bold text-gray-800 leading-tight">
+            {zhTWDictionary.registerPage.title}
+          </h1>
 
-          <InputElement
-            label={zhTWDictionary.registerPage.input.label.username}
-            name="username"
-            type="text"
-            placeholder={zhTWDictionary.registerPage.input.placeholder.username}
-          />
+          <form className="mt-6 space-y-6" onSubmit={handleRegister} noValidate>
+            <section>
+              <div className="mb-4 flex items-center gap-3">
+                <h2 id="register-profile-heading" className="shrink-0 text-sm font-bold text-blue-700">
+                  基本資料
+                  </h2>
+                <div className="h-px flex-1 bg-blue-100" aria-hidden="true" />
+              </div>
+              <div className="space-y-4">
+                <InputElement label={labels.name} name="name" type="text" placeholder={placeholders.name} autoComplete="nickname" required className={inputClassName} />
+                <InputElement label={labels.username} name="username" type="text" placeholder={placeholders.username} autoComplete="username" required className={inputClassName} />
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="register-gender" className="block text-sm font-semibold text-slate-700">{labels.gender} <span className="text-red-600">*</span></label>
+                    <select id="register-gender" name="gender" defaultValue="" required className={inputClassName}>
+                      <option value="" disabled>請選擇</option>
+                      <option value="male">男性</option>
+                      <option value="female">女性</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="register-birth-date" className="block text-sm font-semibold text-slate-700">{labels.birthDate} <span className="text-red-600">*</span></label>
+                    <Calendar
+                      buttonId="register-birth-date"
+                      placeholder="選擇出生日期"
+                      showYearDropdown
+                      maxDate={today}
+                      onDayPicked={({ date }) => setBirthDate(formatBirthDate(date))}
+                    />
+                    <input type="hidden" name="birth_date" value={birthDate} readOnly />
+                  </div>
+                </div>
+              </div>
+            </section>
 
-          <InputElement
-            label={zhTWDictionary.registerPage.input.label.email}
-            name="email"
-            type="email"
-            placeholder={zhTWDictionary.registerPage.input.placeholder.email}
-          />
+            {/* 填入登入資訊 */}
+            <section>
+              <div className="mb-4 flex items-center gap-3">
+                <h2 id="register-account-heading" className="shrink-0 text-sm font-bold text-blue-700">
+                  登入資訊
+                  </h2>
+                <div className="h-px flex-1 bg-blue-100" aria-hidden="true" />
+              </div>
+              <div className="space-y-4">
+                <InputElement label={labels.email} name="email" type="email" placeholder={placeholders.email} autoComplete="email" required className={inputClassName} />
+                <InputElement label={labels.password} name="password" type="password" placeholder={placeholders.password} autoComplete="new-password" required className={inputClassName} />
+                <InputElement label={labels.confirmPassword} name="confirmPassword" type="password" placeholder={placeholders.confirmPassword} autoComplete="new-password" required className={inputClassName} />
+              </div>
+            </section>
 
-          <InputElement
-            label={zhTWDictionary.registerPage.input.label.password}
-            name="password"
-            type="password"
-            placeholder={zhTWDictionary.registerPage.input.placeholder.password}
-          />
+            {errorMessage && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{errorMessage}</p>}
 
-          <InputElement
-            label={zhTWDictionary.registerPage.input.label.confirmPassword}
-            name="confirmPassword"
-            type="password"
-            placeholder={zhTWDictionary.registerPage.input.placeholder.confirmPassword}
-          />
+            <button type="submit" disabled={loading} className="min-h-11 w-full rounded-lg bg-blue-600 px-4 py-2.5 font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
+              {loading ? zhTWDictionary.registerPage.button.registering : "建立帳號"}
+            </button>
+          </form>
 
-          {errorMessage && (
-            <p className="text-red-500 text-sm text-center">{errorMessage}</p>
-          )}
-
-          <button
-            type="submit"
-            className={`w-full bg-blue-500 text-white py-2 rounded-lg hover:bg-blue-600 transition ${loading ? "opacity-50 cursor-not-allowed" : ""
-              }`}
-            disabled={loading}
-          >
-            {loading ? zhTWDictionary.registerPage.button.registering : zhTWDictionary.registerPage.button.register}
-          </button>
-        </form>
-
-        <p className="text-center text-sm text-gray-500 mt-4">
-          已有帳號？{" "}
-          <Link to="/" className="text-blue-500 hover:underline">
-            回到登入
-          </Link>
-        </p>
+          <p className="mt-5 text-center text-sm text-slate-500">
+            已有帳號？ <Link to="/" onClick={(event) => switchPage(event, "/")} className="font-semibold text-blue-700 hover:underline">回到登入</Link>
+          </p>
+        </main>
       </div>
     </div>
   );

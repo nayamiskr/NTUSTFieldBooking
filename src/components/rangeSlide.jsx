@@ -19,7 +19,6 @@ export function DoubleSlide({ value, onChange, levels = EMPTY_LEVELS }) {
     const range = useMemo(() => {
         if (!orderedLevels.length) return null;
         const result = { min: orderedLevels[0].level, max: orderedLevels[orderedLevels.length - 1].level };
-        // 缺級時也只允許選到表內的 level，實際數值仍是整數。
         orderedLevels.slice(1, -1).forEach((item, index) => {
             result[`${((index + 1) / (orderedLevels.length - 1)) * 100}%`] = item.level;
         });

@@ -32,7 +32,6 @@ export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, clos
         <section
             role="dialog"
             aria-modal="true"
-            aria-labelledby="pickup-detail-title"
             className={`max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:max-w-2xl sm:rounded-2xl ${isClosing ? "pickup-modal-panel-leave" : "pickup-modal-panel-enter"}`}
             onMouseDown={(event) => event.stopPropagation()}
         >

@@ -26,8 +26,10 @@ export const zhTWDictionary = {
       label: {
         name: "姓名",
         username: "使用者名稱 (只能填英文或數字)",
+        gender: "性別",
+        birthDate: "出生日期",
         email: "電子郵件",
-        password: "密碼 (需超過8個字元)",
+        password: "密碼 (至少 8 個字元)",
         confirmPassword: "確認密碼",
       },
       placeholder: {
@@ -43,8 +45,11 @@ export const zhTWDictionary = {
       requiredFields: "請填寫所有必填欄位",
       emailExist: "該電子郵件已被註冊過",
       usernameInvalid: "使用者名稱只能包含英文或數字",
+      emailInvalid: "請輸入有效的電子郵件",
+      genderInvalid: "請選擇性別",
+      birthDateInvalid: "請輸入有效且不晚於今天的出生日期",
       passwordMismatch: "密碼與確認密碼不一致",
-      passwordTooShort: "密碼長度需超過8個字元",
+      passwordTooShort: "密碼長度至少需要 8 個字元",
       registrationFailed: "註冊失敗，請稍後再試",
     },
     button: {

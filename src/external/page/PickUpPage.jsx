@@ -259,7 +259,7 @@ export default function PickUpPage() {
                                     {/*費用程度標籤與報名按鈕 */}
                                     <div className="flex flex-col sm:flex-row justify-between items-center mt-4 pt-4 border-t border-gray-100 gap-4">
                                         <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
-                                            <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-base font-medium">{zhTWDictionary.pickUpPage.label.level}: {group.min_skill_level.label || zhTWDictionary.pickUpPage.label.levelNull}</span>
+                                            <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-base font-medium">{zhTWDictionary.pickUpPage.label.level}: {group.min_skill_level.label || zhTWDictionary.pickUpPage.label.levelNull} {"- " + group.max_skill_level.label || ""}</span>
                                             <span className={`px-3 py-1 my-[auto] rounded-md text-base font-bold border ${(group.fee !== 0) ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-700'}`} >$ {group.fee}</span>
 
                                         </div>
@@ -279,15 +279,15 @@ export default function PickUpPage() {
                                                 disabled={status !== null || isFull}
                                                 onClick={() => handleJoinGroup(group.id)}
                                                 className={`min-h-11 flex-1 rounded-lg px-6 py-2 font-bold tracking-wide text-white transition sm:flex-none 
-                                        ${(status !== null || isFull) ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"} 
-                                        ${isFull && status === null ? statusMap.full.class : (statusMap[status]?.class || statusMap.default.class)}
-                                    `}
-                                            >
-                                                {status !== null
-                                                    ? (statusMap[status]?.label || statusMap.default.label)
-                                                    : isFull
-                                                        ? statusMap.full.label
-                                                        : statusMap.default.label}
+                                                            ${(status !== null || isFull) ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"} 
+                                                            ${isFull && status === null ? statusMap.full.class : (statusMap[status]?.class || statusMap.default.class)}
+                                                        `}
+                                                                >
+                                                                    {status !== null
+                                                                        ? (statusMap[status]?.label || statusMap.default.label)
+                                                                        : isFull
+                                                                            ? statusMap.full.label
+                                                                            : statusMap.default.label}
                                             </button>
                                         </div>
                                     </div>

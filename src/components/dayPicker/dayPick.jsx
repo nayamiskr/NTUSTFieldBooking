@@ -1,5 +1,7 @@
 import { DayPicker } from "react-day-picker";
+import { zhTW } from "react-day-picker/locale";
 import { useState } from "react";
+import "react-day-picker/style.css";
 import "./dayPick.css";
 
 function getWeekday(date) {
@@ -7,7 +9,13 @@ function getWeekday(date) {
   return weekdays[date.getDay()];
 }
 
-function Calendar({ onDayPicked = () => { } }) {
+function Calendar({
+  onDayPicked = () => {},
+  buttonId,
+  placeholder = "選擇日期",
+  showYearDropdown = false,
+  maxDate,
+}) {
   const [selected, setSelected] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
 
@@ -33,8 +41,9 @@ function Calendar({ onDayPicked = () => { } }) {
   };
 
   return (
-    <div className="flex flex-col relative">
+    <div className={`flex flex-col relative ${showYearDropdown ? "calendar-birth" : ""}`}>
       <button
+        id={buttonId}
         type="button"
         onClick={openCalendar}
         aria-expanded={showCalendar}
@@ -47,19 +56,27 @@ function Calendar({ onDayPicked = () => { } }) {
             month: "2-digit",
             day: "2-digit",
           })
-          : "選擇日期"}
+          : placeholder}
       </button>
       <div
-        className={`calendar-container ${showCalendar ? 'active' : ''}`}
+        className={`calendar-container ${showCalendar ? 'active' : ''} ${showYearDropdown ? 'calendar-container--birth' : ''}`}
         style={{
           pointerEvents: showCalendar ? "auto" : "none",
         }}
       >
         <DayPicker
           mode="single"
+          required={showYearDropdown}
           selected={selected}
           onSelect={handleSelect}
-          className="day-picker"
+          className={`day-picker ${showYearDropdown ? "day-picker--birth" : ""}`}
+          captionLayout={showYearDropdown ? "dropdown" : undefined}
+          reverseYears={showYearDropdown}
+          startMonth={showYearDropdown ? new Date(1900, 0) : undefined}
+          endMonth={showYearDropdown ? maxDate || new Date() : undefined}
+          defaultMonth={showYearDropdown ? new Date(new Date().getFullYear() - 20, new Date().getMonth()) : undefined}
+          disabled={maxDate ? { after: maxDate } : undefined}
+          locale={showYearDropdown ? zhTW : undefined}
         />
       </div>
     </div>

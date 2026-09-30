@@ -8,6 +8,7 @@ import { skillLevelService } from "../service/skillLevelService";
 import { errorPopup } from "../components/pop-up";
 import { zhTWDictionary } from "../locale/zh-TW/translate";
 import { functionIconMap } from "../constant/IconMap";
+import { useAuthPageTransition } from "../components/useAuthPageTransition";
 
 
 function LoginPage() {
@@ -22,6 +23,7 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
+  const { isLeaving, switchPage } = useAuthPageTransition();
 
   // const handleVersionFilp = () => {
   //   setIsFlipping(true);
@@ -95,7 +97,7 @@ function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-100 to-blue-300">
       <Loading isLoading={loading} text={zhTWDictionary.loginPage.loadingMessage} />
       <div className="w-[80%] max-w-md" style={{ perspective: "1200px" }}>
-        <div className={`relative bg-white shadow-lg rounded-xl p-8 w-full max-w-md transition-transform duration-500 ease-in-out ${isFlipping ? "rotate-y-180" : ""}`}>
+        <div className={`auth-card ${isLeaving ? "auth-card-leaving" : ""} relative bg-white shadow-lg rounded-xl p-8 w-full max-w-md transition-transform duration-500 ease-in-out ${isFlipping ? "rotate-y-180" : ""}`}>
           <div className="flex flex-col items-center mb-4">
             <img
               src="/icon/logo.png"
@@ -186,7 +188,7 @@ function LoginPage() {
           </form>
           <p className="text-center text-sm text-gray-500 mt-4">
             還沒有帳號？{" "}
-            <Link to="/register" className="text-blue-500 hover:underline">
+            <Link to="/register" onClick={(event) => switchPage(event, "/register")} className="text-blue-500 hover:underline">
               註冊帳號
             </Link>
           </p>

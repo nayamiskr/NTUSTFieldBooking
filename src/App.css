@@ -70,7 +70,28 @@
   gap: 16px;
 }
 
+@keyframes auth-card-leave {
+  to {
+    opacity: 0;
+    transform: translateY(-12px) scale(.985);
+  }
+}
 
+@keyframes auth-card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(.985);
+  }
+}
 
+@media (prefers-reduced-motion: no-preference) {
+  .auth-card {
+    animation: auth-card-enter 320ms cubic-bezier(.22, 1, .36, 1) both;
+  }
+
+  .auth-card.auth-card-leaving {
+    animation: auth-card-leave 190ms ease-in both;
+  }
+}
 
 
