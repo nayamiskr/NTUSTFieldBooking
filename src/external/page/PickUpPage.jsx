@@ -1,13 +1,11 @@
-import { useMemo } from "react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 
 import Navbar from "../components/navbar";
 import Loading from "../../components/loading";
-import Calendar from "../../components/dayPicker/dayPick";
 import GroupNearbyMap from "../components/pickUp/pickUpNearbyMap";
+import PickUpFilterSection from "../components/pickUp/pickUpFilterSection";
 import { formatDateTime } from "../../utils/dateTimeFormat";
-import { getDistance } from "../../utils/distance";
 import { errorPopup, successPopup } from "../../components/pop-up";
 import PickUpDetailPopUp from "../components/pickUp/pickUpDetailPopUp";
 
@@ -15,6 +13,7 @@ import { facilityMap, functionIconMap, InfoIconMap, sportIconMap } from "../../c
 import { statusMap } from "../../constant/statusMap";
 import { zhTWDictionary } from "../../locale/zh-TW/translate";
 import { pickUpService } from "../../service/pickUpService";
+import { skillLevelService } from "../../service/skillLevelService";
 
 
 
@@ -23,58 +22,90 @@ export default function PickUpPage() {
 
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [activeFilter, setActiveFilter] = useState("location");
+    const [activeFilter, setActiveFilter] = useState("distance");
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [isDetailModalClosing, setIsDetailModalClosing] = useState(false);
-    const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+    const [levels, setLevels] = useState([]);
+    const [levelRange, setLevelRange] = useState(null);
+    const [appliedLevelRange, setAppliedLevelRange] = useState(null);
+    const [levelsLoading, setLevelsLoading] = useState(true);
+    const [levelsError, setLevelsError] = useState("");
+    const [levelsRetry, setLevelsRetry] = useState(0);
+    const sportTypeId = localStorage.getItem("sportType");
 
-    const userPosition = localStorage.getItem('currentPosition');
-    const options = [
-        { value: 'location', label: '距離近' },
-        { value: 'time', label: '快開始' },]
-
-    const sortedGroups = useMemo(() => {
-        if (!groups || groups.length === 0) return [];
-
-        const copyGroups = [...groups];
-
-        if (activeFilter === 'time') {
-            return copyGroups.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
-        }
-
-        if (activeFilter === 'location') {
-            return copyGroups.sort((a, b) => {
-                if (!a.location || !b.location) return 0;
-                const distA = getDistance(userPosition.lat, userPosition.lng, a.location.lat, a.location.lng);
-                const distB = getDistance(userPosition.lat, userPosition.lng, b.location.lat, b.location.lng);
-                return distA - distB;
-            });
-        }
-
-        return copyGroups;
-    }, [groups, activeFilter]);
+    let userPosition = null;
+    try {
+        userPosition = JSON.parse(localStorage.getItem("currentPosition") || "null");
+    } catch {
+        // 尚未定位或快取損壞時，仍可按時間及程度查詢。
+    }
+    const latitude = userPosition?.lat;
+    const longitude = userPosition?.lng;
+    const hasPosition = Number.isFinite(latitude) && Number.isFinite(longitude);
+    const minSkillLevel = appliedLevelRange?.[0];
+    const maxSkillLevel = appliedLevelRange?.[1];
 
     useEffect(() => {
-        const sportTypeId = localStorage.getItem("sportType");
+        let cancelled = false;
+        setLevelsLoading(true);
+        setLevelsError("");
+        setLevels([]);
+        setLevelRange(null);
+        setAppliedLevelRange(null);
+        const request = levelsRetry > 0
+            ? skillLevelService.refreshSkillLevels(sportTypeId)
+            : skillLevelService.getSkillLevels(sportTypeId);
+        request.then((data) => {
+            if (cancelled) return;
+            setLevels(data);
+            const initialRange = data.length ? [data[0].level, data[data.length - 1].level] : null;
+            setLevelRange(initialRange);
+            setAppliedLevelRange(initialRange);
+        }).catch((error) => {
+            if (cancelled) return;
+            console.error("取得程度表失敗:", error);
+            setLevelsError("無法載入程度，請重試");
+        }).finally(() => {
+            if (!cancelled) setLevelsLoading(false);
+        });
+        return () => { cancelled = true; };
+    }, [sportTypeId, levelsRetry]);
+
+    // 拖曳時先更新顯示，停止操作一小段時間後才查詢球團。
+    useEffect(() => {
+        const timer = window.setTimeout(() => setAppliedLevelRange(levelRange), 350);
+        return () => window.clearTimeout(timer);
+    }, [levelRange]);
+
+    useEffect(() => {
+        let cancelled = false;
         const fetchGroups = async () => {
             setLoading(true);
             try {
                 const data = await pickUpService.getPickUpList({
                     sport_id: sportTypeId,
+                    latitude: hasPosition ? latitude : undefined,
+                    longitude: hasPosition ? longitude : undefined,
+                    sort_by: activeFilter === "distance" && !hasPosition ? "start_time" : activeFilter,
+                    sort_order: "asc",
+                    min_skill_level: minSkillLevel,
+                    max_skill_level: maxSkillLevel,
                 });
-                setGroups(data || []);
+                if (!cancelled) setGroups(data || []);
             } catch (error) {
+                if (cancelled) return;
                 console.error("Error fetching groups:", error);
                 errorPopup(zhTWDictionary.pickUp.errorMessage.error, zhTWDictionary.pickUp.errorMessage.fetchFailed);
 
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         }
         fetchGroups();
-    }, [setGroups, refreshTrigger]);
+        return () => { cancelled = true; };
+    }, [sportTypeId, refreshTrigger, activeFilter, hasPosition, latitude, longitude, minSkillLevel, maxSkillLevel]);
 
     const handleJoinGroup = async (groupId) => {
         try {
@@ -126,65 +157,6 @@ export default function PickUpPage() {
         }
     };
 
-    const renderFilters = (isMobile = false) => (
-        <section aria-label="篩選場次" className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-            <div className="mb-5 flex items-center justify-between">
-                <p className="text-lg font-bold text-gray-900">篩選場次</p>
-                {isMobile && (
-                    <button
-                        type="button"
-                        aria-label="收合篩選"
-                        onClick={() => setIsMobileFilterOpen(false)}
-                        className="grid h-9 w-9 place-items-center rounded-full text-xl text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
-                    >
-                        {functionIconMap.cancel.icon}
-                    </button>
-                )}
-            </div>
-
-            <div className="space-y-5">
-                <div className="flex flex-col gap-2">
-                    <label className="text-xs font-bold tracking-wider text-gray-500">排序方式</label>
-                    <div className="flex w-full rounded-lg bg-gray-100 p-1">
-                        {options.map((opt) => (
-                            <button
-                                type="button"
-                                key={opt.value}
-                                onClick={() => {
-                                    setActiveFilter(opt.value);
-                                    if (isMobile) setIsMobileFilterOpen(false);
-                                }}
-                                className={`flex-1 rounded-md px-3 py-2 text-sm font-bold transition-all ${activeFilter === opt.value
-                                    ? "bg-white text-blue-600 shadow-sm"
-                                    : "text-gray-500 hover:text-gray-700"
-                                    }`}
-                            >
-                                {opt.label}
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                    <label className="text-xs font-bold tracking-wider text-gray-500">選擇日期</label>
-                    <div className="flex items-center gap-2">
-                        <Calendar onDayPicked={(day) => {
-                            setSelectedDate(day.date);
-                            if (isMobile) setIsMobileFilterOpen(false);
-                        }} />
-                        <button
-                            type="button"
-                            onClick={() => setSelectedDate(null)}
-                            className="rounded-lg border border-red-100 bg-white px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
-                        >
-                            清除
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </section>
-    );
-
     return (
         <div>
             <Navbar />
@@ -192,43 +164,26 @@ export default function PickUpPage() {
             <Loading isLoading={loading} text={zhTWDictionary.pickUpPage.loadingMessage} />
 
             <div className="mx-auto mb-8 w-[95%] max-w-7xl lg:flex lg:items-start lg:gap-6">
-                {/* 桌面版Filter Section */}
-                <aside className="sticky top-4 hidden w-72 shrink-0 lg:block">
-                    {renderFilters()}
-                </aside>
+                <PickUpFilterSection
+                    levels={levels}
+                    levelRange={levelRange}
+                    onLevelChange={setLevelRange}
+                    levelsLoading={levelsLoading}
+                    levelsError={levelsError}
+                    onRetryLevels={() => setLevelsRetry((previous) => previous + 1)}
+                    activeFilter={activeFilter}
+                    onFilterChange={setActiveFilter}
+                    onDatePicked={setSelectedDate}
+                    onClearDate={() => setSelectedDate(null)}
+                />
 
                 <main className="min-w-0 flex-1">
-                    {/* 手機板Filter Section */}
-                    <div className="mb-4 lg:hidden">
-                        <button
-                            type="button"
-                            aria-expanded={isMobileFilterOpen}
-                            aria-controls="mobile-pickup-filters"
-                            onClick={() => setIsMobileFilterOpen((isOpen) => !isOpen)}
-                            aria-label={isMobileFilterOpen ? "收合篩選" : "展開篩選"}
-                            className="ml-auto grid h-11 w-11 place-items-center rounded-lg border border-blue-200 bg-white text-blue-700 shadow-sm transition-opacity duration-300 hover:bg-blue-50"
-                        >
-                            <div>{functionIconMap.filter.icon}</div>
-                        </button>
-                    </div>
-
-                    <div
-                        className={`relative z-20 grid transition-[grid-template-rows,opacity,transform] duration-200 ease-out ${isMobileFilterOpen
-                            ? "grid-rows-[1fr] translate-y-0 overflow-visible opacity-100"
-                            : "grid-rows-[0fr] -translate-y-2 overflow-hidden opacity-0 pointer-events-none"
-                            }`}
-                    >
-                        <div className={isMobileFilterOpen ? "overflow-visible" : "overflow-hidden"}>
-                            {renderFilters(true)}
-                        </div>
-                    </div>
-
                     <GroupNearbyMap groups={groups} />
 
                     {/* {顯示臨打團清單} */}
                     {!loading && groups.length === 0 && <p className="text-center text-gray-500">{zhTWDictionary.pickUpPage.groupEmpty}</p>}
                     <div>
-                        {sortedGroups.filter((group) => {
+                        {groups.filter((group) => {
                             if (!selectedDate) return true;
                             const groupDate = formatDateTime(group.start_time).date;
                             console.log("groupDate", groupDate, "selectedDate", formatDateTime(selectedDate).date);
@@ -304,7 +259,7 @@ export default function PickUpPage() {
                                     {/*費用程度標籤與報名按鈕 */}
                                     <div className="flex flex-col sm:flex-row justify-between items-center mt-4 pt-4 border-t border-gray-100 gap-4">
                                         <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
-                                            <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-base font-medium">{zhTWDictionary.pickUpPage.label.level}: {group.skill_level.name || zhTWDictionary.pickUpPage.label.levelNull}</span>
+                                            <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-base font-medium">{zhTWDictionary.pickUpPage.label.level}: {group.min_skill_level.label || zhTWDictionary.pickUpPage.label.levelNull}</span>
                                             <span className={`px-3 py-1 my-[auto] rounded-md text-base font-bold border ${(group.fee !== 0) ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-700'}`} >$ {group.fee}</span>
 
                                         </div>

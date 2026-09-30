@@ -64,7 +64,6 @@ function FieldPicker({ fieldId, onSelectField, selectedId }) {
                         <g key={a.id}
                             onClick={() => handlePick(a.id)}
                             style={{ cursor: isDisabled ? 'not-allowed' : 'pointer' }}
-                            aria-label={String(a.label ?? a.id)}
                         >
                             <rect
                                 x={a.x} y={a.y} width={cardSize.w} height={cardSize.h}

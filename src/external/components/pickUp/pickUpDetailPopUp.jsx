@@ -54,7 +54,6 @@ export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, clos
                 </div>
                 <button
                     type="button"
-                    aria-label="關閉詳細資訊"
                     onClick={closeDetailModal}
                     className="ml-4 grid h-10 w-10 shrink-0 place-items-center rounded-full text-2xl leading-none text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
                 >
@@ -65,7 +64,7 @@ export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, clos
             </div>
 
             <div className="space-y-4 px-5 py-4 sm:px-7">
-                <section aria-label="場次摘要" className="space-y-3">
+                <section className="space-y-3">
                     <div className="rounded-2xl border border-gray-100 p-4 shadow-sm">
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
@@ -119,7 +118,7 @@ export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, clos
                     </div>
                 </section>
 
-                <section aria-label="主揪資訊" className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
+                <section className="rounded-xl border border-gray-200 bg-white px-4 py-3 shadow-sm">
                     <div className="flex items-center justify-between gap-3">
                         <h3 className="font-bold text-gray-900">主揪資訊</h3>
                     </div>

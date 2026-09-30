@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Loading from "../components/loading";
 import { loginService } from "../service/authService";
 import { sportService } from "../service/sportService";
+import { skillLevelService } from "../service/skillLevelService";
 import { errorPopup } from "../components/pop-up";
 import { zhTWDictionary } from "../locale/zh-TW/translate";
 import { functionIconMap } from "../constant/IconMap";
@@ -74,6 +75,12 @@ function LoginPage() {
       // const baseUrl = forSchool ? "ntust" : "external";
       // const typePath = forSchool ? "" : filter;
       localStorage.setItem("sportType", filter);
+      try {
+        await skillLevelService.refreshSkillLevels(filter);
+      } catch (error) {
+        // 登入已成功；程度資料失敗時，進入臨打頁後可以重新載入。
+        console.error("取得程度表失敗:", error);
+      }
       navigate(`external/group`);
 
     } catch (error) {
@@ -98,9 +105,9 @@ function LoginPage() {
             <h1 className="text-2xl font-bold text-gray-800 leading-tight">
               {zhTWDictionary.loginPage.title}
             </h1>
-            <span className="text-sm text-gray-500 mt-1 tracking-wide">
+            {/* <span className="text-sm text-gray-500 mt-1 tracking-wide">
               {forSchool ? "學校版" : forLine ? "Line 登入" : "校外版"}
-            </span>
+            </span> */}
           </div>
 
 
@@ -140,7 +147,6 @@ function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword((isVisible) => !isVisible)}
-                  aria-label={showPassword ? "隱藏密碼" : "顯示密碼"}
                   aria-pressed={showPassword}
                   className="absolute inset-y-0 right-0 grid w-11 place-items-center text-gray-500 transition hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-inset rounded-r-lg"
                 >

@@ -138,7 +138,7 @@ export default function OrderPage() {
                         {/* Order List */}
                         <ul>
                             {(activeTab === "booking" ? orders.booking?.items : orders.pickUp)?.map((order, index) => (
-                                <li key={order.id} className={`w-[95%] md:w-[80%] mx-auto mb-4 p-5 border border-gray-200 rounded-xl shadow-sm bg-white ${order.status === "cancelled" ? "opacity-40" : ""}`}>
+                                <li key={order.id} className={`w-[95%] md:w-[50%] mx-auto mb-4 p-5 border border-gray-200 rounded-xl shadow-sm bg-white ${order.status === "cancelled" ? "opacity-40" : ""}`}>
 
                                     {/* 標題與狀態 */}
                                     <div className="flex justify-between items-start mb-3 gap-3">

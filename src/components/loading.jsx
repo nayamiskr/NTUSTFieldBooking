@@ -4,8 +4,7 @@ export default function Loading({ isLoading = false, text = "載入中..." }) {
     return (
         <div className='fixed inset-0 z-99 flex items-center justify-center'
         role = "dialog"
-        aria-modal = "true"
-        aria-label = "Loading">
+        >
             <div className="absolute inset-0 bg-black/30"/>
             <div className="relative md:w-96 w-[80%]  z-99  aspect-6/4 bg-white rounded-lg shadow-lg flex flex-col items-center justify-center">
                 <div className="flex flex-col items-center space-y-4">

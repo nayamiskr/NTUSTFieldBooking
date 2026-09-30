@@ -1,0 +1,79 @@
+import api from "../baseApi.js";
+
+const pendingRequests = new Map();
+const cacheKey = (sportId) => `skillLevels:${sportId}`;
+
+function normalizeLevels(items) {
+  const unique = new Map();
+  for (const item of items) {
+    if (!Number.isInteger(item.level) || typeof item.label !== "string") {
+      throw new Error("程度表資料格式不正確");
+    }
+    unique.set(item.level, { level: item.level, label: item.label });
+  }
+  return [...unique.values()].sort((a, b) => a.level - b.level);
+}
+
+async function fetchLevels(sportId) {
+  const allItems = [];
+  const pageSize = 20;
+  let previousPage = null;
+
+  // 先取齊分頁再篩選球類，避免只拿到第一頁的部分程度。
+  for (let page = 1; ; page += 1) {
+    const { data } = await api.get("/skill-levels", {
+      params: { page, page_size: pageSize, sort_order: "ASC" },
+    });
+    if (!Array.isArray(data.items)) throw new Error("程度表回應格式不正確");
+    if (data.items.length === 0) break;
+
+    const signature = JSON.stringify(data.items);
+    if (signature === previousPage) throw new Error("程度表分頁未正確更新");
+    previousPage = signature;
+    allItems.push(...data.items);
+
+    const actualPageSize = Number.isInteger(data.page_size) && data.page_size > 0
+      ? data.page_size : pageSize;
+    if (Number.isInteger(data.total)) {
+      if (allItems.length >= data.total) break;
+    } else if (data.items.length < actualPageSize) break;
+  }
+
+  const levels = normalizeLevels(allItems.filter(
+    (item) => item.sport_id === sportId && item.is_active === true
+  ));
+  try {
+    // 只保存 [{ level, label }]，不另外保存對照表或上下限。
+    localStorage.setItem(cacheKey(sportId), JSON.stringify(levels));
+  } catch {
+    // 儲存空間不可用時，仍可使用這次從 API 取得的資料。
+  }
+  return levels;
+}
+
+export const skillLevelService = {
+  refreshSkillLevels(sportId) {
+    if (!sportId) return Promise.reject(new Error("請先選擇球類"));
+    if (!pendingRequests.has(sportId)) {
+      pendingRequests.set(sportId, fetchLevels(sportId).finally(() => {
+        pendingRequests.delete(sportId);
+      }));
+    }
+    return pendingRequests.get(sportId);
+  },
+
+  async getSkillLevels(sportId) {
+    if (!sportId) throw new Error("請先選擇球類");
+    if (pendingRequests.has(sportId)) return pendingRequests.get(sportId);
+    try {
+      const saved = localStorage.getItem(cacheKey(sportId));
+      if (saved !== null) {
+        const levels = JSON.parse(saved);
+        if (Array.isArray(levels)) return normalizeLevels(levels);
+      }
+    } catch {
+      // 缺少或損壞的快取交由 API 補齊。
+    }
+    return skillLevelService.refreshSkillLevels(sportId);
+  },
+};

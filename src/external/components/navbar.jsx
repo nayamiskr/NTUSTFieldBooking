@@ -67,7 +67,6 @@ function Navbar() {
         <button
           type="button"
           className="icon-container"
-          aria-label="開啟使用者選單"
           aria-expanded={isMenuOpen}
           aria-controls="user-menu"
           onClick={() => setIsMenuOpen((isOpen) => !isOpen)}

@@ -1,6 +1,6 @@
 export const zhTWDictionary = {
   loginPage: {
-    title: "場地租借系統",
+    title: "揪打球和租場地系統",
     loadingMessage: "登入中...",
     input: {
       label: {
@@ -64,6 +64,7 @@ export const zhTWDictionary = {
       facilities: "場地設施",
       level: "程度",
       levelNull: "未指定",
+      filter: "篩選球團",
     },
     button: {
       detail: "顯示詳細",
@@ -96,7 +97,12 @@ export const zhTWDictionary = {
       rejected: "已拒絕",
       default: "立即報名",
     },
-
+    filter: {
+      label: {
+        distance: "距離",
+        start: "時間"
+      }
+    }
   },
 
   facilities: {
