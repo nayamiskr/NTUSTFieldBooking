@@ -1,18 +1,49 @@
 import { useEffect, useState } from "react";
 
 import Navbar from "../components/navbar";
-import { CalendarDays, Mail, Phone, UserRound, UsersRound } from "lucide-react";
+import { Award, CalendarDays, Mail, Phone, UserRound, UsersRound } from "lucide-react";
 import { getUserProfile, updateUserProfile } from "../../service/userService";
 import { InfoIconMap } from "../../constant/IconMap";
 import Loading from "../../components/loading";
 import { errorPopup, successPopup } from "../../components/pop-up";
+import { isValidBirthDate } from "../../utils/validator";
+import Calendar from "../../components/dayPicker/dayPick";
 
-const createEditableProfile = (user) => ({
+const mockLevels = ["初學", "初級", "中級", "進階"];
+const mockLevelKey = (user) => `profile-mock-level:${user.id ?? user.username ?? "current"}`;
+
+const readMockLevel = (user) => {
+    try {
+        const savedLevel = localStorage.getItem(mockLevelKey(user));
+        return mockLevels.includes(savedLevel) ? savedLevel : "初級";
+    } catch {
+        return "初級";
+    }
+};
+
+const saveMockLevel = (user, level) => {
+    try {
+        localStorage.setItem(mockLevelKey(user), level);
+    } catch {
+        // 瀏覽器停用儲存空間時，本次畫面仍顯示更新後的程度。
+    }
+};
+
+const createEditableProfile = (user, level) => ({
     display_name: user.display_name || "",
     phone: user.phone || "",
     gender: user.gender || "",
     birth_date: user.birth_date?.slice(0, 10) || "",
+    level,
 });
+
+const parseBirthDate = (value) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return null;
+    const [year, month, day] = value.split("-").map(Number);
+    return new Date(year, month - 1, day);
+};
+
+const formatBirthDate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 const calculateAge = (birthDate) => {
     if (!birthDate) return undefined;
@@ -29,19 +60,23 @@ export function UserPage() {
     const [user, setUser] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
+    const [mockLevel, setMockLevel] = useState("初級");
     const [formData, setFormData] = useState({
         display_name: "",
         phone: "",
         gender: "",
         birth_date: "",
+        level: "初級",
     });
 
     useEffect(() => {
         const fetchUserProfile = async () => {
             try {
                 const profile = await getUserProfile();
+                const level = readMockLevel(profile);
                 setUser(profile);
-                setFormData(createEditableProfile(profile));
+                setMockLevel(level);
+                setFormData(createEditableProfile(profile, level));
             } catch (error) {
                 console.error("取得個人資料失敗：", error);
                 errorPopup("個人資料", "目前無法取得個人資料，請稍後再試。");
@@ -57,15 +92,19 @@ export function UserPage() {
     };
 
     const handleCancelEdit = () => {
-        setFormData(createEditableProfile(user));
+        setFormData(createEditableProfile(user, mockLevel));
         setIsEditing(false);
     };
 
     const handleSaveProfile = async (event) => {
         event.preventDefault();
 
-        if (!formData.display_name.trim() || !formData.gender || !formData.birth_date) {
-            errorPopup("資料不完整", "請填寫顯示名稱、性別與出生日期。");
+        if (!formData.display_name.trim() || !formData.gender || !formData.birth_date || !formData.level) {
+            errorPopup("資料不完整", "請填寫顯示名稱、性別、出生日期與程度。");
+            return;
+        }
+        if (!isValidBirthDate(formData.birth_date)) {
+            errorPopup("出生日期錯誤", "請選擇有效且不晚於今天的出生日期。");
             return;
         }
 
@@ -80,6 +119,8 @@ export function UserPage() {
             const result = await updateUserProfile(editableData);
             const updatedUser = result?.user || {};
 
+            setMockLevel(formData.level);
+            saveMockLevel(user, formData.level);
             setUser((current) => ({
                 ...current,
                 ...editableData,
@@ -104,6 +145,7 @@ export function UserPage() {
         ? new Intl.DateTimeFormat("zh-TW", { year: "numeric", month: "long", day: "numeric" }).format(new Date(user.birth_date))
         : "未提供";
     const genderMap = { male: "男性", female: "女性", other: "其他" };
+    const today = new Date();
 
     return (
         <div className="min-h-screen bg-gray-50 pb-12">
@@ -178,8 +220,25 @@ export function UserPage() {
                                             <option value="other">其他</option>
                                         </select>
                                     </label>
+                                    <div>
+                                        <label htmlFor="profile-birth-date" className="block text-sm font-semibold text-slate-700">出生日期</label>
+                                        <Calendar
+                                            buttonId="profile-birth-date"
+                                            placeholder="選擇出生日期"
+                                            selectedDate={parseBirthDate(formData.birth_date)}
+                                            showYearDropdown
+                                            maxDate={today}
+                                            onDayPicked={({ date }) => setFormData((current) => ({ ...current, birth_date: formatBirthDate(date) }))}
+                                        />
+                                    </div>
+                                    <label className="block text-sm font-semibold text-slate-700">
+                                        程度（示範）
+                                        <select name="level" value={formData.level} onChange={handleInputChange} className="mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 font-normal outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
+                                            {mockLevels.map((level) => <option key={level} value={level}>{level}</option>)}
+                                        </select>
+                                    </label>
                                 </div>
-                                <p className="text-sm text-slate-500">Email、username、頭像與組織資料無法透過目前 API 修改。</p>
+                                <p className="text-sm text-slate-500">程度是示範資料，只會儲存在此瀏覽器。Email、username、頭像與組織資料無法透過目前 API 修改。</p>
                                 <div className="flex justify-end gap-3 border-t border-gray-100 pt-4">
                                     <button type="button" onClick={handleCancelEdit} disabled={isSaving} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60">取消</button>
                                     <button type="submit" disabled={isSaving} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">{isSaving ? "儲存中..." : "儲存變更"}</button>
@@ -206,6 +265,20 @@ export function UserPage() {
                                     <div>
                                         <p className="text-xs font-semibold text-slate-500">性別</p>
                                         <p className="mt-0.5 font-medium text-slate-800">{genderMap[user.gender] || "未提供"}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 rounded-lg bg-gray-50 px-4 py-3">
+                                    <span className="text-blue-600"><CalendarDays size={19} /></span>
+                                    <div>
+                                        <p className="text-xs font-semibold text-slate-500">出生日期</p>
+                                        <p className="mt-0.5 font-medium text-slate-800">{birthDate}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 rounded-lg bg-gray-50 px-4 py-3">
+                                    <span className="text-blue-600"><Award size={19} /></span>
+                                    <div>
+                                        <p className="text-xs font-semibold text-slate-500">程度（mock）</p>
+                                        <p className="mt-0.5 font-medium text-slate-800">{mockLevel}</p>
                                     </div>
                                 </div>
                             </div>

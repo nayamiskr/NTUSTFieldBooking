@@ -1,6 +1,7 @@
 import api from "../baseApi.js";
 
 const pendingRequests = new Map();
+const pendingMyLevelRequests = new Map();
 const cacheKey = (sportId) => `skillLevels:${sportId}`;
 
 function normalizeLevels(items) {
@@ -40,7 +41,7 @@ async function fetchLevels(sportId) {
   }
 
   const levels = normalizeLevels(allItems.filter(
-    (item) => item.sport_id === sportId && item.is_active === true
+    (item) => String(item.sport_id) === String(sportId) && item.is_active === true
   ));
   try {
     // 只保存 [{ level, label }]，不另外保存對照表或上下限。
@@ -75,5 +76,22 @@ export const skillLevelService = {
       // 缺少或損壞的快取交由 API 補齊。
     }
     return skillLevelService.refreshSkillLevels(sportId);
+  },
+
+  getMyLevel(sportId) {
+    if (!sportId) return Promise.reject(new Error("請先選擇球類"));
+    if (!pendingMyLevelRequests.has(sportId)) {
+      pendingMyLevelRequests.set(sportId,
+        api.get(`/me/skill-levels/${sportId}`)
+          .then((res) => res.data)
+          .finally(() => pendingMyLevelRequests.delete(sportId))
+      );
+    }
+    return pendingMyLevelRequests.get(sportId);
+  },
+
+  async setMyLevel(sportId, level) {
+    const res = await api.put(`/me/skill-levels/${sportId}`, { skill_level: level });
+    return res.data;
   },
 };

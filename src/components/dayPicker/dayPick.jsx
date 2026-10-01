@@ -15,16 +15,18 @@ function Calendar({
   placeholder = "選擇日期",
   showYearDropdown = false,
   maxDate,
+  selectedDate,
 }) {
-  const [selected, setSelected] = useState(null);
+  const [internalSelected, setInternalSelected] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
+  const selected = selectedDate === undefined ? internalSelected : selectedDate;
 
   const openCalendar = () => {
     setShowCalendar((isOpen) => !isOpen);
   }
 
   const handleSelect = (date) => {
-    setSelected(date);
+    if (selectedDate === undefined) setInternalSelected(date);
     if (date && typeof onDayPicked === "function") {
       const weekday = getWeekday(date);
       onDayPicked({
@@ -74,7 +76,7 @@ function Calendar({
           reverseYears={showYearDropdown}
           startMonth={showYearDropdown ? new Date(1900, 0) : undefined}
           endMonth={showYearDropdown ? maxDate || new Date() : undefined}
-          defaultMonth={showYearDropdown ? new Date(new Date().getFullYear() - 20, new Date().getMonth()) : undefined}
+          defaultMonth={selected || (showYearDropdown ? new Date(new Date().getFullYear() - 20, new Date().getMonth()) : undefined)}
           disabled={maxDate ? { after: maxDate } : undefined}
           locale={showYearDropdown ? zhTW : undefined}
         />

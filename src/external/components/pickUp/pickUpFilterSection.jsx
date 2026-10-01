@@ -8,7 +8,7 @@ const sortOptions = [
     { value: "start_time", label: "快開始" },
 ];
 
-function FilterContent({ activeFilter, onFilterChange, onDatePicked, onClearDate, isMobile, onClose,
+function FilterContent({ activeFilter, onFilterChange, selectedDate, onDatePicked, onClearDate, isMobile, onClose,
     levels, levelRange, onLevelChange, levelsLoading, levelsError, onRetryLevels }) {
     const handleDatePicked = (day) => {
         onDatePicked(day.date);
@@ -58,7 +58,7 @@ function FilterContent({ activeFilter, onFilterChange, onDatePicked, onClearDate
                 <div className="flex flex-col gap-2">
                     <label className="text-xs font-bold tracking-wider text-gray-500">選擇日期</label>
                     <div className="flex items-center gap-2">
-                        <Calendar onDayPicked={handleDatePicked} />
+                        <Calendar selectedDate={selectedDate} onDayPicked={handleDatePicked} />
                         <button
                             type="button"
                             onClick={onClearDate}
@@ -89,18 +89,19 @@ function FilterContent({ activeFilter, onFilterChange, onDatePicked, onClearDate
     );
 }
 
-export default function PickUpFilterSection({ activeFilter, onFilterChange, onDatePicked, onClearDate,
+export default function PickUpFilterSection({ activeFilter, onFilterChange, selectedDate, onDatePicked, onClearDate,
     levels, levelRange, onLevelChange, levelsLoading, levelsError, onRetryLevels }) {
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const levelProps = { levels, levelRange, onLevelChange, levelsLoading, levelsError, onRetryLevels };
 
     return (
         <>
-            <aside className="sticky top-4 hidden w-72 shrink-0 lg:block">
+            <aside className="sticky top-4 hidden w-72 shrink-0 lg:block z-10">
                 <FilterContent
                     {...levelProps}
                     activeFilter={activeFilter}
                     onFilterChange={onFilterChange}
+                    selectedDate={selectedDate}
                     onDatePicked={onDatePicked}
                     onClearDate={onClearDate}
                 />
@@ -129,6 +130,7 @@ export default function PickUpFilterSection({ activeFilter, onFilterChange, onDa
                             {...levelProps}
                             activeFilter={activeFilter}
                             onFilterChange={onFilterChange}
+                            selectedDate={selectedDate}
                             onDatePicked={onDatePicked}
                             onClearDate={onClearDate}
                             isMobile

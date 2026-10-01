@@ -8,6 +8,7 @@ import PickUpFilterSection from "../components/pickUp/pickUpFilterSection";
 import { formatDateTime } from "../../utils/dateTimeFormat";
 import { errorPopup, successPopup } from "../../components/pop-up";
 import PickUpDetailPopUp from "../components/pickUp/pickUpDetailPopUp";
+import SkillLevelPrompt from "../components/pickUp/SkillLevelPrompt";
 
 import { facilityMap, functionIconMap, InfoIconMap, sportIconMap } from "../../constant/IconMap";
 import { statusMap } from "../../constant/statusMap";
@@ -15,19 +16,26 @@ import { zhTWDictionary } from "../../locale/zh-TW/translate";
 import { pickUpService } from "../../service/pickUpService";
 import { skillLevelService } from "../../service/skillLevelService";
 
+const isMissingSkillLevelError = (error) => error?.response?.status === 400
+    && /^skill level not set for this sport\b/i.test(String(error?.response?.data?.error || ""));
 
 
 export default function PickUpPage() {
     const navigate = useNavigate();
 
     const [groups, setGroups] = useState([]);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState("distance");
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [isDetailModalClosing, setIsDetailModalClosing] = useState(false);
     const [levels, setLevels] = useState([]);
+    const [myLevelStatus, setMyLevelStatus] = useState("checking");
+    const [levelDialogDismissed, setLevelDialogDismissed] = useState(false);
+    const [selectedMyLevel, setSelectedMyLevel] = useState("");
+    const [savingMyLevel, setSavingMyLevel] = useState(false);
+    const [myLevelSaveError, setMyLevelSaveError] = useState("");
     const [levelRange, setLevelRange] = useState(null);
     const [appliedLevelRange, setAppliedLevelRange] = useState(null);
     const [levelsLoading, setLevelsLoading] = useState(true);
@@ -49,11 +57,36 @@ export default function PickUpPage() {
 
     useEffect(() => {
         let cancelled = false;
+        setMyLevelStatus("checking");
+        setLevelDialogDismissed(false);
+        setSelectedMyLevel("");
+        setMyLevelSaveError("");
+
+        skillLevelService.getMyLevel(sportTypeId).then(() => {
+            if (!cancelled) setMyLevelStatus("ready");
+        }).catch((error) => {
+            if (cancelled) return;
+            if (isMissingSkillLevelError(error)) {
+                setMyLevelStatus("missing");
+            } else {
+                console.error("取得個人運動程度失敗:", error);
+                setMyLevelStatus("error");
+                errorPopup("讀取程度失敗", "目前無法確認你的運動程度，請稍後再試。");
+            }
+        });
+
+        return () => { cancelled = true; };
+    }, [sportTypeId]);
+
+    useEffect(() => {
+        let cancelled = false;
         setLevelsLoading(true);
+        setLoading(true);
         setLevelsError("");
         setLevels([]);
         setLevelRange(null);
         setAppliedLevelRange(null);
+
         const request = levelsRetry > 0
             ? skillLevelService.refreshSkillLevels(sportTypeId)
             : skillLevelService.getSkillLevels(sportTypeId);
@@ -80,6 +113,7 @@ export default function PickUpPage() {
     }, [levelRange]);
 
     useEffect(() => {
+        if (levelsLoading) return;
         let cancelled = false;
         const fetchGroups = async () => {
             setLoading(true);
@@ -97,7 +131,7 @@ export default function PickUpPage() {
             } catch (error) {
                 if (cancelled) return;
                 console.error("Error fetching groups:", error);
-                errorPopup(zhTWDictionary.pickUp.errorMessage.error, zhTWDictionary.pickUp.errorMessage.fetchFailed);
+                errorPopup(zhTWDictionary.pickUpPage.errorMessage.error, zhTWDictionary.pickUpPage.errorMessage.fetchFailed);
 
             } finally {
                 if (!cancelled) setLoading(false);
@@ -105,7 +139,7 @@ export default function PickUpPage() {
         }
         fetchGroups();
         return () => { cancelled = true; };
-    }, [sportTypeId, refreshTrigger, activeFilter, hasPosition, latitude, longitude, minSkillLevel, maxSkillLevel]);
+    }, [sportTypeId, refreshTrigger, activeFilter, hasPosition, latitude, longitude, minSkillLevel, maxSkillLevel, levelsLoading]);
 
     const handleJoinGroup = async (groupId) => {
         try {
@@ -123,6 +157,29 @@ export default function PickUpPage() {
             errorPopup(zhTWDictionary.pickUp.errorMessage.error, zhTWDictionary.pickUp.errorMessage.registrationFailed);
             setRefreshTrigger((pre) => pre + 1);
             return false;
+        }
+    };
+
+    const handleSaveMyLevel = async (event) => {
+        event.preventDefault();
+        const level = Number(selectedMyLevel);
+        if (!levels.some((item) => item.level === level)) {
+            setMyLevelSaveError("請先選擇有效的程度。");
+            return;
+        }
+
+        setSavingMyLevel(true);
+        setMyLevelSaveError("");
+        try {
+            await skillLevelService.setMyLevel(sportTypeId, level);
+            setMyLevelStatus("ready");
+            successPopup("設定成功", "你的運動程度已儲存。");
+        } catch (error) {
+            const apiMessage = error?.response?.data?.error;
+            setMyLevelSaveError(typeof apiMessage === "string" && apiMessage
+                ? apiMessage : "儲存程度失敗，請稍後再試。");
+        } finally {
+            setSavingMyLevel(false);
         }
     };
 
@@ -161,8 +218,27 @@ export default function PickUpPage() {
         <div>
             <Navbar />
             <h1 className="text-3xl font-bold text-center my-8">{zhTWDictionary.pickUpPage.title}</h1>
-            <Loading isLoading={loading} text={zhTWDictionary.pickUpPage.loadingMessage} />
+            <Loading isLoading={loading || levelsLoading} text={zhTWDictionary.pickUpPage.loadingMessage} />
 
+            {myLevelStatus === "missing" && levelDialogDismissed && (
+                <div className="mx-auto mb-4 flex w-[95%] max-w-7xl items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900" role="status">
+                    <span>你還沒有設定這個球類的程度。</span>
+                    <button type="button" onClick={() => setLevelDialogDismissed(false)} className="shrink-0 font-bold text-blue-700 underline">設定程度</button>
+                </div>
+            )}
+            {myLevelStatus === "missing" && !levelDialogDismissed && !loading && !levelsLoading && (
+                <SkillLevelPrompt
+                    levels={levels}
+                    levelsError={levelsError}
+                    value={selectedMyLevel}
+                    onChange={(value) => { setSelectedMyLevel(value); setMyLevelSaveError(""); }}
+                    onSave={handleSaveMyLevel}
+                    onClose={() => setLevelDialogDismissed(true)}
+                    onRetry={() => setLevelsRetry((previous) => previous + 1)}
+                    saving={savingMyLevel}
+                    saveError={myLevelSaveError}
+                />
+            )}
             <div className="mx-auto mb-8 w-[95%] max-w-7xl lg:flex lg:items-start lg:gap-6">
                 <PickUpFilterSection
                     levels={levels}
@@ -173,6 +249,7 @@ export default function PickUpPage() {
                     onRetryLevels={() => setLevelsRetry((previous) => previous + 1)}
                     activeFilter={activeFilter}
                     onFilterChange={setActiveFilter}
+                    selectedDate={selectedDate}
                     onDatePicked={setSelectedDate}
                     onClearDate={() => setSelectedDate(null)}
                 />
@@ -186,7 +263,6 @@ export default function PickUpPage() {
                         {groups.filter((group) => {
                             if (!selectedDate) return true;
                             const groupDate = formatDateTime(group.start_time).date;
-                            console.log("groupDate", groupDate, "selectedDate", formatDateTime(selectedDate).date);
                             return groupDate === formatDateTime(selectedDate).date;
                         }).map((group) => {
                             const isFull = Number(group.current_enrolled || 0) >= Number(group.capacity || 0);
@@ -282,12 +358,12 @@ export default function PickUpPage() {
                                                             ${(status !== null || isFull) ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"} 
                                                             ${isFull && status === null ? statusMap.full.class : (statusMap[status]?.class || statusMap.default.class)}
                                                         `}
-                                                                >
-                                                                    {status !== null
-                                                                        ? (statusMap[status]?.label || statusMap.default.label)
-                                                                        : isFull
-                                                                            ? statusMap.full.label
-                                                                            : statusMap.default.label}
+                                            >
+                                                {status !== null
+                                                    ? (statusMap[status]?.label || statusMap.default.label)
+                                                    : isFull
+                                                        ? statusMap.full.label
+                                                        : statusMap.default.label}
                                             </button>
                                         </div>
                                     </div>
