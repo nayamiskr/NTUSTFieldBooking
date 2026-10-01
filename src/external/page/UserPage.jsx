@@ -8,33 +8,24 @@ import Loading from "../../components/loading";
 import { errorPopup, successPopup } from "../../components/pop-up";
 import { isValidBirthDate } from "../../utils/validator";
 import Calendar from "../../components/dayPicker/dayPick";
+import { skillLevelService } from "../../service/skillLevelService";
 
-const mockLevels = ["初學", "初級", "中級", "進階"];
-const mockLevelKey = (user) => `profile-mock-level:${user.id ?? user.username ?? "current"}`;
+const isMissingSkillLevelError = (error) => error?.response?.status === 400
+    && /^skill level not set for this sport\b/i.test(String(error?.response?.data?.error || ""));
 
-const readMockLevel = (user) => {
-    try {
-        const savedLevel = localStorage.getItem(mockLevelKey(user));
-        return mockLevels.includes(savedLevel) ? savedLevel : "初級";
-    } catch {
-        return "初級";
-    }
+const readSkillLevel = (data) => {
+    const value = data?.skill_level?.level ?? data?.skill_level ?? data?.level;
+    if (value === null || value === undefined || value === "") return null;
+    const level = Number(value);
+    if (!Number.isInteger(level)) throw new Error("個人程度回應格式不正確");
+    return level;
 };
 
-const saveMockLevel = (user, level) => {
-    try {
-        localStorage.setItem(mockLevelKey(user), level);
-    } catch {
-        // 瀏覽器停用儲存空間時，本次畫面仍顯示更新後的程度。
-    }
-};
-
-const createEditableProfile = (user, level) => ({
+const createEditableProfile = (user) => ({
     display_name: user.display_name || "",
     phone: user.phone || "",
     gender: user.gender || "",
     birth_date: user.birth_date?.slice(0, 10) || "",
-    level,
 });
 
 const parseBirthDate = (value) => {
@@ -60,23 +51,26 @@ export function UserPage() {
     const [user, setUser] = useState(null);
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
-    const [mockLevel, setMockLevel] = useState("初級");
+    const [myLevel, setMyLevel] = useState(null);
+    const [selectedLevel, setSelectedLevel] = useState("");
+    const [levelOptions, setLevelOptions] = useState([]);
+    const [levelStatus, setLevelStatus] = useState("loading");
+    const [levelOptionsError, setLevelOptionsError] = useState(false);
+    const [levelRetry, setLevelRetry] = useState(0);
     const [formData, setFormData] = useState({
         display_name: "",
         phone: "",
         gender: "",
         birth_date: "",
-        level: "初級",
     });
+    const sportId = localStorage.getItem("sportType");
 
     useEffect(() => {
         const fetchUserProfile = async () => {
             try {
                 const profile = await getUserProfile();
-                const level = readMockLevel(profile);
                 setUser(profile);
-                setMockLevel(level);
-                setFormData(createEditableProfile(profile, level));
+                setFormData(createEditableProfile(profile));
             } catch (error) {
                 console.error("取得個人資料失敗：", error);
                 errorPopup("個人資料", "目前無法取得個人資料，請稍後再試。");
@@ -86,21 +80,66 @@ export function UserPage() {
         fetchUserProfile();
     }, []);
 
+    useEffect(() => {
+        if (!sportId) {
+            setLevelStatus("no-sport");
+            return;
+        }
+
+        let cancelled = false;
+        setLevelStatus("loading");
+        setLevelOptionsError(false);
+        const optionsRequest = levelRetry > 0
+            ? skillLevelService.refreshSkillLevels(sportId)
+            : skillLevelService.getSkillLevels(sportId);
+
+        Promise.allSettled([optionsRequest, skillLevelService.getMyLevel(sportId)])
+            .then(([optionsResult, levelResult]) => {
+                if (cancelled) return;
+                if (optionsResult.status === "fulfilled") {
+                    setLevelOptions(optionsResult.value);
+                } else {
+                    setLevelOptions([]);
+                    setLevelOptionsError(true);
+                }
+
+                if (levelResult.status === "fulfilled") {
+                    try {
+                        const level = readSkillLevel(levelResult.value);
+                        setMyLevel(level);
+                        setSelectedLevel(level === null ? "" : String(level));
+                        setLevelStatus(level === null ? "missing" : "ready");
+                    } catch {
+                        setLevelStatus("error");
+                    }
+                } else if (isMissingSkillLevelError(levelResult.reason)) {
+                    setMyLevel(null);
+                    setSelectedLevel("");
+                    setLevelStatus("missing");
+                } else {
+                    setLevelStatus("error");
+                }
+            });
+
+        return () => { cancelled = true; };
+    }, [sportId, levelRetry]);
+
     const handleInputChange = (event) => {
         const { name, value } = event.target;
         setFormData((current) => ({ ...current, [name]: value }));
     };
 
     const handleCancelEdit = () => {
-        setFormData(createEditableProfile(user, mockLevel));
+        setFormData(createEditableProfile(user));
+        setSelectedLevel(myLevel === null ? "" : String(myLevel));
         setIsEditing(false);
     };
 
     const handleSaveProfile = async (event) => {
         event.preventDefault();
 
-        if (!formData.display_name.trim() || !formData.gender || !formData.birth_date || !formData.level) {
-            errorPopup("資料不完整", "請填寫顯示名稱、性別、出生日期與程度。");
+        if (!formData.display_name.trim() || !formData.gender || !formData.birth_date) {
+            errorPopup("資料不完整", "請填寫顯示名稱、性別與出生日期。");
             return;
         }
         if (!isValidBirthDate(formData.birth_date)) {
@@ -108,30 +147,57 @@ export function UserPage() {
             return;
         }
 
+        const editableData = {
+            display_name: formData.display_name.trim(),
+            phone: formData.phone.trim(),
+            gender: formData.gender,
+            birth_date: formData.birth_date,
+        };
+        const savedProfile = createEditableProfile(user);
+        const profileChanged = Object.keys(editableData).some((key) => editableData[key] !== savedProfile[key]);
+        const level = selectedLevel === "" ? null : Number(selectedLevel);
+        const levelChanged = level !== null && level !== myLevel;
+        if (levelChanged && (!sportId || !levelOptions.some((item) => item.level === level))) {
+            errorPopup("程度選擇錯誤", "請先載入並選擇有效的程度。");
+            return;
+        }
+
+        let profileSaved = false;
+        let savingLevel = false;
         try {
             setIsSaving(true);
-            const editableData = {
-                display_name: formData.display_name.trim(),
-                phone: formData.phone.trim(),
-                gender: formData.gender,
-                birth_date: formData.birth_date,
-            };
-            const result = await updateUserProfile(editableData);
-            const updatedUser = result?.user || {};
-
-            setMockLevel(formData.level);
-            saveMockLevel(user, formData.level);
-            setUser((current) => ({
-                ...current,
-                ...editableData,
-                age: calculateAge(editableData.birth_date),
-                ...updatedUser,
-            }));
+            if (profileChanged) {
+                const result = await updateUserProfile(editableData);
+                const updatedUser = result?.user || {};
+                setUser((current) => ({
+                    ...current,
+                    ...editableData,
+                    age: calculateAge(editableData.birth_date),
+                    ...updatedUser,
+                }));
+                profileSaved = true;
+            }
+            if (levelChanged) {
+                savingLevel = true;
+                await skillLevelService.setMyLevel(sportId, level);
+                setMyLevel(level);
+                setLevelStatus("ready");
+            }
             setIsEditing(false);
-            successPopup("儲存成功", "個人資料已更新。");
+            if (profileChanged || levelChanged) {
+                successPopup("儲存成功", profileChanged && levelChanged
+                    ? "個人資料與程度已更新。"
+                    : levelChanged ? "程度已更新。" : "個人資料已更新。");
+            }
         } catch (error) {
-            console.error("更新個人資料失敗：", error);
-            errorPopup("儲存失敗", "無法更新個人資料，請稍後再試。");
+            console.error(savingLevel ? "更新程度失敗：" : "更新個人資料失敗：", error);
+            if (savingLevel) {
+                errorPopup("儲存程度失敗", profileSaved
+                    ? "基本資料已更新，但程度未更新。請重試儲存。"
+                    : "無法更新程度，請稍後再試。");
+            } else {
+                errorPopup("儲存失敗", "無法更新個人資料，請稍後再試。");
+            }
         } finally {
             setIsSaving(false);
         }
@@ -146,6 +212,11 @@ export function UserPage() {
         : "未提供";
     const genderMap = { male: "男性", female: "女性", other: "其他" };
     const today = new Date();
+    const levelLabel = levelOptions.find((item) => item.level === myLevel)?.label;
+    const displayedLevel = levelStatus === "loading" ? "讀取中..."
+        : levelStatus === "error" ? "暫時無法讀取"
+            : levelStatus === "no-sport" ? "尚未選擇球類"
+                : myLevel === null ? "尚未設定" : levelLabel || `等級 ${myLevel}`;
 
     return (
         <div className="min-h-screen bg-gray-50 pb-12">
@@ -232,13 +303,27 @@ export function UserPage() {
                                         />
                                     </div>
                                     <label className="block text-sm font-semibold text-slate-700">
-                                        程度（示範）
-                                        <select name="level" value={formData.level} onChange={handleInputChange} className="mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 font-normal outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100">
-                                            {mockLevels.map((level) => <option key={level} value={level}>{level}</option>)}
+                                        程度（目前球類）
+                                        <select
+                                            value={selectedLevel}
+                                            onChange={(event) => setSelectedLevel(event.target.value)}
+                                            disabled={isSaving || levelStatus === "loading" || levelStatus === "error" || levelStatus === "no-sport" || levelOptionsError || levelOptions.length === 0}
+                                            className="mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 font-normal outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:bg-gray-100"
+                                        >
+                                            <option value="" disabled>請選擇程度</option>
+                                            {levelOptions.map((item) => <option key={item.level} value={item.level}>{item.label}</option>)}
                                         </select>
                                     </label>
                                 </div>
-                                <p className="text-sm text-slate-500">程度是示範資料，只會儲存在此瀏覽器。Email、username、頭像與組織資料無法透過目前 API 修改。</p>
+                                {(levelStatus === "error" || levelOptionsError) && (
+                                    <p role="alert" className="text-sm text-red-600">
+                                        無法載入程度，請重試。
+                                        <button type="button" onClick={() => setLevelRetry((current) => current + 1)} className="ml-2 font-semibold underline">重新載入</button>
+                                    </p>
+                                )}
+                                {levelStatus === "no-sport" && <p className="text-sm text-slate-500">尚未選擇球類，請先選擇球類再設定程度。</p>}
+                                {!levelOptionsError && levelStatus !== "loading" && levelOptions.length === 0 && sportId && <p className="text-sm text-slate-500">目前沒有可選的程度。</p>}
+                                <p className="text-sm text-slate-500">Email、username、頭像與組織資料無法透過目前 API 修改。</p>
                                 <div className="flex justify-end gap-3 border-t border-gray-100 pt-4">
                                     <button type="button" onClick={handleCancelEdit} disabled={isSaving} className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-bold text-gray-700 transition hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-60">取消</button>
                                     <button type="submit" disabled={isSaving} className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">{isSaving ? "儲存中..." : "儲存變更"}</button>
@@ -277,8 +362,11 @@ export function UserPage() {
                                 <div className="flex items-center gap-3 rounded-lg bg-gray-50 px-4 py-3">
                                     <span className="text-blue-600"><Award size={19} /></span>
                                     <div>
-                                        <p className="text-xs font-semibold text-slate-500">程度（mock）</p>
-                                        <p className="mt-0.5 font-medium text-slate-800">{mockLevel}</p>
+                                        <p className="text-xs font-semibold text-slate-500">程度（目前球類）</p>
+                                        <p className="mt-0.5 font-medium text-slate-800">{displayedLevel}</p>
+                                        {(levelStatus === "error" || levelOptionsError) && (
+                                            <button type="button" onClick={() => setLevelRetry((current) => current + 1)} className="mt-1 text-xs font-semibold text-blue-600 underline">重新載入程度</button>
+                                        )}
                                     </div>
                                 </div>
                             </div>

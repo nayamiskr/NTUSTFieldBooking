@@ -18,12 +18,16 @@ import { skillLevelService } from "../../service/skillLevelService";
 const isMissingSkillLevelError = (error) => error?.response?.status === 400
     && /^skill level not set for this sport\b/i.test(String(error?.response?.data?.error || ""));
 const HOST_CREATE_URL = "https://vdmin.chenmh.dev/login";
+const PAGE_SIZES = [10, 20, 50];
 
 
 export default function PickUpPage() {
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState("distance");
+    const [page, setPage] = useState(1);
+    const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
+    const [pageInfo, setPageInfo] = useState({ total: 0, hasNext: false, pageSize: PAGE_SIZES[0] });
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null);
@@ -110,9 +114,14 @@ export default function PickUpPage() {
 
     // 拖曳時先更新顯示，停止操作一小段時間後才查詢球團。
     useEffect(() => {
-        const timer = window.setTimeout(() => setAppliedLevelRange(levelRange), 350);
+        if (levelRange?.[0] === appliedLevelRange?.[0]
+            && levelRange?.[1] === appliedLevelRange?.[1]) return;
+        const timer = window.setTimeout(() => {
+            setAppliedLevelRange(levelRange);
+            setPage(1);
+        }, 350);
         return () => window.clearTimeout(timer);
-    }, [levelRange]);
+    }, [levelRange, appliedLevelRange]);
 
     useEffect(() => {
         if (levelsLoading) return;
@@ -122,6 +131,8 @@ export default function PickUpPage() {
             try {
                 const data = await pickUpService.getPickUpList({
                     sport_id: sportTypeId,
+                    page,
+                    page_size: pageSize,
                     latitude: hasPosition ? latitude : undefined,
                     longitude: hasPosition ? longitude : undefined,
                     sort_by: activeFilter === "distance" && !hasPosition ? "start_time" : activeFilter,
@@ -129,10 +140,27 @@ export default function PickUpPage() {
                     min_skill_level: minSkillLevel,
                     max_skill_level: maxSkillLevel,
                 });
-                if (!cancelled) setGroups(data || []);
+                if (cancelled) return;
+                if (data.page !== page) {
+                    setPage(data.page);
+                    return;
+                }
+                const lastPage = data.total === null ? null : Math.max(1, Math.ceil(data.total / data.pageSize));
+                if (lastPage !== null && page > lastPage) {
+                    setPage(lastPage);
+                    return;
+                }
+                if (data.total === null && page > 1 && data.items.length === 0) {
+                    setPage(page - 1);
+                    return;
+                }
+                setGroups(data.items);
+                setPageInfo({ total: data.total, hasNext: data.hasNext, pageSize: data.pageSize });
             } catch (error) {
                 if (cancelled) return;
                 console.error("Error fetching groups:", error);
+                setGroups([]);
+                setPageInfo({ total: 0, hasNext: false, pageSize });
                 errorPopup(zhTWDictionary.pickUpPage.errorMessage.error, zhTWDictionary.pickUpPage.errorMessage.fetchFailed);
 
             } finally {
@@ -141,7 +169,7 @@ export default function PickUpPage() {
         }
         fetchGroups();
         return () => { cancelled = true; };
-    }, [sportTypeId, refreshTrigger, activeFilter, hasPosition, latitude, longitude, minSkillLevel, maxSkillLevel, levelsLoading]);
+    }, [sportTypeId, refreshTrigger, activeFilter, page, pageSize, hasPosition, latitude, longitude, minSkillLevel, maxSkillLevel, levelsLoading]);
 
     const promptForMyLevel = (groupId) => {
         setPendingJoinGroupId(groupId);
@@ -264,6 +292,14 @@ export default function PickUpPage() {
         }
     };
 
+    const pageCount = pageInfo.total === null
+        ? null : Math.max(1, Math.ceil(pageInfo.total / pageInfo.pageSize));
+    const visibleGroups = selectedDate
+        ? groups.filter((group) => formatDateTime(group.start_time).date === formatDateTime(selectedDate).date)
+        : groups;
+    const showPageControls = pageInfo.total === null
+        ? page > 1 || pageInfo.hasNext : pageInfo.total > 0;
+
     return (
         <div>
             <Navbar />
@@ -298,23 +334,23 @@ export default function PickUpPage() {
                     levelsError={levelsError}
                     onRetryLevels={() => setLevelsRetry((previous) => previous + 1)}
                     activeFilter={activeFilter}
-                    onFilterChange={setActiveFilter}
+                    onFilterChange={(filter) => { setActiveFilter(filter); setPage(1); }}
                     selectedDate={selectedDate}
-                    onDatePicked={setSelectedDate}
-                    onClearDate={() => setSelectedDate(null)}
+                    onDatePicked={(date) => { setSelectedDate(date); setPage(1); }}
+                    onClearDate={() => { setSelectedDate(null); setPage(1); }}
                 />
 
                 <main className="min-w-0 flex-1">
-                    <GroupNearbyMap groups={groups} onSelectGroup={openDetailModal} />
+                    <GroupNearbyMap groups={visibleGroups} onSelectGroup={openDetailModal} />
 
                     {/* {顯示臨打團清單} */}
-                    {!loading && groups.length === 0 && <p className="text-center text-gray-500">{zhTWDictionary.pickUpPage.groupEmpty}</p>}
+                    {!loading && visibleGroups.length === 0 && (
+                        <p className="text-center text-gray-500">
+                            {selectedDate ? "此頁沒有符合所選日期的臨打團，請切換頁面查看。" : zhTWDictionary.pickUpPage.groupEmpty}
+                        </p>
+                    )}
                     <div>
-                        {groups.filter((group) => {
-                            if (!selectedDate) return true;
-                            const groupDate = formatDateTime(group.start_time).date;
-                            return groupDate === formatDateTime(selectedDate).date;
-                        }).map((group) => {
+                        {visibleGroups.map((group) => {
                             const isFull = Number(group.current_enrolled || 0) >= Number(group.capacity || 0);
                             const status = group.enrolledStatus;
 
@@ -324,7 +360,7 @@ export default function PickUpPage() {
                                     {/* 標題與人數狀態 */}
                                     <div className="mb-3 flex items-start justify-between gap-3">
                                         <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                            <div className="flex min-w-0 flex-wrap items-start gap-2">
+                                            <div className="flex min-w-0 items-center gap-2">
                                                 <h2 className="min-w-0 max-w-[8em] break-words text-xl font-bold text-gray-900 sm:max-w-96">{group.title}</h2>
                                                 <p className="flex w-fit shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-gray-300 px-2 py-1 text-sm text-gray-600">
                                                     {sportIconMap[group.sport?.code]?.icon}
@@ -420,6 +456,31 @@ export default function PickUpPage() {
                             );
                         })}
                     </div>
+                    {!loading && (
+                        <nav aria-label="臨打團分頁" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700">
+                            <div className="flex items-center gap-2">
+                                <label htmlFor="pickup-page-size" className="font-medium">每頁顯示</label>
+                                <select
+                                    id="pickup-page-size"
+                                    value={pageSize}
+                                    onChange={(event) => { setPageSize(Number(event.target.value)); setPage(1); }}
+                                    className="rounded-lg border border-gray-300 bg-white px-2 py-2 text-gray-800"
+                                >
+                                    {PAGE_SIZES.map((size) => <option key={size} value={size}>{size} 筆</option>)}
+                                </select>
+                            </div>
+                            {showPageControls && (
+                                <div className="flex items-center gap-2">
+                                    <span className="whitespace-nowrap text-gray-500">
+                                        第 {page}{pageCount === null ? "" : ` / ${pageCount}`} 頁
+                                        {pageInfo.total === null ? "" : ` · 共 ${pageInfo.total} 筆`}
+                                    </span>
+                                    <button type="button" onClick={() => setPage((current) => Math.max(1, current - 1))} disabled={page <= 1} className="min-h-10 rounded-lg border border-gray-300 px-3 font-semibold text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40">上一頁</button>
+                                    <button type="button" onClick={() => setPage((current) => current + 1)} disabled={!pageInfo.hasNext} className="min-h-10 rounded-lg border border-gray-300 px-3 font-semibold text-blue-600 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-40">下一頁</button>
+                                </div>
+                            )}
+                        </nav>
+                    )}
                 </main>
 
                 {/* 臨打團詳細資訊浮動視窗 */}

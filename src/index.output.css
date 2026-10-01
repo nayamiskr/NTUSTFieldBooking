@@ -2069,6 +2069,11 @@
       cursor: wait;
     }
   }
+  .disabled\:bg-gray-100 {
+    &:disabled {
+      background-color: var(--color-gray-100);
+    }
+  }
   .disabled\:bg-slate-100 {
     &:disabled {
       background-color: var(--color-slate-100);

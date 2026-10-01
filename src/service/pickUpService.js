@@ -1,6 +1,5 @@
 import api from "../baseApi.js";
 import { locationService } from "./locationService.js";
-import { sportService } from "./sportService.js";
 
 export const pickUpService = {
   // 取得臨打團細節
@@ -16,7 +15,13 @@ export const pickUpService = {
       pickUpService.getMyPickUpList().catch(() => []),
     ]);
 
-    const pickups = res.data.items || [];
+    const { data } = res;
+    if (!Array.isArray(data.items)) throw new Error("臨打團清單回應格式不正確");
+    const pickups = data.items;
+    const page = Number.isInteger(data.page) && data.page > 0 ? data.page : params.page || 1;
+    const pageSize = Number.isInteger(data.page_size) && data.page_size > 0
+      ? data.page_size : params.page_size || 10;
+    const total = Number.isInteger(data.total) && data.total >= 0 ? data.total : null;
 
     // 建立一個映射，將我的訂單的 pickup_group_id 對應到其狀態
     const enrolledStatusMap = myOrders.reduce((acc, order) => {
@@ -52,7 +57,13 @@ export const pickUpService = {
         }
       }),
     );
-    return pickupWithLocation;
+    return {
+      items: pickupWithLocation,
+      total,
+      page,
+      pageSize,
+      hasNext: total === null ? pickups.length === pageSize : page * pageSize < total,
+    };
   },
 
   // 報名臨打團
