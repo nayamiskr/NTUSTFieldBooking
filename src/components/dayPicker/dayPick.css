@@ -133,6 +133,32 @@
   max-width: calc(100vw - 2rem);
 }
 
+@media (max-width: 639px) {
+  .calendar-container--birth {
+    right: auto;
+    left: 50%;
+    transform: translate(-50%, -4px);
+  }
+
+  .calendar-container--birth.active {
+    transform: translate(-50%, 0);
+  }
+}
+
+@media (max-width: 380px) {
+  .day-picker--birth {
+    --rdp-day-width: 36px;
+    --rdp-day-height: 36px;
+    padding: 10px;
+  }
+
+  .day-picker--birth button.rdp-day_button {
+    width: 34px;
+    height: 34px;
+    line-height: 34px;
+  }
+}
+
 .day-picker--birth {
   max-width: 100%;
 }

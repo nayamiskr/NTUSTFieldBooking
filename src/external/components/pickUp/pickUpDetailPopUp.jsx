@@ -2,7 +2,7 @@ import { statusMap } from "../../../constant/statusMap";
 import { formatDateTime } from "../../../utils/dateTimeFormat";
 import { facilityMap, functionIconMap, InfoIconMap, sportIconMap } from "../../../constant/IconMap";
 
-export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, closeDetailModal, isClosing, onContactHost }) {
+export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, closeDetailModal, isClosing, onContactHost, joining }) {
     const isFull = Number(selectedGroup.current_enrolled || 0) >= Number(selectedGroup.capacity || 0);
     const status = selectedGroup.enrolledStatus;
     const canJoin = status === null && !isFull;
@@ -47,7 +47,7 @@ export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, clos
             className={`max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-white shadow-2xl sm:max-w-2xl sm:rounded-2xl ${isClosing ? "pickup-modal-panel-leave" : "pickup-modal-panel-enter"}`}
             onMouseDown={(event) => event.stopPropagation()}
         >
-            <div className="sticky top-0 flex items-start justify-between border-b border-gray-100 bg-white px-5 py-3 sm:px-7">
+            <div className="sticky z-20 top-0 flex items-start justify-between border-b border-gray-100 bg-white px-5 py-3 sm:px-7">
                 <div className="min-w-0">
                     <h2 id="pickup-detail-title" className="mt-1 text-xl font-bold text-gray-900 sm:text-2xl">
                         {selectedGroup.title}
@@ -141,7 +141,7 @@ export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, clos
                                     src={hostAvatar}
                                     alt={`${hostName} 的頭像`}
                                     onError={(event) => { event.currentTarget.style.display = "none"; }}
-                                    className="absolute inset-0 h-full w-full object-cover"
+                                    className="absolute inset-0 h-full w-full object-cover z-0"
                                 />
                             )}
                         </div>
@@ -212,14 +212,14 @@ export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, clos
                 </button>
                 <button
                     type="button"
-                    disabled={!canJoin}
+                    disabled={!canJoin || joining}
                     onClick={async () => {
                         const joined = await handleJoinGroup(selectedGroup.id);
                         if (joined) closeDetailModal();
                     }}
-                    className={`min-h-11 flex-1 rounded-lg px-4 font-bold text-white transition ${!canJoin ? "cursor-not-allowed opacity-60" : "hover:opacity-90"} ${isFull && status === null ? statusMap.full.class : (statusMap[status]?.class || statusMap.default.class)}`}
+                    className={`min-h-11 flex-1 rounded-lg px-4 font-bold text-white transition ${!canJoin || joining ? "cursor-not-allowed opacity-60" : "hover:opacity-90"} ${isFull && status === null ? statusMap.full.class : (statusMap[status]?.class || statusMap.default.class)}`}
                 >
-                    {status !== null
+                    {joining ? "處理中..." : status !== null
                         ? (statusMap[status]?.label || statusMap.default.label)
                         : isFull
                             ? statusMap.full.label

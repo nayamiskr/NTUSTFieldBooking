@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 import Navbar from "../components/navbar";
 import Loading from "../../components/loading";
@@ -35,6 +35,9 @@ export default function PickUpPage() {
     const [selectedMyLevel, setSelectedMyLevel] = useState("");
     const [savingMyLevel, setSavingMyLevel] = useState(false);
     const [myLevelSaveError, setMyLevelSaveError] = useState("");
+    const [pendingJoinGroupId, setPendingJoinGroupId] = useState(null);
+    const [joiningGroupId, setJoiningGroupId] = useState(null);
+    const joinInFlight = useRef(false);
     const [levelRange, setLevelRange] = useState(null);
     const [appliedLevelRange, setAppliedLevelRange] = useState(null);
     const [levelsLoading, setLevelsLoading] = useState(true);
@@ -140,9 +143,44 @@ export default function PickUpPage() {
         return () => { cancelled = true; };
     }, [sportTypeId, refreshTrigger, activeFilter, hasPosition, latitude, longitude, minSkillLevel, maxSkillLevel, levelsLoading]);
 
-    const handleJoinGroup = async (groupId) => {
+    const promptForMyLevel = (groupId) => {
+        setPendingJoinGroupId(groupId);
+        setSelectedMyLevel("");
+        setMyLevelSaveError("");
+        setMyLevelStatus("missing");
+        setLevelDialogDismissed(false);
+    };
+
+    const handleJoinGroup = async (groupId, skipLevelCheck = false) => {
+        if (joinInFlight.current) return false;
+        joinInFlight.current = true;
+        setJoiningGroupId(groupId);
+
         try {
-            await pickUpService.joinPickUpGroup(groupId);
+            if (!skipLevelCheck) {
+                try {
+                    await skillLevelService.getMyLevel(sportTypeId);
+                    setMyLevelStatus("ready");
+                } catch (error) {
+                    if (isMissingSkillLevelError(error)) {
+                        promptForMyLevel(groupId);
+                    } else {
+                        errorPopup("讀取程度失敗", "目前無法確認你的運動程度，請稍後再試。");
+                    }
+                    return false;
+                }
+            }
+
+            try {
+                await pickUpService.joinPickUpGroup(groupId);
+            } catch (error) {
+                if (isMissingSkillLevelError(error)) {
+                    promptForMyLevel(groupId);
+                    return false;
+                }
+                throw error;
+            }
+
             setGroups((prevGroups) =>
                 prevGroups.map((group) => group.id === groupId ? {
                     ...group, enrolledStatus: "pending",
@@ -156,6 +194,9 @@ export default function PickUpPage() {
             errorPopup(zhTWDictionary.pickUpPage.errorMessage.error, zhTWDictionary.pickUpPage.errorMessage.registrationFailed);
             setRefreshTrigger((pre) => pre + 1);
             return false;
+        } finally {
+            joinInFlight.current = false;
+            setJoiningGroupId(null);
         }
     };
 
@@ -172,7 +213,17 @@ export default function PickUpPage() {
         try {
             await skillLevelService.setMyLevel(sportTypeId, level);
             setMyLevelStatus("ready");
-            successPopup("設定成功", "你的運動程度已儲存。");
+            const groupId = pendingJoinGroupId;
+            setPendingJoinGroupId(null);
+            if (groupId) {
+                const joined = await handleJoinGroup(groupId, true);
+                if (joined && selectedGroup?.id === groupId) {
+                    setSelectedGroup(null);
+                    setIsDetailModalClosing(false);
+                }
+            } else {
+                successPopup("設定成功", "你的運動程度已儲存。");
+            }
         } catch (error) {
             const apiMessage = error?.response?.data?.error;
             setMyLevelSaveError(typeof apiMessage === "string" && apiMessage
@@ -232,7 +283,7 @@ export default function PickUpPage() {
                     value={selectedMyLevel}
                     onChange={(value) => { setSelectedMyLevel(value); setMyLevelSaveError(""); }}
                     onSave={handleSaveMyLevel}
-                    onClose={() => setLevelDialogDismissed(true)}
+                    onClose={() => { setPendingJoinGroupId(null); setLevelDialogDismissed(true); }}
                     onRetry={() => setLevelsRetry((previous) => previous + 1)}
                     saving={savingMyLevel}
                     saveError={myLevelSaveError}
@@ -271,19 +322,19 @@ export default function PickUpPage() {
                                 <div key={group.id} className="mx-auto mb-4 p-5 border border-gray-200 rounded-xl shadow-sm bg-white">
 
                                     {/* 標題與人數狀態 */}
-                                    <div className="flex justify-between items-start mb-3">
-                                        <div className="flex flex-col gap-1">
-                                            <div className="flex flex-row gap-2 items-center">
-                                                <h2 className="text-xl font-bold text-gray-900">{group.title}</h2>
-                                                <p className="text-sm text-gray-600 border border-gray-300 rounded-md px-2 py-1 flex flex-row gap-1 items-center">
-                                                    {sportIconMap[group.sport.code]?.icon}
+                                    <div className="mb-3 flex items-start justify-between gap-3">
+                                        <div className="flex min-w-0 flex-1 flex-col gap-1">
+                                            <div className="flex min-w-0 flex-wrap items-start gap-2">
+                                                <h2 className="min-w-0 max-w-[8em] break-words text-xl font-bold text-gray-900 sm:max-w-96">{group.title}</h2>
+                                                <p className="flex w-fit shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-gray-300 px-2 py-1 text-sm text-gray-600">
+                                                    {sportIconMap[group.sport?.code]?.icon}
                                                     {group.sport?.name || "-"}
                                                 </p>
                                             </div>
-                                            <p className="text-sm font-semibold text-gray-400">{zhTWDictionary.pickUpPage.label.hostName} {group.host?.display_name || "-"}</p>
+                                            <p className="break-words text-sm font-semibold text-gray-400">{zhTWDictionary.pickUpPage.label.hostName} {group.host?.display_name || "-"}</p>
                                         </div>
 
-                                        <div className={`text-sm font-semibold px-3 py-1 rounded-full ${isFull ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}`}>
+                                        <div className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1 text-sm font-semibold ${isFull ? "bg-red-50 text-red-600" : "bg-blue-50 text-blue-600"}`}>
                                             {group.current_enrolled || 0}/{group.capacity || 0} 人
                                         </div>
                                     </div>
@@ -334,7 +385,7 @@ export default function PickUpPage() {
                                     {/*費用程度標籤與報名按鈕 */}
                                     <div className="flex flex-col sm:flex-row justify-between items-center mt-4 pt-4 border-t border-gray-100 gap-4">
                                         <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
-                                            <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-base font-medium">{zhTWDictionary.pickUpPage.label.level}: {group.min_skill_level.label || zhTWDictionary.pickUpPage.label.levelNull} {(group.max_skill_level.level == group.min_skill_level.level || !group.max_skill_level.label) ? "" : "- " + group.max_skill_level.label}</span>
+                                            <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-base font-medium">{zhTWDictionary.pickUpPage.label.level}: {group.min_skill_level.label || zhTWDictionary.pickUpPage.label.levelNull} {(Number(group.max_skill_level.level) === Number(group.min_skill_level.level) || !group.max_skill_level.label) ? "" : "- " + group.max_skill_level.label}</span>
                                             <span className={`px-3 py-1 my-[auto] rounded-md text-base font-bold border ${(group.fee !== 0) ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-700'}`} >$ {group.fee}</span>
 
                                         </div>
@@ -351,12 +402,11 @@ export default function PickUpPage() {
 
                                             {/* 報名按鈕 */}
                                             <button
-                                                disabled={status !== null || isFull}
+                                                disabled={status !== null || isFull || joiningGroupId === group.id}
                                                 onClick={() => handleJoinGroup(group.id)}
-                                                className={`min-h-11 flex-1 rounded-lg px-6 py-2 font-bold tracking-wide text-white transition sm:flex-none 
-                                                            ${(status !== null || isFull) ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"} 
-                                                            ${isFull && status === null ? statusMap.full.class : (statusMap[status]?.class || statusMap.default.class)}
-                                                        `}
+                                                className={`min-h-11 flex-1 rounded-lg px-6 py-2 font-bold tracking-wide text-white transition sm:flex-none
+                                                    ${(status !== null || isFull || joiningGroupId === group.id) ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"}
+                                                    ${isFull && status === null ? statusMap.full.class : (statusMap[status]?.class || statusMap.default.class)}`}
                                             >
                                                 {status !== null
                                                     ? (statusMap[status]?.label || statusMap.default.label)
@@ -382,6 +432,7 @@ export default function PickUpPage() {
                         <PickUpDetailPopUp
                             selectedGroup={selectedGroup}
                             handleJoinGroup={handleJoinGroup}
+                            joining={joiningGroupId === selectedGroup.id}
                             closeDetailModal={closeDetailModal}
                             isClosing={isDetailModalClosing}
                             onContactHost={handleContactHost}

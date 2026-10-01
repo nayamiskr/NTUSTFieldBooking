@@ -13,7 +13,6 @@ const inputClassName = "mt-1.5 w-full rounded-lg border border-gray-300 bg-white
 const formatBirthDate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 
 function RegisterPage() {
-  const [errorMessage, setErrorMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const [birthDate, setBirthDate] = useState("");
   const navigate = useNavigate();
@@ -37,12 +36,11 @@ function RegisterPage() {
 
     const validationError = validateRegister(formData);
     if (validationError) {
-      setErrorMessage(validationError);
+      errorPopup(zhTWDictionary.registerPage.errorMessage.error, validationError);
       return;
     }
 
     setLoading(true);
-    setErrorMessage("");
     try {
       await registerService.registerAccount({
         email: formData.email,
@@ -54,9 +52,12 @@ function RegisterPage() {
       });
       navigate("/");
     } catch (error) {
-      errorPopup(error?.response?.status === 409
-        ? zhTWDictionary.registerPage.errorMessage.emailExist
-        : zhTWDictionary.registerPage.errorMessage.registrationFailed);
+      errorPopup(
+        zhTWDictionary.registerPage.errorMessage.error,
+        error?.response?.status === 409
+          ? zhTWDictionary.registerPage.errorMessage.emailExist
+          : zhTWDictionary.registerPage.errorMessage.registrationFailed
+      );
     } finally {
       setLoading(false);
     }
@@ -123,8 +124,6 @@ function RegisterPage() {
                 <InputElement label={labels.confirmPassword} name="confirmPassword" type="password" placeholder={placeholders.confirmPassword} autoComplete="new-password" required className={inputClassName} />
               </div>
             </section>
-
-            {errorMessage && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{errorMessage}</p>}
 
             <button type="submit" disabled={loading} className="min-h-11 w-full rounded-lg bg-blue-600 px-4 py-2.5 font-bold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60">
               {loading ? zhTWDictionary.registerPage.button.registering : "建立帳號"}
