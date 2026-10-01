@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 
 import Navbar from "../components/navbar";
 import Loading from "../../components/loading";
@@ -18,17 +17,17 @@ import { skillLevelService } from "../../service/skillLevelService";
 
 const isMissingSkillLevelError = (error) => error?.response?.status === 400
     && /^skill level not set for this sport\b/i.test(String(error?.response?.data?.error || ""));
+const HOST_CREATE_URL = "https://vdmin.chenmh.dev/login";
 
 
 export default function PickUpPage() {
-    const navigate = useNavigate();
-
     const [groups, setGroups] = useState([]);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState("distance");
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null);
+    const [showHostRedirectPrompt, setShowHostRedirectPrompt] = useState(false);
     const [isDetailModalClosing, setIsDetailModalClosing] = useState(false);
     const [levels, setLevels] = useState([]);
     const [myLevelStatus, setMyLevelStatus] = useState("checking");
@@ -151,10 +150,10 @@ export default function PickUpPage() {
                 } : group)
             );
 
-            successPopup("", zhTWDictionary.pickUp.successMessage.registrationSuccess);
+            successPopup("", zhTWDictionary.pickUpPage.successMessage.registrationSuccess);
             return true;
         } catch (error) {
-            errorPopup(zhTWDictionary.pickUp.errorMessage.error, zhTWDictionary.pickUp.errorMessage.registrationFailed);
+            errorPopup(zhTWDictionary.pickUpPage.errorMessage.error, zhTWDictionary.pickUpPage.errorMessage.registrationFailed);
             setRefreshTrigger((pre) => pre + 1);
             return false;
         }
@@ -399,14 +398,33 @@ export default function PickUpPage() {
                     <span className="font-bold tracking-wider">{zhTWDictionary.pickUpPage.button.refresh}</span>
                 </button>
 
-                {/* 申請加入臨打團按鈕 */}
+                {/* 開團入口 */}
                 <button
-                    onClick={() => navigate("/external/apply-host")}
+                    type="button"
+                    onClick={() => setShowHostRedirectPrompt(true)}
                     className="fixed bottom-4 left-4 z-50 flex items-center justify-center gap-2 bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
                 >
                     {functionIconMap.add.icon}
                     <span className="font-bold tracking-wider">{zhTWDictionary.pickUpPage.button.hostApply}</span>
                 </button>
+
+                {showHostRedirectPrompt && (
+                    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/55 px-4 py-6">
+                        <div role="dialog" aria-modal="true" aria-labelledby="host-redirect-title" aria-describedby="host-redirect-description" className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl sm:p-7">
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <h2 id="host-redirect-title" className="text-xl font-bold text-slate-900">前往新增臨打團</h2>
+                                    <p id="host-redirect-description" className="mt-2 text-sm leading-6 text-slate-600">目前將前往新增臨打團的頁面。</p>
+                                </div>
+                                <button type="button" onClick={() => setShowHostRedirectPrompt(false)} aria-label="關閉提示" className="rounded-lg px-2 py-1 text-xl text-slate-500 hover:bg-slate-100">×</button>
+                            </div>
+                            <div className="mt-6 flex justify-end gap-3">
+                                <button type="button" onClick={() => setShowHostRedirectPrompt(false)} className="rounded-lg border border-slate-300 px-4 py-2.5 font-semibold text-slate-700 hover:bg-slate-50">取消</button>
+                                <a href={HOST_CREATE_URL} className="rounded-lg bg-blue-600 px-5 py-2.5 font-semibold text-white hover:bg-blue-700">前往</a>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     )

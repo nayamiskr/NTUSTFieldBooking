@@ -80,6 +80,7 @@ export const pickUpService = {
           ...order,
           location: locationInfo,
           title: pickUpdetail.title,
+          sport: pickUpdetail.sport || order.sport,
           start_time: pickUpdetail.start_time,
           end_time: pickUpdetail.end_time,
         };

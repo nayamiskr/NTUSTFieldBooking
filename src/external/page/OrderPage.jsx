@@ -5,6 +5,32 @@ import { bookingService } from "../../service/bookingService";
 import { pickUpService } from "../../service/pickUpService";
 import { statusMap } from "../../constant/statusMap";
 import { formatDateTime } from "../../utils/dateTimeFormat";
+import { sportIconMap } from "../../constant/IconMap";
+
+const resourceSportCodes = {
+    baseball: "BASEBALL",
+    volleyball: "VOLLEYBALL",
+    badminton: "BADMINTON",
+    tennis: "TENNIS",
+    football: "SOCCER",
+    soccer: "SOCCER",
+    basketball: "BASKETBALL",
+};
+
+function OrderSportTag({ order }) {
+    const sport = order.sport;
+    const resourceType = order.resource?.resource_type?.toLowerCase();
+    const code = (typeof sport === "string" ? sport : sport?.code) || resourceSportCodes[resourceType];
+    const name = (typeof sport === "object" ? sport?.name : null) || sportIconMap[code]?.name;
+    if (!name) return null;
+
+    return (
+        <span className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-2 py-1 text-sm font-normal text-gray-600">
+            {sportIconMap[code]?.icon}
+            {name}
+        </span>
+    );
+}
 
 export default function OrderPage() {
     const [orders, setOrders] = useState(null);
@@ -25,7 +51,7 @@ export default function OrderPage() {
                 user_id: userId,
             }
             try {
-                const bookingRes = await bookingService.getBookingList(query);
+                const bookingRes = await bookingService.getBookingList(query, true);
                 const pickUpRes = await pickUpService.getMyPickUpList(true);
                 setOrders({ booking: bookingRes, pickUp: pickUpRes });
             } catch (err) {
@@ -137,16 +163,19 @@ export default function OrderPage() {
 
                         {/* Order List */}
                         <ul>
-                            {(activeTab === "booking" ? orders.booking?.items : orders.pickUp)?.map((order, index) => (
+                            {(activeTab === "booking" ? orders.booking?.items : orders.pickUp)?.map((order) => (
                                 <li key={order.id} className={`w-[95%] md:w-[50%] mx-auto mb-4 p-5 border border-gray-200 rounded-xl shadow-sm bg-white ${order.status === "cancelled" ? "opacity-40" : ""}`}>
 
                                     {/* 標題與狀態 */}
                                     <div className="flex justify-between items-start mb-3 gap-3">
-                                        <h2 className="text-xl font-bold text-gray-900 break-words">
-                                            {activeTab === "booking"
-                                                ? `${order.location?.name} ${order.resource ? `- ${order.resource.name}` : ""}`
-                                                : `${order.title}`}
-                                        </h2>
+                                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                                            <h2 className="text-xl font-bold text-gray-900 break-words">
+                                                {activeTab === "booking"
+                                                    ? `${order.location?.name} ${order.resource ? `- ${order.resource.name}` : ""}`
+                                                    : `${order.title}`}
+                                            </h2>
+                                            <OrderSportTag order={order} />
+                                        </div>
                                         <div className={`shrink-0 px-3 py-1 rounded-md font-bold text-white font-medium ${statusMap[order.status]?.class || ""}`}>
                                             {statusMap[order.status]?.label || order.status}
                                         </div>
