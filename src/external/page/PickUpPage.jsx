@@ -457,7 +457,7 @@ export default function PickUpPage() {
                         })}
                     </div>
                     {!loading && (
-                        <nav aria-label="臨打團分頁" className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700">
+                        <nav aria-label="臨打團分頁" className="mt-6 mb-22 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-700">
                             <div className="flex items-center gap-2">
                                 <label htmlFor="pickup-page-size" className="font-medium">每頁顯示</label>
                                 <select
