@@ -1,4 +1,3 @@
-import { useState } from "react";
 import Calendar from "../../../components/dayPicker/dayPick";
 import { functionIconMap } from "../../../constant/IconMap";
 import { DoubleSlide } from "../../../components/rangeSlide";
@@ -28,6 +27,7 @@ function FilterContent({ activeFilter, onFilterChange, selectedDate, onDatePicke
                     <button
                         type="button"
                         onClick={onClose}
+                        aria-label="關閉篩選"
                         className="grid h-9 w-9 place-items-center rounded-full text-xl text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
                     >
                         {functionIconMap.cancel.icon}
@@ -90,8 +90,7 @@ function FilterContent({ activeFilter, onFilterChange, selectedDate, onDatePicke
 }
 
 export default function PickUpFilterSection({ activeFilter, onFilterChange, selectedDate, onDatePicked, onClearDate,
-    levels, levelRange, onLevelChange, levelsLoading, levelsError, onRetryLevels }) {
-    const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+    levels, levelRange, onLevelChange, levelsLoading, levelsError, onRetryLevels, isMobileOpen, onMobileClose }) {
     const levelProps = { levels, levelRange, onLevelChange, levelsLoading, levelsError, onRetryLevels };
 
     return (
@@ -107,25 +106,15 @@ export default function PickUpFilterSection({ activeFilter, onFilterChange, sele
                 />
             </aside>
 
-            <div className="mb-4 lg:hidden">
-                <button
-                    type="button"
-                    aria-expanded={isMobileFilterOpen}
-                    aria-controls="mobile-pickup-filters"
-                    onClick={() => setIsMobileFilterOpen((isOpen) => !isOpen)}
-                    className="ml-auto grid h-11 w-11 place-items-center rounded-lg border border-blue-200 bg-white text-blue-700 shadow-sm transition-opacity duration-300 hover:bg-blue-50"
-                >
-                    {functionIconMap.filter.icon}
-                </button>
-
+            <div className={`${isMobileOpen ? "mb-4" : ""} lg:hidden`}>
                 <div
                     id="mobile-pickup-filters"
-                    className={`relative z-20 grid transition-[grid-template-rows,opacity,transform] duration-500 ease-out-in ${isMobileFilterOpen
+                    className={`relative z-20 grid transition-[grid-template-rows,opacity,transform] duration-500 ease-out-in ${isMobileOpen
                         ? "grid-rows-[1fr] translate-y-2 overflow-visible opacity-100"
                         : "grid-rows-[0fr] translate-y-2 overflow-hidden opacity-0 pointer-events-none"
                         }`}
                 >
-                    <div className={isMobileFilterOpen ? "overflow-visible" : "overflow-hidden"}>
+                    <div className={isMobileOpen ? "overflow-visible" : "overflow-hidden"}>
                         <FilterContent
                             {...levelProps}
                             activeFilter={activeFilter}
@@ -134,7 +123,7 @@ export default function PickUpFilterSection({ activeFilter, onFilterChange, sele
                             onDatePicked={onDatePicked}
                             onClearDate={onClearDate}
                             isMobile
-                            onClose={() => setIsMobileFilterOpen(false)}
+                            onClose={onMobileClose}
                         />
                     </div>
                 </div>

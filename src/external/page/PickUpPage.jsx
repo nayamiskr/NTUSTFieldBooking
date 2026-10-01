@@ -28,6 +28,7 @@ export default function PickUpPage() {
     const [page, setPage] = useState(1);
     const [pageSize, setPageSize] = useState(PAGE_SIZES[0]);
     const [pageInfo, setPageInfo] = useState({ total: 0, hasNext: false, pageSize: PAGE_SIZES[0] });
+    const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null);
@@ -303,7 +304,19 @@ export default function PickUpPage() {
     return (
         <div>
             <Navbar />
-            <h1 className="text-3xl font-bold text-center my-8">{zhTWDictionary.pickUpPage.title}</h1>
+            <header className="relative mx-auto my-8 w-[95%] max-w-7xl">
+                <h1 className="px-12 text-center text-3xl font-bold">{zhTWDictionary.pickUpPage.title}</h1>
+                <button
+                    type="button"
+                    aria-label="篩選球團"
+                    aria-expanded={isMobileFilterOpen}
+                    aria-controls="mobile-pickup-filters"
+                    onClick={() => setIsMobileFilterOpen((isOpen) => !isOpen)}
+                    className="absolute right-0 top-1/2 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-lg border border-blue-200 bg-white text-blue-700 shadow-sm transition-opacity duration-300 hover:bg-blue-50 lg:hidden"
+                >
+                    {functionIconMap.filter.icon}
+                </button>
+            </header>
             <Loading isLoading={loading || levelsLoading} text={zhTWDictionary.pickUpPage.loadingMessage} />
 
             {myLevelStatus === "missing" && levelDialogDismissed && (
@@ -327,6 +340,8 @@ export default function PickUpPage() {
             )}
             <div className="mx-auto mb-8 w-[95%] max-w-7xl lg:flex lg:items-start lg:gap-6">
                 <PickUpFilterSection
+                    isMobileOpen={isMobileFilterOpen}
+                    onMobileClose={() => setIsMobileFilterOpen(false)}
                     levels={levels}
                     levelRange={levelRange}
                     onLevelChange={setLevelRange}
@@ -421,7 +436,7 @@ export default function PickUpPage() {
                                     {/*費用程度標籤與報名按鈕 */}
                                     <div className="flex flex-col sm:flex-row justify-between items-center mt-4 pt-4 border-t border-gray-100 gap-4">
                                         <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
-                                            <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-base font-medium">{zhTWDictionary.pickUpPage.label.level}: {group.min_skill_level.label || zhTWDictionary.pickUpPage.label.levelNull} {(Number(group.max_skill_level.level) === Number(group.min_skill_level.level) || !group.max_skill_level.label) ? "" : "- " + group.max_skill_level.label}</span>
+                                            <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-base font-medium">{zhTWDictionary.pickUpPage.label.level}: {group.min_skill_level.label || zhTWDictionary.pickUpPage.label.levelNull} {(Number(group.max_skill_level?.level) === Number(group.min_skill_level.level) || !group.max_skill_level?.label) ? "" : "- " + group.max_skill_level?.label}</span>
                                             <span className={`px-3 py-1 my-[auto] rounded-md text-base font-bold border ${(group.fee !== 0) ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-700'}`} >$ {group.fee}</span>
 
                                         </div>
