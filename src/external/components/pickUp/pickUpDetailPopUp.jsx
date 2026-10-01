@@ -7,11 +7,18 @@ export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, clos
     const status = selectedGroup.enrolledStatus;
     const canJoin = status === null && !isFull;
     const detailNote = selectedGroup.description || "主揪尚未提供額外備註。";
-    const hasParking = selectedGroup.facilities?.includes("parking");
-    const parkingDetail = selectedGroup.location?.parking_info
-        || selectedGroup.location?.parking_detail
-        || (typeof selectedGroup.location?.parking === "string" ? selectedGroup.location.parking : null)
-        || (hasParking ? "停車場" : "場地未提供停車資訊。");
+    const location = selectedGroup.location || {};
+    const parkingName = typeof location.parking_name === "string" ? location.parking_name.trim() : "";
+    const parkingLatitude = Number(location.parking_latitude);
+    const parkingLongitude = Number(location.parking_longitude);
+    const hasParkingCoordinates = location.parking_latitude !== null && location.parking_latitude !== undefined && location.parking_latitude !== ""
+        && location.parking_longitude !== null && location.parking_longitude !== undefined && location.parking_longitude !== ""
+        && Number.isFinite(parkingLatitude) && Number.isFinite(parkingLongitude)
+        && Math.abs(parkingLatitude) <= 90 && Math.abs(parkingLongitude) <= 180
+        && (parkingLatitude !== 0 || parkingLongitude !== 0);
+    const parkingDirectionsUrl = hasParkingCoordinates
+        ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${parkingLatitude},${parkingLongitude}`)}&travelmode=driving&dir_action=navigate`
+        : null;
     const host = selectedGroup.host || {};
     const hostName = host.display_name || host.username || "未提供主揪資訊";
     const hostUsername = host.username || "未提供 username";
@@ -26,6 +33,11 @@ export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, clos
 
         const query = encodeURIComponent(`${latitude},${longitude}`);
         window.open(`https://www.google.com/maps/search/?api=1&query=${query}`, "_blank", "noopener,noreferrer");
+    };
+
+    const openParkingInGoogleMaps = () => {
+        if (!parkingDirectionsUrl) return;
+        window.open(parkingDirectionsUrl, "_blank", "noopener,noreferrer");
     };
 
     return (
@@ -167,13 +179,22 @@ export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, clos
                     </div>
                 </div>
 
-                <div className="rounded-xl border border-blue-100  px-4 py-3">
-                    <div className="flex items-center gap-2 text-sm font-bold text-gray-900">
-                        <span className="text-blue-700">{facilityMap.parking.icon}</span>
-                        停車資訊
-                    </div>
-                    <p className="mt-1 text-sm leading-5 text-gray-700">{parkingDetail}</p>
-                </div>
+                <button
+                    type="button"
+                    disabled={!parkingDirectionsUrl}
+                    title={parkingDirectionsUrl ? "在 Google Maps 開啟停車場導航" : "此停車場尚未提供座標"}
+                    onClick={openParkingInGoogleMaps}
+                    className={`w-full rounded-xl border px-4 py-3 text-left shadow-sm transition ${parkingDirectionsUrl
+                        ? "border-gray-100 bg-white hover:border-blue-200 hover:bg-blue-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+                        : "cursor-not-allowed border-gray-100 bg-gray-50 text-gray-400"
+                        }`}
+                >
+                    <span className="flex items-center gap-2 font-semibold text-gray-900">
+                        <span className="text-lg text-blue-600">{facilityMap.parking.icon}</span>
+                        {parkingName || "停車場"}
+                    </span>
+                    {parkingDirectionsUrl && <span className="mt-2 block text-xs font-semibold text-blue-600">點擊查看地圖 →</span>}
+                </button>
 
                 <div>
                     <h3 className="font-bold text-gray-900">主揪備註</h3>

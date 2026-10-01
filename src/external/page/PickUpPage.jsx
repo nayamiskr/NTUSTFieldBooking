@@ -254,7 +254,7 @@ export default function PickUpPage() {
                 />
 
                 <main className="min-w-0 flex-1">
-                    <GroupNearbyMap groups={groups} />
+                    <GroupNearbyMap groups={groups} onSelectGroup={openDetailModal} />
 
                     {/* {顯示臨打團清單} */}
                     {!loading && groups.length === 0 && <p className="text-center text-gray-500">{zhTWDictionary.pickUpPage.groupEmpty}</p>}
@@ -334,7 +334,7 @@ export default function PickUpPage() {
                                     {/*費用程度標籤與報名按鈕 */}
                                     <div className="flex flex-col sm:flex-row justify-between items-center mt-4 pt-4 border-t border-gray-100 gap-4">
                                         <div className="flex items-center justify-between gap-2 w-full sm:w-auto">
-                                            <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-base font-medium">{zhTWDictionary.pickUpPage.label.level}: {group.min_skill_level.label || zhTWDictionary.pickUpPage.label.levelNull} {"- " + group.max_skill_level.label || ""}</span>
+                                            <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-md text-base font-medium">{zhTWDictionary.pickUpPage.label.level}: {group.min_skill_level.label || zhTWDictionary.pickUpPage.label.levelNull} {(group.max_skill_level.level == group.min_skill_level.level || !group.max_skill_level.label) ? "" : "- " + group.max_skill_level.label}</span>
                                             <span className={`px-3 py-1 my-[auto] rounded-md text-base font-bold border ${(group.fee !== 0) ? 'text-green-700 bg-green-50 border-green-200' : 'text-gray-700'}`} >$ {group.fee}</span>
 
                                         </div>

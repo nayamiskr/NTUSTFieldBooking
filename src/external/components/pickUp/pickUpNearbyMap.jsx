@@ -1,5 +1,5 @@
-import { GoogleMap, useJsApiLoader, Marker, OverlayView } from '@react-google-maps/api';
-import { useEffect, useRef, useState } from 'react';
+import { GoogleMap, useJsApiLoader, OverlayView } from '@react-google-maps/api';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { RiMapPin2Fill, RiMapPinUserFill } from "react-icons/ri";
 import { IoPinSharp } from "react-icons/io5";
 
@@ -12,16 +12,48 @@ const containerStyle = {
     zIndex: 0,
 }
 
-export default function GroupNearbyMap({ groups }) {
+const defaultCenter = { lat: 25.013, lng: 121.541 };
+const markerOffset = () => ({ x: -12, y: -24 });
+const hasCoordinateValue = (value) => value !== null && value !== undefined && String(value).trim() !== '';
+
+const isValidPosition = ({ lat, lng }) => Number.isFinite(lat) && Number.isFinite(lng)
+    && Math.abs(lat) <= 90 && Math.abs(lng) <= 180 && (lat !== 0 || lng !== 0);
+
+export default function GroupNearbyMap({ groups, onSelectGroup }) {
     const [currentPosition, setCurrentPosition] = useState(() => {
-        const savedPosition = localStorage.getItem('currentPosition');
-        if (savedPosition) {
-            return JSON.parse(savedPosition);
+        try {
+            const savedPosition = JSON.parse(localStorage.getItem('currentPosition') || 'null');
+            if (!hasCoordinateValue(savedPosition?.lat) || !hasCoordinateValue(savedPosition?.lng)) return null;
+            const position = { lat: Number(savedPosition?.lat), lng: Number(savedPosition?.lng) };
+            return isValidPosition(position) ? position : null;
+        } catch {
+            return null;
         }
-        return { lat: 0, lng: 0 };
     });
     const [mapReady, setMapReady] = useState(false);
+    const [selectedLocationKey, setSelectedLocationKey] = useState(null);
     const mapRef = useRef(null);
+    const locationMarkers = useMemo(() => {
+        const locations = new Map();
+
+        (groups || []).forEach((group) => {
+            const location = group.location;
+            if (!hasCoordinateValue(location?.latitude) || !hasCoordinateValue(location?.longitude)) return;
+
+            const position = { lat: Number(location.latitude), lng: Number(location.longitude) };
+            if (!isValidPosition(position)) return;
+
+            const key = `${position.lat},${position.lng}`;
+            if (!locations.has(key)) {
+                locations.set(key, { key, position, name: location.name || "活動地點", groups: [] });
+            }
+            locations.get(key).groups.push(group);
+        });
+
+        return [...locations.values()];
+    }, [groups]);
+    const selectedLocation = locationMarkers.find(({ key }) => key === selectedLocationKey);
+    const mapCenter = currentPosition || locationMarkers[0]?.position || defaultCenter;
     const { isLoaded } = useJsApiLoader({
         id: 'google-map-id',
         googleMapsApiKey: process.env.REACT_APP_GOOGLE_MAPS_API_KEY
@@ -34,17 +66,35 @@ export default function GroupNearbyMap({ groups }) {
     };
 
     useEffect(() => {
+        if (!mapReady || !mapRef.current || !window.google?.maps) return;
+
+        const points = [...new Map([currentPosition, ...locationMarkers.map(({ position }) => position)]
+            .filter(Boolean)
+            .map((point) => [`${point.lat},${point.lng}`, point])).values()];
+        if (points.length === 0) return;
+        if (points.length === 1) {
+            mapRef.current.panTo(points[0]);
+            mapRef.current.setZoom(15);
+            return;
+        }
+
+        const bounds = new window.google.maps.LatLngBounds();
+        points.forEach((point) => bounds.extend(point));
+        mapRef.current.fitBounds(bounds, { top: 60, bottom: 60, left: 60, right: 60 });
+    }, [mapReady, currentPosition, locationMarkers]);
+
+    useEffect(() => {
         if (!navigator.geolocation) return;
 
-        // 背景偷偷去抓真實 GPS
         navigator.geolocation.getCurrentPosition(
             (pos) => {
                 const newPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-                setCurrentPosition(newPos); // 更新到目前最新位置
-                localStorage.setItem("currentPosition", JSON.stringify(newPos)); // 順便更新快取
+                if (!isValidPosition(newPos)) return;
+                setCurrentPosition(newPos);
+                localStorage.setItem("currentPosition", JSON.stringify(newPos));
             },
             (err) => console.warn("定位失敗", err),
-            { enableHighAccuracy: true, timeout: 10000 }
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
         );
     }, []);
 
@@ -71,49 +121,84 @@ export default function GroupNearbyMap({ groups }) {
                     ]
                 }
             }
-            onLoad={(map) => { mapRef.current = map; setMapReady(true) }}
-            center={currentPosition}
+            onLoad={(map) => { mapRef.current = map; setMapReady(true); }}
+            onUnmount={() => { mapRef.current = null; }}
+            center={mapCenter}
         >
             {/* 顯示自己的位置 */}
             {mapReady && currentPosition && (
                 <OverlayView
                     position={currentPosition}
                     mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-                    getPixelPositionOffset={(width, height) => ({ x: -(width / 2), y: -height })}
+                    getPixelPositionOffset={markerOffset}
                 >
-                    <div className="text-blue-500 text-3xl drop-shadow-md">
-                        <RiMapPinUserFill />
+                    <div className="text-blue-500 drop-shadow-md">
+                        <RiMapPinUserFill className="block h-6 w-6" />
                     </div>
                 </OverlayView>
             )}
-            {mapReady && groups?.map((group, index) => (
+            {mapReady && locationMarkers.map(({ key, name, groups: locationGroups, position }) => (
                 <OverlayView
-                    key={group.id || index}
-                    position={{ lat: group.location.latitude, lng: group.location.longitude }}
+                    key={key}
+                    position={position}
                     mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-                    getPixelPositionOffset={(width, height) => ({ x: -(width / 2), y: -height })}
+                    getPixelPositionOffset={markerOffset}
                 >
-                    <div className="flex flex-col items-center cursor-pointer group relative z-10 hover:z-50">
-                        {/* 資訊框 */}
-                        <div className="bg-white px-2 py-1 rounded shadow-md text-xs font-bold text-gray-800 whitespace-nowrap mb-1 border border-gray-200 transition-colors group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-300">
-                            {group.title} ({group.current_enrolled || 0}/{group.capacity || 0}人)
-                        </div>
-                        {/* 圖標 */}
-                        <div className="text-3xl text-red-500 drop-shadow-md rounded-full flex items-center justify-center align-middle">
-                            <RiMapPin2Fill />
-                        </div>
-                    </div>
+                    <button
+                        type="button"
+                        onClick={() => setSelectedLocationKey((previous) => previous === key ? null : key)}
+                        aria-label={`查看${name}的 ${locationGroups.length} 場活動`}
+                        className="group relative block h-6 w-6 text-red-500 drop-shadow-md"
+                    >
+                        <span className="absolute bottom-full left-1/2 mb-1 -translate-x-1/2 whitespace-nowrap rounded border border-gray-200 bg-white px-2 py-1 text-xs font-bold text-gray-800 shadow-md transition-colors group-hover:border-blue-300 group-hover:bg-blue-50 group-hover:text-blue-600">
+                            {locationGroups.length === 1
+                                ? `${locationGroups[0].title} (${locationGroups[0].current_enrolled || 0}/${locationGroups[0].capacity || 0}人)`
+                                : `${name} · ${locationGroups.length} 場活動`}
+                        </span>
+                        <RiMapPin2Fill className="block h-6 w-6" />
+                    </button>
                 </OverlayView>
             ))}
             {/* 回到目前位置按鈕 */}
-            <button
-                className="absolute bottom-4 right-4 bg-white rounded-full p-2 shadow-md hover:bg-gray-100"
-                onClick={handleRecenter}
-                title="回到目前位置"
-            >
-                <IoPinSharp size={24} color="#333" />
-            </button>
+            {currentPosition && (
+                <button
+                    type="button"
+                    className="absolute bottom-4 right-4 bg-white rounded-full p-2 shadow-md hover:bg-gray-100"
+                    onClick={handleRecenter}
+                    title="回到目前位置"
+                >
+                    <IoPinSharp size={24} color="#333" />
+                </button>
+            )}
         </GoogleMap>
+        {selectedLocation && (
+            <div className="absolute left-4 top-4 z-20 w-72 max-w-[calc(100%-2rem)] rounded-xl border border-gray-200 bg-white p-3 shadow-lg">
+                <div className="flex items-start justify-between gap-2">
+                    <div>
+                        <p className="font-bold text-gray-900">{selectedLocation.name}</p>
+                        <p className="text-xs text-gray-500">這裡有 {selectedLocation.groups.length} 場活動</p>
+                    </div>
+                    <button type="button" onClick={() => setSelectedLocationKey(null)} aria-label="關閉活動清單" className="rounded px-2 text-xl leading-none text-gray-500 hover:bg-gray-100">×</button>
+                </div>
+                <ul className="mt-2 max-h-48 space-y-1 overflow-y-auto">
+                    {selectedLocation.groups.map((group) => (
+                        <li key={group.id}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setSelectedLocationKey(null);
+                                    onSelectGroup?.(group);
+                                }}
+                                className="w-full rounded-lg px-2 py-2 text-left hover:bg-blue-50"
+                            >
+                                <span className="block font-semibold text-gray-900">{group.title}</span>
+                                <span className="text-xs text-gray-500">{group.current_enrolled || 0}/{group.capacity || 0} 人・點擊查看詳情</span>
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            </div>
+        )}
         </div>
     );
 }
