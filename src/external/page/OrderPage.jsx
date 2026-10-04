@@ -5,7 +5,34 @@ import { bookingService } from "../../service/bookingService";
 import { pickUpService } from "../../service/pickUpService";
 import { statusMap } from "../../constant/statusMap";
 import { formatDateTime } from "../../utils/dateTimeFormat";
-import { sportIconMap } from "../../constant/IconMap";
+import { sportIconMap, functionIconMap } from "../../constant/IconMap";
+import { zhTWDictionary } from "../../locale/zh-TW/translate";
+import { MapPinned } from "lucide-react";
+
+const STARTING_SOON_WINDOW_MS = 24 * 60 * 60 * 1000;
+
+const getDirectionsUrl = (location) => {
+    const latitude = Number(location?.latitude);
+    const longitude = Number(location?.longitude);
+    const hasCoordinates = location?.latitude !== null && location?.latitude !== undefined && location?.latitude !== ""
+        && location?.longitude !== null && location?.longitude !== undefined && location?.longitude !== ""
+        && Number.isFinite(latitude) && Number.isFinite(longitude)
+        && Math.abs(latitude) <= 90 && Math.abs(longitude) <= 180
+        && (latitude !== 0 || longitude !== 0);
+    const address = typeof location?.address === "string" ? location.address.trim() : "";
+    const name = typeof location?.name === "string" ? location.name.trim() : "";
+    const destination = hasCoordinates ? `${latitude},${longitude}` : (address || name);
+    return destination
+        ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(destination)}&travelmode=driving&dir_action=navigate`
+        : null;
+};
+
+const isStartingSoon = (order, now) => {
+    if (["cancelled", "cancel_request", "rejected"].includes(order.status)) return false;
+    const startTime = new Date(order.start_time).getTime();
+    const timeUntilStart = startTime - now;
+    return Number.isFinite(startTime) && timeUntilStart > 0 && timeUntilStart <= STARTING_SOON_WINDOW_MS;
+};
 
 const resourceSportCodes = {
     baseball: "BASEBALL",
@@ -42,6 +69,12 @@ export default function OrderPage() {
     const [cancellingIds, setCancellingIds] = useState(() => new Set());
     const [cancelActionError, setCancelActionError] = useState(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [now, setNow] = useState(() => Date.now());
+
+    useEffect(() => {
+        const timer = window.setInterval(() => setNow(Date.now()), 60 * 1000);
+        return () => window.clearInterval(timer);
+    }, []);
 
     useEffect(() => {
         setLoading(true);
@@ -134,7 +167,7 @@ export default function OrderPage() {
             {!loading && orders &&
                 (
                     <div>
-                        <h1 class="text-3xl font-bold text-center my-8">我的預約</h1>
+                        <h1 className="text-3xl font-bold text-center my-8">我的預約</h1>
 
                         {/* Tab Buttons */}
                         <div className="flex justify-center w-full mb-6">
@@ -163,8 +196,11 @@ export default function OrderPage() {
 
                         {/* Order List */}
                         <ul>
-                            {(activeTab === "booking" ? orders.booking?.items : orders.pickUp)?.map((order) => (
-                                <li key={order.id} className={`w-[95%] md:w-[50%] mx-auto mb-4 p-5 border border-gray-200 rounded-xl shadow-sm bg-white ${order.status === "cancelled" ? "opacity-40" : ""}`}>
+                            {(activeTab === "booking" ? orders.booking?.items : orders.pickUp)?.map((order) => {
+                                const directionsUrl = getDirectionsUrl(order.location);
+                                const startingSoon = isStartingSoon(order, now);
+                                return (
+                                    <li key={order.id} className={`w-[95%] md:w-[50%] mx-auto mb-4 p-5 border border-gray-200 rounded-xl shadow-sm bg-white ${order.status === "cancelled" ? "opacity-40" : ""}`}>
 
                                     {/* 標題與狀態 */}
                                     <div className="flex justify-between items-start mb-3 gap-3">
@@ -175,6 +211,9 @@ export default function OrderPage() {
                                                     : `${order.title}`}
                                             </h2>
                                             <OrderSportTag order={order} />
+                                            {startingSoon && (
+                                                <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-bold text-amber-800">即將開始 · 24 小時內</span>
+                                            )}
                                         </div>
                                         <div className={`shrink-0 px-3 py-1 rounded-md font-bold text-white font-medium ${statusMap[order.status]?.class || ""}`}>
                                             {statusMap[order.status]?.label || order.status}
@@ -189,7 +228,12 @@ export default function OrderPage() {
                                     </div>
 
                                     {/* 按鈕區塊 */}
-                                    <div className="flex justify-end mt-4 pt-4 border-t border-gray-100">
+                                    <div className="flex flex-wrap justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
+                                        {directionsUrl && (
+                                            <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 sm:w-auto">
+                                                <MapPinned size={16} aria-hidden="true" />Google Maps 導航
+                                            </a>
+                                        )}
                                         {!cancellingIds.has(order.id) && (order.status !== "cancelled" && order.status !== "cancel_request") && !order._cancelRequested && (
                                             <button
                                                 className="w-full sm:w-auto border border-red-500 text-red-600 bg-white hover:bg-red-50 text-sm font-semibold py-2 px-6 rounded-lg transition"
@@ -199,8 +243,9 @@ export default function OrderPage() {
                                             </button>
                                         )}
                                     </div>
-                                </li>
-                            ))}
+                                    </li>
+                                );
+                            })}
                         </ul>
                     </div>
                 )}
@@ -243,10 +288,8 @@ export default function OrderPage() {
                 onClick={() => setRefreshTrigger(prev => prev + 1)}
                 className="fixed bottom-4 right-4 z-50 flex items-center justify-center gap-2 bg-gray-700 text-white px-5 py-3 rounded-full shadow-lg hover:shadow-xl hover:-translate-y-1 transition-all"
             >
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0013.803-3.7M4.031 9.865a8.25 8.25 0 0113.803-3.7l3.181 3.182m0-4.991v4.99" />
-                </svg>
-                <span className="font-bold tracking-wider">重整</span>
+                <div>{functionIconMap.refresh.icon}</div>
+                <span className="font-bold tracking-wider">{zhTWDictionary.pickUpPage.button.refresh}</span>
             </button>
         </div>
     )

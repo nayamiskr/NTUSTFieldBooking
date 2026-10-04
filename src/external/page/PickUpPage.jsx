@@ -17,6 +17,11 @@ import { skillLevelService } from "../../service/skillLevelService";
 
 const isMissingSkillLevelError = (error) => error?.response?.status === 400
     && /^skill level not set for this sport\b/i.test(String(error?.response?.data?.error || ""));
+const isTimeConflictError = (error) => {
+    const data = error?.response?.data;
+    return [data?.error, data?.code, data?.error_code, data?.error?.code]
+        .some((code) => typeof code === "string" && code.trim().toLowerCase() === "time_conflict");
+};
 const HOST_CREATE_URL = "https://vdmin.chenmh.dev/login";
 const PAGE_SIZES = [10, 20, 50];
 
@@ -220,6 +225,10 @@ export default function PickUpPage() {
             successPopup("", zhTWDictionary.pickUpPage.successMessage.registrationSuccess);
             return true;
         } catch (error) {
+            if (isTimeConflictError(error)) {
+                errorPopup("報名時間衝突", zhTWDictionary.pickUpPage.errorMessage.timeConflict);
+                return false;
+            }
             errorPopup(zhTWDictionary.pickUpPage.errorMessage.error, zhTWDictionary.pickUpPage.errorMessage.registrationFailed);
             setRefreshTrigger((pre) => pre + 1);
             return false;

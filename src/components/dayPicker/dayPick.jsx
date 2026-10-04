@@ -16,6 +16,7 @@ function Calendar({
   showYearDropdown = false,
   maxDate,
   selectedDate,
+  align = "start",
 }) {
   const [internalSelected, setInternalSelected] = useState(null);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -61,7 +62,7 @@ function Calendar({
           : placeholder}
       </button>
       <div
-        className={`calendar-container ${showCalendar ? 'active' : ''} ${showYearDropdown ? 'calendar-container--birth' : ''}`}
+        className={`calendar-container ${showCalendar ? 'active' : ''} ${showYearDropdown ? 'calendar-container--birth' : ''} ${align === 'end' ? 'calendar-container--end' : ''}`}
         style={{
           pointerEvents: showCalendar ? "auto" : "none",
         }}
@@ -78,7 +79,7 @@ function Calendar({
           endMonth={showYearDropdown ? maxDate || new Date() : undefined}
           defaultMonth={selected || (showYearDropdown ? new Date(new Date().getFullYear() - 20, new Date().getMonth()) : undefined)}
           disabled={maxDate ? { after: maxDate } : undefined}
-          locale={showYearDropdown ? zhTW : undefined}
+          locale={zhTW}
         />
       </div>
     </div>

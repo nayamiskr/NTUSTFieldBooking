@@ -86,7 +86,7 @@ function LoginPage() {
       navigate(`external/group`);
 
     } catch (error) {
-      errorPopup(zhTWDictionary.loginPage.errorMessage.error, zhTWDictionary.loginPage.errorMessage.externalLoginError);
+      errorPopup(zhTWDictionary.loginPage.errorMessage.error, zhTWDictionary.loginPage.errorMessage.invalidCredentials);
       console.error("Login error:", error);
     } finally {
       setLoading(false);

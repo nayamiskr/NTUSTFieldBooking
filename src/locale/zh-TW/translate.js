@@ -78,13 +78,14 @@ export const zhTWDictionary = {
     },
 
     successMessage: {
-      registrationSuccess: "報名成功，已送出臨打申請。",
+      registrationSuccess: "報名成功，已送出臨打申請。"
     },
 
     errorMessage: {
       error: "臨打團錯誤",
       fetchFailed: "取得臨打團清單失敗，請稍後再試",
       registrationFailed: "報名已額滿",
+      timeConflict: "此時間段已有報名活動",
     },
   },
 

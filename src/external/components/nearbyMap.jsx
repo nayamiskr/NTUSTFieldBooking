@@ -233,7 +233,7 @@ function NearbyMap({ filter, fields = [], onConfirmPlace = () => { } }) {
 
 
       <div className="content flex flex-col justify-center md:flex-row gap-4">
-        <div className="w-full md:w-[90%] h-[350px] rounded-[10px] overflow-hidden relative mb-4">
+        <div className="w-full h-[350px] rounded-[10px] overflow-hidden relative mb-4">
           
             {isLoaded && currentPosition ? (
               <GoogleMap
