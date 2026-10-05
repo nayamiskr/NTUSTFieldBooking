@@ -1,6 +1,16 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import api from "../../baseApi";
+import { successPopup } from "../../components/pop-up";
+import { earliestBookingDate, isDateBookable } from "../bookingWindow";
+
+const clockMinutes = (value) => {
+  const match = typeof value === "string" ? value.match(/^(\d{1,2}):(\d{2})/) : null;
+  if (!match) return null;
+  const hour = Number(match[1]);
+  const minute = Number(match[2]);
+  return hour <= 24 && minute < 60 ? hour * 60 + minute : null;
+};
 
 function PayPage() {
   const location = useLocation();
@@ -11,6 +21,7 @@ function PayPage() {
 
   const {
     fieldName,
+    fieldId,
     resourceName,
     resourceIdx,
     date,
@@ -53,7 +64,7 @@ function PayPage() {
 
     const s = String(d).trim();
 
-    const m = s.match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})/);
+    const m = s.match(/(\d{4})[/-](\d{1,2})[/-](\d{1,2})/);
     if (!m) return null;
 
     const y = m[1];
@@ -62,7 +73,7 @@ function PayPage() {
     return `${y}-${mo}-${da}`;
   };
 
-  const toIsoWithOffset = (ymd, hhmm) => {
+  const toBookingApiTime = (ymd, hhmm) => {
     const d = normalizeYmd(ymd);
     if (!d || !hhmm) return null;
 
@@ -77,26 +88,45 @@ function PayPage() {
     const hh = Number(hhRaw);
     const mm = Number(mmRaw);
 
-    if ([y, mo, da, hh, mm].some((n) => Number.isNaN(n))) return null;
+    if ([y, mo, da, hh, mm].some((n) => !Number.isInteger(n))) return null;
+    if (hh > 23 || mm > 59) return null;
 
-    const pad = (value) => String(value).padStart(2, "0");
-    return `${pad(y)}-${pad(mo)}-${pad(da)}T${pad(hh)}:${pad(mm)}:00+08:00`;
+    const utc = new Date(Date.UTC(y, mo - 1, da, hh, mm));
+    if (utc.getUTCFullYear() !== y || utc.getUTCMonth() + 1 !== mo || utc.getUTCDate() !== da) return null;
+    return utc.toISOString().replace(".000Z", "Z");
   };
 
   async function handlePayment() {
     setSubmitError(null);
 
     if (!resourceIdx) {
+      console.warn("[預約場地] 未送出：缺少 resource_id", { fieldId, fieldName, resourceName, date, timeRange });
       setSubmitError("找不到 resource_id（請重新選擇場地/球場後再試一次）");
       return;
     }
 
     const tr = parseTimeRange(timeRange);
-    const start_time = toIsoWithOffset(date, tr?.start);
-    const end_time = toIsoWithOffset(date, tr?.end);
+    const start_time = toBookingApiTime(date, tr?.start);
+    const end_time = toBookingApiTime(date, tr?.end);
+
+    const bookingPayload = {
+      resource_id: resourceIdx,
+      start_time,
+      end_time,
+    };
+    const bookingContext = { fieldId, fieldName, resourceName, date, timeRange };
+    console.log("[預約場地] 準備送出", { ...bookingContext, payload: bookingPayload });
 
     if (!start_time || !end_time) {
+      console.warn("[預約場地] 未送出：時段格式無法解析", { ...bookingContext, payload: bookingPayload });
       setSubmitError("時段格式無法解析（請返回修改預約）");
+      return;
+    }
+
+    const [year, month, day] = normalizeYmd(date).split("-").map(Number);
+    if (!isDateBookable(new Date(year, month - 1, day))) {
+      console.warn("[預約場地] 未送出：需提前 7 天預約", { ...bookingContext, payload: bookingPayload });
+      setSubmitError(`需提前 7 天預約，最早可選 ${earliestBookingDate().toLocaleDateString("zh-TW")}。請返回重新選擇日期。`);
       return;
     }
 
@@ -105,13 +135,42 @@ function PayPage() {
     try {
       setIsSubmitting(true);
 
+      if (fieldId) {
+        const { data: venue } = await api.get(`/locations/${fieldId}`);
+        const opens = clockMinutes(venue?.opening_hours_start);
+        const closes = clockMinutes(venue?.opening_hours_end);
+        const startsAt = clockMinutes(tr.start);
+        const endsAt = clockMinutes(tr.end);
+        console.log("[預約場地] 營業時間檢查", {
+          fieldId,
+          opening: venue?.opening,
+          opening_hours_start: venue?.opening_hours_start,
+          opening_hours_end: venue?.opening_hours_end,
+          selected_start: tr.start,
+          selected_end: tr.end,
+        });
+
+        if (venue?.opening === false) {
+          console.warn("[預約場地] 未送出：場地暫停開放", bookingContext);
+          setSubmitError("此場地目前暫停開放，請返回選擇其他場地。");
+          return;
+        }
+        if (opens === null || closes === null || startsAt === null || endsAt === null) {
+          console.warn("[預約場地] 未送出：無法確認營業時間", bookingContext);
+          setSubmitError("無法確認場地營業時間，請稍後再試。");
+          return;
+        }
+        if (startsAt < opens || endsAt >= closes || startsAt >= endsAt) {
+          console.warn("[預約場地] 未送出：時段不在可預約時間內", { ...bookingContext, payload: bookingPayload });
+          setSubmitError(`所選時段不在場地可預約時間內（營業時間 ${venue.opening_hours_start.slice(0, 5)}–${venue.opening_hours_end.slice(0, 5)}）。請返回重新選擇。`);
+          return;
+        }
+      }
+
+      console.log("[預約場地] POST /bookings", bookingPayload);
       await api.post(
         "/bookings",
-        {
-          resource_id: resourceIdx,
-          start_time,
-          end_time,
-        },
+        bookingPayload,
         {
           headers: {
             "Content-Type": "application/json",
@@ -120,15 +179,24 @@ function PayPage() {
         }
       );
 
-      alert("預約已送出！請耐心等候審核，並依場地方通知於現場付款。");
+      await successPopup("預約已送出", "請耐心等候審核，並依場地方通知於現場付款。");
       navigate(`/external/order`);
     } catch (e) {
+      console.error("[預約場地] 送出失敗", {
+        ...bookingContext,
+        payload: bookingPayload,
+        status: e?.response?.status,
+        response: e?.response?.data,
+        message: e?.message,
+      });
       const msg =
         e?.response?.data?.message ||
         e?.response?.data?.error ||
         e?.message ||
         "送出失敗";
-      setSubmitError(msg);
+      setSubmitError(/booking must fall within the location's opening hours/i.test(msg)
+        ? "所選時段不在場地可預約時間內，請返回重新選擇。"
+        : msg);
     } finally {
       setIsSubmitting(false);
     }

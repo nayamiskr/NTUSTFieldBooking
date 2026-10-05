@@ -197,8 +197,8 @@ function NearbyMap({ filter, fields = [], onConfirmPlace = () => { } }) {
 
 
     <div>
-      <div className="map-list md:mx-18" >
-        <ul className="flex flex-row w-auto h-5rem mb-5 gap-3 overflow-x-auto snap-x snap-mandatory">
+      <div className="map-list w-full min-w-0">
+        <ul className="mb-5 flex w-full min-w-0 flex-row gap-3 overflow-x-auto snap-x snap-mandatory">
           {placesWithColor.map((place, idx) => (
             <li
               key={idx}

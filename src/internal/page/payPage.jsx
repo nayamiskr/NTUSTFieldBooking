@@ -82,7 +82,7 @@ function PayPage() {
     return `${y}-${mo}-${da}`;
   };
 
-  const toIsoWithOffset = (ymd, hhmm) => {
+  const toBookingApiTime = (ymd, hhmm) => {
     const d = normalizeYmd(ymd);
     if (!d || !hhmm) return null;
 
@@ -97,19 +97,12 @@ function PayPage() {
     const hh = Number(hhRaw);
     const mm = Number(mmRaw);
 
-    if ([y, mo, da, hh, mm].some((n) => Number.isNaN(n))) return null;
+    if ([y, mo, da, hh, mm].some((n) => !Number.isInteger(n))) return null;
+    if (hh > 23 || mm > 59) return null;
 
-    const pad = (n) => String(n).padStart(2, "0");
-
-    // Build local time and append local timezone offset (+08:00 in Taiwan)
-    const dtLocal = new Date(y, mo - 1, da, hh, mm, 0, 0);
-    const offsetMin = -dtLocal.getTimezoneOffset();
-    const sign = offsetMin >= 0 ? "+" : "-";
-    const abs = Math.abs(offsetMin);
-    const offH = pad(Math.floor(abs / 60));
-    const offM = pad(abs % 60);
-
-    return `${pad(y)}-${pad(mo)}-${pad(da)}T${pad(hh)}:${pad(mm)}:00${sign}${offH}:${offM}`;
+    const utc = new Date(Date.UTC(y, mo - 1, da, hh, mm));
+    if (utc.getUTCFullYear() !== y || utc.getUTCMonth() + 1 !== mo || utc.getUTCDate() !== da) return null;
+    return utc.toISOString().replace(".000Z", "Z");
   };
 
   const resolvedResourceId = resourceId ?? extractFirstUuid(fieldKey);
@@ -123,8 +116,8 @@ function PayPage() {
     }
 
     const tr = parseTimeRange(timeRange);
-    const start_time = toIsoWithOffset(date, tr?.start);
-    const end_time = toIsoWithOffset(date, tr?.end);
+    const start_time = toBookingApiTime(date, tr?.start);
+    const end_time = toBookingApiTime(date, tr?.end);
 
     console.log({
       resolvedResourceId,

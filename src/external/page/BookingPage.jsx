@@ -1,312 +1,159 @@
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { ArrowLeft, Building2, CalendarDays, CircleHelp, Clock3, ExternalLink, MapPin, ParkingSquare, Users } from "lucide-react";
 import Navbar from "../components/navbar";
 import Calendar from "../../components/dayPicker/dayPick";
-import { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import FieldPicker from "../components/fieldPicker/fieldPicker";
-import api from "../../baseApi"
+import VenueBookingCards from "../components/VenueBookingCards";
 import Loading from "../../components/loading";
-import { IoMdPeople } from "react-icons/io";
-import { FaClock } from "react-icons/fa6";
-import { FaMapPin } from "react-icons/fa";
-import { GrStatusInfo } from "react-icons/gr";
-import { FaArrowLeft } from "react-icons/fa";
-import SelectFieldSection from "../components/SelectFieldSection";
+import api from "../../baseApi";
+import { facilityMap } from "../../constant/IconMap";
+import { earliestBookingDate } from "../bookingWindow";
 
-function Bookpage() {
-    const { id } = useParams();
-    const imgUrl = '/field_img/';
-    const [activeTab, setActiveTab] = useState("info");
-    const [fieldInfo, setFieldInfo] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [rule, setRule] = useState([]);
-    const [facilities, setFacilities] = useState([]);
-    const [selectedSlots, setSelectedSlots] = useState(null);
-    const [selectedDate, setSelectedDate] = useState(new Date());
-    const HOURS = Array.from({ length: 22 - 8 }, (_, i) => 8 + i);
-    const hasData = !!fieldInfo;
-    const baseDate = selectedDate ? new Date(selectedDate) : new Date();
-    const sevenDays = Array.from({ length: 7 }, (_, i) => {
-        const d = new Date(baseDate);
-        d.setDate(baseDate.getDate() + i - 3);
-        return d;
-    });
+const splitItems = (value) => typeof value === "string" ? value.split(/[,，;；\n]+/).map((item) => item.trim()).filter(Boolean) : [];
+const splitFacilities = (value) => typeof value === "string" ? value.split(/[,，;；\n_]+/).map((item) => item.trim()).filter(Boolean) : [];
 
-    const formatDate = (d) => {
-        const m = d.getMonth() + 1;
-        const day = d.getDate();
-        const week = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
-        return `${m}/${day} (${week})`;
-    };
-
-    useEffect(() => {
-        let isMounted = true;
-        const fetchLocation = async () => {
-            setLoading(true);
-            try {
-                const res = await api.get(`/locations/${id}`);
-
-                if (isMounted) {
-                    setFieldInfo(res.data);
-                    console.log("location data:", res.data);
-                    setRule(res.data?.rule.split(",") || null);
-                    setFacilities(res.data?.facility.split(",") || null);
-                    console.log("facilities:", facilities);
-                }
-            } catch (err) {
-                console.error("fail fetch location", err);
-            } finally {
-                if (isMounted) setLoading(false);
-            }
-        };
-
-        if (id) fetchLocation();
-
-        return () => {
-            isMounted = false;
-        };
-    }, [id]);
-
-    const isContiguous = (hours) => {
-        if (!hours || hours.length <= 1) return true;
-        const sortedHours = [...hours].sort((a, b) => a - b);
-        for (let i = 1; i < sortedHours.length; i++) {
-            if (sortedHours[i] !== sortedHours[i - 1] + 1) return false;
-        }
-        return true;
-    };
-
-    const handleSelectSlot = ({ fieldIdx, resourceIdx, hour, date }) => {
-        const dateKey = date ? new Date(date).toISOString().slice(0, 10) : null;
-        setSelectedSlots((prev) => {
-
-            if (!prev) {
-                return { fieldIdx, resourceIdx, hours: [hour], date: dateKey };
-            }
-
-            const sameCourt = prev.fieldIdx === fieldIdx && prev.resourceIdx === resourceIdx;
-            const sameDate = prev.date === dateKey;
-
-            if (!sameCourt || !sameDate) {
-                return { fieldIdx, resourceIdx, hours: [hour], date: dateKey };
-            }
-
-            const hoursSet = new Set(prev.hours);
-
-            if (hoursSet.has(hour)) {
-                return null;
-            }
-
-            const nextHours = [...hoursSet, hour].sort((a, b) => a - b);
-
-            if (!isContiguous(nextHours)) {
-                return { fieldIdx, resourceIdx, hours: [hour], date: dateKey };
-            }
-
-            return { ...prev, hours: nextHours };
-        });
-    };
-
-    return (
-        <div className="booking-page">
-            <Loading isLoading={loading} text={"取得場地資訊中..."} />
-            <Navbar />
-            <div className="flex w-[150px] gap-2.5 items-end m-5 md:ml-[50px]">
-                <button onClick={() => window.history.back()} className="flex items-center gap-2.5 text-xl text-gray-500 hover:text-black transition-colors duration-300">
-                    <FaArrowLeft />
-                    返回場地列表
-                </button>
-            </div>
-
-            <div className="main-container px-4">
-
-                {/* 左側 */}
-                <div className="left-panel w-full">
-
-                    <div className="md:px-[50px]">
-                        <h2 className="flex justify-self-start text-3xl font-medium">{fieldInfo?.name ?? "載入中..."}</h2>
-                        <p className="field-description">
-                            {fieldInfo?.description ?? ""}
-                        </p>
-                    </div>
-                    {/* Tabs */}
-                    <div className="flex flex-row w-full md:w-[60%] justify-between mx-auto bg-blue-50 p-1.5 rounded-lg">
-                        <button
-                            className={`tab w-full  px-2 py-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis ${activeTab === 'info' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('info')}
-                        >
-                            場地資訊
-                        </button>
-                        <button
-                            className={`tab w-full min-w-0 px-2 py-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis ${activeTab === 'rule' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('rule')}
-                        >
-                            使用規則
-                        </button>
-                        <button
-                            className={`tab w-full min-w-0 px-2 py-2 text-sm whitespace-nowrap overflow-hidden text-ellipsis ${activeTab === 'facility' ? 'active' : ''}`}
-                            onClick={() => setActiveTab('facility')}
-                        >
-                            設施
-                        </button>
-                    </div>
-
-                    {/* Info */}
-                    {activeTab === 'info' && hasData && (
-                        <div className="info-section">
-                            <div className="flex flex-row w-[200px] border border-gray-300 rounded-xl items-center justify-center p-2.5 gap-4 shadow-lg">
-                                <IoMdPeople className="text-4xl text-blue-600" />
-                                <div className="text">
-                                    <div className="label">容納人數</div>
-                                    <div className="font-medium text-lg">{fieldInfo?.capacity ?? "-"}</div>
-                                </div>
-                            </div>
-                            <div className="flex flex-row w-[200px] border border-gray-300 rounded-xl items-center justify-center p-2.5 gap-4 shadow-lg">
-                                <FaClock className="text-2xl text-blue-600" />
-                                <div className="text">
-                                    <div className="label">開放時間</div>
-                                    <div className="font-medium text-lg">
-                                        {(fieldInfo?.opening_hours_start
-                                            ? fieldInfo.opening_hours_start.slice(0, 5)
-                                            : "-")}
-                                        <span className="mx-0.5 text-gray-400">–</span>
-                                        {(fieldInfo?.opening_hours_end
-                                            ? fieldInfo.opening_hours_end.slice(0, 5)
-                                            : "-")}
-                                    </div>
-                                </div>
-                            </div>
-                            <div className="flex flex-row w-[200px] border border-gray-300 rounded-xl items-center justify-center p-2.5 gap-4 shadow-lg">
-                                <FaMapPin className="text-2xl text-blue-600" />
-                                <div className="text">
-                                    <div className="label">位置</div>
-                                    <div className="value">{fieldInfo?.location_info ?? "-"}</div>
-                                </div>
-                            </div>
-                            <div className="flex flex-row w-[200px] border border-gray-300 rounded-xl items-center justify-center p-2.5 gap-6 shadow-lg">
-                                <GrStatusInfo className="text-2xl font-bold text-blue-600" />
-                                <div className="text">
-                                    <div className="m-0 text-gray-400">場地狀態</div>
-                                    <div className={`${fieldInfo?.opening ? 'text-green-500 font-bold' : 'text-red-500'} text-lg text-gray-400 m-0`}>
-                                        {fieldInfo?.opening ? '開放' : '關閉'}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                    {activeTab === 'rule' && (
-                        <div className="flex flex-col w-full md:w-[60%] m-5 p-5 justify-self-center border border-gray-300 rounded-[10px] shadow-lg">
-                            <ul className="list-disc text-[24px] pl-5 justify-self-start text-gray-600 text-left">
-                                {rule?.map((r, idx) => (
-                                    <li key={idx}>{r}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    {activeTab === 'facility' && (
-                        <div className="facility-section w-full md:w-[60%] mx-auto mt-5">
-                            <div className="grid gap-4 justify-center grid-cols-[repeat(auto-fit,minmax(200px,250px))]">
-                                {facilities?.map((f, idx) => (
-                                    <div key={idx} className="border border-gray-300 rounded-[10px] p-4 shadow-lg text-center font-bold">
-                                        {f}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                    <div className="field-board flex justify-center">
-                        {false === 'true' ? (
-                            <img src={imgUrl} alt="場地圖片" className="field-image" />
-                        ) : (
-                            <FieldPicker fieldId={id} />
-                        )}
-                    </div>
-                </div>
-                {/* 預約section */}
-                <div className="flex flex-col md:mx-[50px] mt-5 p-4 md:p-8 bg-white border border-gray-300 rounded-2xl shadow-lg">
-                    <h4 className="flex justify-start text-3xl font-medium">場地時段金額總覽</h4>
-                    <p className="flex justify-start my-2 text-gray-400">選擇日期與時間進行預約</p>
-                    <div className="w-full mt-5 flex justify-center items-center">
-                        <Calendar onDayPicked={({ date }) => {
-                            setSelectedDate(date);
-                        }} />
-                    </div>
-                    {/* 七日單場地表格 */}
-                    <div className="overflow-x-auto my-2 rounded-2xl">
-                        <table className="min-w-full border-collapse shadow-sm text-center text-sm">
-                            <thead>
-                                <tr>
-                                    <th className="sticky text-lg left-0 z-30 px-4 py-2 border whitespace-nowrap border-gray-300 bg-blue-100">
-                                        {fieldInfo?.name ?? "場地名稱"}
-                                    </th>
-
-                                    {sevenDays.map((day, idx) => {
-                                        return (
-                                            <th
-                                                id={`day-column-${idx}`}
-                                                key={idx}
-                                                className={`px-4 py-2 border whitespace-nowrap cursor-pointer border-gray-300 ${idx === 3 ? "bg-blue-400" : "bg-blue-100"}`}
-                                            >
-                                                <div
-                                                    className={`flex text-center justify-center text-lg`}
-                                                >
-                                                    {formatDate(day)}
-                                                </div>
-                                            </th>
-                                        );
-                                    })}
-                                </tr>
-                            </thead>
-
-                            <tbody>
-                                {
-                                    HOURS.map((h) => {
-                                        const start = `${h}:00`;
-                                        const end = `${h + 1}:00`;
-                                        const isLunch = h === 20; // 之後依需求改成訂單判斷
-
-                                        return (
-                                            <tr key={h} className={isLunch ? "bg-gray-50" : "bg-white"}>
-                                                {/* 左側時段欄 */}
-                                                <td className="sticky left-0 z-20 font-semibold px-4 py-3 border whitespace-nowrap border-gray-300 bg-blue-50 text-center">
-                                                    {start} - {end}
-                                                </td>
-
-                                                {/* 每個日期一格 */}
-                                                {sevenDays.map((day, colIdx) => (
-                                                    <td key={colIdx} className="px-3 py-3 border border-gray-300">
-                                                        <div className="flex items-center justify-center gap-2">
-                                                            {Array.from(
-                                                                { length: 5 },
-                                                                (_, i) => (
-                                                                    <button
-                                                                        key={i}
-                                                                        type="button"
-                                                                        onClick={() => { }
-
-                                                                        }
-                                                                        className={`bg-blue-100 w-8 h-10 rounded-full font-semibold flex items-center justify-center transition`}
-                                                                    >
-                                                                        {i + 1}
-                                                                    </button>
-                                                                )
-                                                            )}
-                                                        </div>
-                                                    </td>
-                                                ))}
-                                            </tr>
-                                        );
-                                    })
-                                }
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <button className="book-now" onClick={() => { /* TODO: implement booking submit */ }}>立即預約</button>
-                </div>
-            </div>
-        </div>
-    );
+function imageUrl(value) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  if (/^https?:\/\//i.test(value)) return value;
+  if (!value.startsWith("/")) return null;
+  const apiOrigin = new URL(process.env.REACT_APP_API_BASE_URL || "https://api-field.gravitycat.tw/v1", window.location.origin).origin;
+  return `${apiOrigin}${value}`;
 }
 
-export default Bookpage;
+function mapsUrl(latitude, longitude) {
+  if (latitude === null || latitude === undefined || latitude === "" || longitude === null || longitude === undefined || longitude === "") return null;
+  const lat = Number(latitude);
+  const lng = Number(longitude);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng) || Math.abs(lat) > 90 || Math.abs(lng) > 180 || (lat === 0 && lng === 0)) return null;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${lat},${lng}`)}`;
+}
+
+export default function BookingPage() {
+  const { id } = useParams();
+  const [location, setLocation] = useState(null);
+  const [resources, setResources] = useState([]);
+  const [selectedDate, setSelectedDate] = useState(earliestBookingDate);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
+  const [coverFailed, setCoverFailed] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    async function loadLocation() {
+      setLoading(true);
+      setError(false);
+      setCoverFailed(false);
+      try {
+        const token = localStorage.getItem("token");
+        const [locationResponse, resourceResponse] = await Promise.all([
+          api.get(`/locations/${id}`),
+          api.get("/resources", {
+            headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            params: { location_id: id },
+          }),
+        ]);
+        if (!active) return;
+        setLocation(locationResponse.data);
+        setResources(Array.isArray(resourceResponse.data?.items) ? resourceResponse.data.items : []);
+      } catch {
+        if (active) setError(true);
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    if (id) loadLocation();
+    return () => { active = false; };
+  }, [id]);
+
+  const cover = imageUrl(location?.cover || location?.cover_thumbnail);
+  const rules = splitItems(location?.rule);
+  const facilities = splitFacilities(location?.facility);
+  const locationMapUrl = mapsUrl(location?.latitude, location?.longitude);
+  const parkingMapUrl = mapsUrl(location?.parking_latitude, location?.parking_longitude);
+  const dates = Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(selectedDate);
+    date.setDate(date.getDate() + index);
+    return date;
+  });
+
+  function shiftWeek(weeks) {
+    setSelectedDate((previous) => {
+      const next = new Date(previous);
+      next.setDate(next.getDate() + weeks * 7);
+      return next;
+    });
+  }
+
+  return <div className="min-h-screen bg-slate-50 text-slate-900">
+    <Navbar />
+    <Loading isLoading={loading} text="取得場地資訊中..." />
+    <main className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
+      <Link to="/external/home/all" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-blue-700"><ArrowLeft size={17} />返回場地列表</Link>
+      {error && <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-800">場地資訊載入失敗，請重新整理頁面。</div>}
+      {!loading && !error && location && <>
+        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          <div className="relative h-48 bg-gradient-to-br from-blue-100 via-sky-100 to-slate-200 sm:h-72">
+            {cover && !coverFailed && <img src={cover} alt={`${location.name}場地照片`} onError={() => setCoverFailed(true)} className="h-full w-full object-cover" />}
+            {(!cover || coverFailed) && <div className="absolute inset-0 flex items-center justify-center text-blue-700"><Building2 size={64} strokeWidth={1.2} aria-hidden="true" /></div>}
+          </div>
+          <div className="p-5 sm:p-8">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                {location.organization?.name && <p className="mb-2 text-sm font-semibold text-blue-700">{location.organization.name}</p>}
+                <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">{location.name}</h1>
+              </div>
+              <span className={`rounded-full px-4 py-1.5 text-sm font-semibold ${location.opening ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>{location.opening ? "開放預約" : "暫停開放"}</span>
+            </div>
+            <p className="mt-4 max-w-3xl whitespace-pre-line leading-7 text-slate-600">{location.description?.trim() || "此場地尚未提供詳細介紹。"}</p>
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl bg-slate-50 p-4"><p className="flex items-center gap-2 text-sm text-slate-500"><Clock3 size={16} />開放時間</p><p className="mt-2 font-bold">{location.opening_hours_start?.slice(0, 5) || "未提供"}–{location.opening_hours_end?.slice(0, 5) || "未提供"}</p></div>
+              <div className="rounded-xl bg-slate-50 p-4"><p className="flex items-center gap-2 text-sm text-slate-500"><Users size={16} />容納人數</p><p className="mt-2 font-bold">{Number(location.capacity) > 0 ? `${location.capacity} 人` : "未提供"}</p></div>
+              <div className="rounded-xl bg-slate-50 p-4"><p className="flex items-center gap-2 text-sm text-slate-500"><Building2 size={16} />可預約場面</p><p className="mt-2 font-bold">{resources.length} 面</p></div>
+            </div>
+          </div>
+        </section>
+
+        <div className="mt-5 grid gap-5 lg:grid-cols-2">
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="flex items-center gap-2 text-lg font-bold"><MapPin size={19} className="text-blue-700" />場地位置</h2>
+            <p className="mt-3 text-slate-700">{location.location_info?.trim() || "尚未提供位置資訊"}</p>
+            {locationMapUrl && <a href={locationMapUrl} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-blue-700 hover:underline">在地圖中查看 <ExternalLink size={14} /></a>}
+          </section>
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="flex items-center gap-2 text-lg font-bold"><ParkingSquare size={19} className="text-blue-700" />停車資訊</h2>
+            <p className="mt-3 text-slate-700">{location.parking_name?.trim() || (parkingMapUrl ? "附近停車位置" : "尚未提供停車資訊")}</p>
+            {parkingMapUrl && <a href={parkingMapUrl} target="_blank" rel="noopener noreferrer" className="mt-4 inline-flex items-center gap-1 text-sm font-semibold text-blue-700 hover:underline">查看停車位置 <ExternalLink size={14} /></a>}
+          </section>
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="text-lg font-bold">使用規則</h2>
+            {rules.length ? <ul className="mt-3 list-disc space-y-2 pl-5 text-slate-700">{rules.map((rule, index) => <li key={`${rule}-${index}`}>{rule}</li>)}</ul> : <p className="mt-3 text-slate-500">尚未提供使用規則。</p>}
+          </section>
+          <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+            <h2 className="text-lg font-bold">場地設施</h2>
+            {facilities.length ? <div className="mt-3 flex flex-wrap gap-2">{facilities.map((facility, index) => {
+              const definition = facilityMap[facility];
+              return <span key={`${facility}-${index}`} className="inline-flex items-center gap-2 rounded-xl bg-blue-50 px-3 py-2 text-sm font-medium text-blue-800">
+                <span aria-hidden="true" className="text-blue-700">{definition?.icon || <CircleHelp size={20} />}</span>
+                {definition?.name || facility}
+              </span>;
+            })}</div> : <p className="mt-3 text-slate-500">尚未提供設施資訊。</p>}
+          </section>
+        </div>
+
+        <section aria-label="選擇預約週次" className="my-7 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="flex items-center gap-2 text-lg font-bold"><CalendarDays size={19} className="text-blue-700" />選擇預約週次</h2>
+            <Calendar align="end" selectedDate={selectedDate} onDayPicked={({ date }) => setSelectedDate(date)} />
+          </div>
+          <p className="mt-2 text-sm text-slate-600">需提前 7 天預約，最早可選 {earliestBookingDate().toLocaleDateString("zh-TW")}。</p>
+          <div className="mt-4 flex flex-wrap items-center gap-3">
+            <button type="button" onClick={() => shiftWeek(-1)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50">上一週</button>
+            <span className="text-sm font-semibold text-slate-700">{dates[0].toLocaleDateString("zh-TW")}–{dates[6].toLocaleDateString("zh-TW")}</span>
+            <button type="button" onClick={() => shiftWeek(1)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50">下一週</button>
+          </div>
+        </section>
+      </>}
+    </main>
+    {!loading && !error && location && (resources.length ? <VenueBookingCards fields={[{ ...location, resources }]} selectedDate={selectedDate} selectedVenueId={id} detailMode /> : <p className="mx-auto max-w-7xl px-4 pb-12 text-slate-600 sm:px-6">此場地目前沒有可預約的場面。</p>)}
+  </div>;
+}

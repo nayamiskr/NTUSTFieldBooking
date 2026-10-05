@@ -14,7 +14,7 @@ export const errorPopup = (title, errorMessage) => {
 }
 
 export const successPopup = (title, message) => {
-    Swal.fire({
+    return Swal.fire({
         icon: "success",
         title: title,
         text: message,
