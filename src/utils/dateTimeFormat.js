@@ -44,18 +44,27 @@ export const formatDateTime = (value, options = {}) => {
     }
     if (Number.isNaN(dateTime.getTime())) return EMPTY;
 
+    // 單次場地預約 API 目前以 Z 儲存所選的時鐘時間；顯示時需讀取 UTC 欄位，
+    // 避免瀏覽器再加上台灣時區的八小時。
+    const useUtcClock = options.timeZone === "UTC";
+    const timeZone = useUtcClock ? { timeZone: "UTC" } : {};
+    const year = useUtcClock ? dateTime.getUTCFullYear() : dateTime.getFullYear();
+    const month = useUtcClock ? dateTime.getUTCMonth() + 1 : dateTime.getMonth() + 1;
+    const day = useUtcClock ? dateTime.getUTCDate() : dateTime.getDate();
+    const dayOfWeek = useUtcClock ? dateTime.getUTCDay() : dateTime.getDay();
+
     const date = new Intl.DateTimeFormat("zh-TW", {
-        month: "long", day: "numeric", weekday: "long",
+        month: "long", day: "numeric", weekday: "long", ...timeZone,
     }).format(dateTime);
     const fullDate = new Intl.DateTimeFormat("zh-TW", {
-        year: "numeric", month: "long", day: "numeric",
+        year: "numeric", month: "long", day: "numeric", ...timeZone,
     }).format(dateTime);
     const time = new Intl.DateTimeFormat("zh-TW", {
-        hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+        hour: "2-digit", minute: "2-digit", hourCycle: "h23", ...timeZone,
     }).format(dateTime);
-    const numericDate = `${dateTime.getFullYear()}/${pad(dateTime.getMonth() + 1)}/${pad(dateTime.getDate())}`;
-    const monthDay = `${dateTime.getMonth() + 1}/${dateTime.getDate()}`;
-    const weekdayShort = ["日", "一", "二", "三", "四", "五", "六"][dateTime.getDay()];
+    const numericDate = `${year}/${pad(month)}/${pad(day)}`;
+    const monthDay = `${month}/${day}`;
+    const weekdayShort = ["日", "一", "二", "三", "四", "五", "六"][dayOfWeek];
     const weekday = `週${weekdayShort}`;
     const shortDate = `${monthDay}（${weekday}）`;
 

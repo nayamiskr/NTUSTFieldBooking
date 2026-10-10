@@ -4,6 +4,7 @@ import { Bell, CalendarDays, Check, CheckCheck, ChevronDown, ClipboardList, Cloc
 import { pickUpService } from "../../../service/pickUpService";
 import { locationService } from "../../../service/locationService";
 import { formatDateTime } from "../../../utils/dateTimeFormat";
+import { describeRequestError } from "../../../utils/requestError";
 
 const typeLabels = {
   pickup_order_created: "報名通知",
@@ -51,7 +52,7 @@ function RelatedInfo({ notification }) {
         if (!cancelled) setDetails({ group, location, locationFailed, order });
       } catch (requestError) {
         if (!cancelled) setError(requestError.response?.status === 404
-          ? "相關臨打團已不存在或無法查看。" : "暫時無法取得相關臨打團資訊。");
+          ? "相關臨打團已不存在或無法查看。" : describeRequestError(requestError).message);
       } finally { if (!cancelled) setLoading(false); }
     }
     load();

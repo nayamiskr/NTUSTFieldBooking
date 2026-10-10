@@ -5,6 +5,7 @@ import { useAuthStore } from "../../store/authStore";
 import { earliestBookingDate } from "../bookingWindow";
 import { formatDateTime } from "../../utils/dateTimeFormat";
 import { bookingSlotKey, groupBookingSlots } from "../bookingSelection";
+import { describeRequestError } from "../../utils/requestError";
 
 const HOURS = Array.from({ length: 24 }, (_, index) => index);
 const hourText = (hour) => formatDateTime(hour, { input: "hour" }).time;
@@ -79,7 +80,7 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
     ));
   const availabilityRequestKey = availabilityRequests.map(({ key }) => key).join("|");
   const availabilityLoading = availabilityRequests.some(({ key }) => !availabilityByKey[key]);
-  const availabilityError = availabilityRequests.some(({ key }) => availabilityByKey[key]?.error);
+  const availabilityError = availabilityRequests.find(({ key }) => availabilityByKey[key]?.error);
 
   useEffect(() => {
     if (selectedVenueId == null) {
@@ -99,7 +100,7 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
     setError(false);
     if (!userId) {
       setBookings([]);
-      setError(true);
+      setError("請先登入，才能確認自己的預約時段。");
       setLoading(false);
       return () => { active = false; };
     }
@@ -114,8 +115,8 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
         return bookingUserId == null || String(bookingUserId) === String(userId);
       });
       if (active) setBookings(ownBookings);
-    }).catch(() => {
-      if (active) { setBookings([]); setError(true); }
+    }).catch((requestError) => {
+      if (active) { setBookings([]); setError(describeRequestError(requestError).message); }
     }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [selectedDate, userId]);
@@ -150,7 +151,7 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
           setAvailabilityByKey((previous) => ({ ...previous, [request.key]: entry }));
         } catch (requestError) {
           if (!active) return;
-          setAvailabilityByKey((previous) => ({ ...previous, [request.key]: { error: true } }));
+          setAvailabilityByKey((previous) => ({ ...previous, [request.key]: { error: describeRequestError(requestError).message } }));
         }
       }
     }
@@ -245,8 +246,8 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
       </div>}
     </div>
     {(loading || availabilityLoading) && <p role="status" className="mb-4 rounded-xl bg-blue-50 p-4 text-sm text-blue-800">正在確認場地可預約時段…</p>}
-    {error && <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{userId ? "目前無法確認我的預約時段，請稍後重新整理頁面。" : "請先登入，才能確認自己的預約時段。"}</p>}
-    {availabilityError && <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">部分場地時段暫時無法確認，請稍後重新整理頁面。</p>}
+    {error && <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">無法確認我的預約時段：{error}</p>}
+    {availabilityError && <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">部分場地時段無法確認：{availabilityByKey[availabilityError.key].error}</p>}
     {selectionError && <p role="alert" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{selectionError}</p>}
     {!loading && !availabilityLoading && viewMode !== "week" && !visibleFields.length && <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-600">{availableOnly ? "這個日期目前沒有符合條件的場地，試試其他日期。" : "目前沒有場地資料。"}</p>}
     {viewMode === "table" && visibleFields.length > 0 && !visibleHours.length && <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-600">目前沒有可顯示的營業時段。</p>}

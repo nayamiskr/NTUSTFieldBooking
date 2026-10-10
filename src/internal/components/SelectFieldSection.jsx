@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../baseApi";
 import { formatDateTime } from "../../utils/dateTimeFormat";
+import { describeRequestError } from "../../utils/requestError";
 
 function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate}) {
   const navigate = useNavigate();
@@ -288,7 +289,7 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate})
           <p className="text-center text-sm text-gray-500 mb-2">載入已預約時段中...</p>
         )}
         {bookingsError && (
-          <p className="text-center text-sm text-red-600 mb-2">取得已預約時段失敗：{bookingsError.message}</p>
+          <p className="text-center text-sm text-red-600 mb-2">取得已預約時段失敗：{describeRequestError(bookingsError).message}</p>
         )}
         {tableByDate()}
       </div>

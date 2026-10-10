@@ -19,6 +19,7 @@ import { zhTWDictionary } from "../../locale/zh-TW/translate";
 import { pickUpService } from "../../service/pickUpService";
 import { skillLevelService } from "../../service/skillLevelService";
 import { useSportStore } from "../../store/sportStore";
+import { describeRequestError } from "../../utils/requestError";
 
 const isMissingSkillLevelError = (error) => error?.response?.status === 400
     && /^skill level not set for this sport\b/i.test(String(error?.response?.data?.error || ""));
@@ -106,7 +107,8 @@ function PickUpPageContent({ sportTypeId }) {
             } else {
                 console.error("取得個人運動程度失敗:", error);
                 setMyLevelStatus("error");
-                errorPopup("讀取程度失敗", "目前無法確認你的運動程度，請稍後再試。");
+                const failure = describeRequestError(error);
+                errorPopup(failure.title, failure.message);
             }
         });
 
@@ -134,7 +136,7 @@ function PickUpPageContent({ sportTypeId }) {
         }).catch((error) => {
             if (cancelled) return;
             console.error("取得程度表失敗:", error);
-            setLevelsError("無法載入程度，請重試");
+            setLevelsError(describeRequestError(error).message);
         }).finally(() => {
             if (!cancelled) setLevelsLoading(false);
         });
@@ -190,7 +192,8 @@ function PickUpPageContent({ sportTypeId }) {
                 console.error("Error fetching groups:", error);
                 setGroups([]);
                 setPageInfo({ total: 0, hasNext: false, pageSize });
-                errorPopup(zhTWDictionary.pickUpPage.errorMessage.error, zhTWDictionary.pickUpPage.errorMessage.fetchFailed);
+                const failure = describeRequestError(error);
+                errorPopup(failure.title, failure.message);
 
             } finally {
                 if (!cancelled) setLoading(false);
@@ -209,7 +212,7 @@ function PickUpPageContent({ sportTypeId }) {
             if (cancelled) return;
             console.error("取得近期臨打報名失敗:", error);
             setMyPickUpOrders([]);
-            setMyOrdersError(true);
+            setMyOrdersError(describeRequestError(error).message);
         });
         return () => { cancelled = true; };
     }, [refreshTrigger]);
@@ -246,7 +249,8 @@ function PickUpPageContent({ sportTypeId }) {
                     if (isMissingSkillLevelError(error)) {
                         promptForMyLevel(groupId, requestPayload);
                     } else {
-                        errorPopup("讀取程度失敗", "目前無法確認你的運動程度，請稍後再試。");
+                        const failure = describeRequestError(error);
+                        errorPopup(failure.title, failure.message);
                     }
                     return false;
                 }
@@ -331,9 +335,7 @@ function PickUpPageContent({ sportTypeId }) {
                 successPopup("設定成功", "你的運動程度已儲存。");
             }
         } catch (error) {
-            const apiMessage = error?.response?.data?.error;
-            setMyLevelSaveError(typeof apiMessage === "string" && apiMessage
-                ? apiMessage : "儲存程度失敗，請稍後再試。");
+            setMyLevelSaveError(describeRequestError(error).message);
         } finally {
             setSavingMyLevel(false);
         }
@@ -421,7 +423,7 @@ function PickUpPageContent({ sportTypeId }) {
                     </article>)}
                 </div>
             </section>}
-            {myOrdersError && <p role="alert" className="mx-auto mb-4 w-[95%] max-w-7xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">暫時無法載入近期已報名活動。<button type="button" onClick={() => setRefreshTrigger((value) => value + 1)} className="ml-2 font-semibold underline">重新載入</button></p>}
+            {myOrdersError && <p role="alert" className="mx-auto mb-4 w-[95%] max-w-7xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">近期已報名活動載入失敗：{myOrdersError}<button type="button" onClick={() => setRefreshTrigger((value) => value + 1)} className="ml-2 font-semibold underline">重新載入</button></p>}
 
             {myLevelStatus === "missing" && levelDialogDismissed && (
                 <div className="mx-auto mb-4 flex w-[95%] max-w-7xl items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900" role="status">

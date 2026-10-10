@@ -5,6 +5,7 @@ import { successPopup } from "../../components/pop-up";
 import { earliestBookingDate, isDateBookable } from "../bookingWindow";
 import { formatDateTime } from "../../utils/dateTimeFormat";
 import { createBookingSeriesPayload, readBookingSeriesConflicts } from "../bookingSeries";
+import { describeRequestError, requestErrorDetail } from "../../utils/requestError";
 
 const TERM_MONTHS = { quarter: 3, half: 6, year: 12 };
 const WEEKDAYS = ["週日", "週一", "週二", "週三", "週四", "週五", "週六"];
@@ -211,7 +212,7 @@ function PayPage() {
               ? "以下日期與既有預約衝突，整筆長期預約未建立。請返回調整日期、場面或時段。"
               : "所選長期時段與既有預約衝突，整筆長期預約未建立。請返回調整後再試。");
           } else {
-            setSubmitError(error?.response?.data?.message || error?.response?.data?.error || "長期預約送出失敗，請稍後再試。");
+            setSubmitError(describeRequestError(error).message);
           }
           return;
         }
@@ -235,11 +236,13 @@ function PayPage() {
         } catch (e) {
           console.error("[預約場地] 送出失敗", { fieldId: item.fieldId, payload,
             status: e?.response?.status, response: e?.response?.data, message: e?.message });
-          const message = e?.response?.data?.message || e?.response?.data?.error || e?.message || "送出失敗";
+          const detail = requestErrorDetail(e);
+          const message = /booking must fall within the location's opening hours/i.test(detail)
+            ? "所選時段不在場地可預約時間內，請返回重新選擇。"
+            : describeRequestError(e).message;
           setSubmitError(completed.size
             ? `已有 ${completed.size} 筆預約成功送出，其餘尚未完成。${message} 再次送出時會略過已成功的項目。`
-            : (/booking must fall within the location's opening hours/i.test(message)
-              ? "所選時段不在場地可預約時間內，請返回重新選擇。" : message));
+            : message);
           return;
         }
       }
@@ -248,7 +251,7 @@ function PayPage() {
       navigate(`/external/order`);
     } catch (e) {
       console.error("[預約場地] 訂單確認失敗", { status: e?.response?.status, message: e?.message });
-      setSubmitError("無法確認場地資料，請稍後再試。");
+      setSubmitError(describeRequestError(e).message);
     } finally {
       submittingRef.current = false;
       setIsSubmitting(false);

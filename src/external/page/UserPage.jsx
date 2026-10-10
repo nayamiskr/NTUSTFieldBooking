@@ -11,6 +11,7 @@ import Calendar from "../../components/dayPicker/dayPick";
 import { skillLevelService } from "../../service/skillLevelService";
 import { formatDateTime } from "../../utils/dateTimeFormat";
 import { useSportStore } from "../../store/sportStore";
+import { describeRequestError } from "../../utils/requestError";
 
 const isMissingSkillLevelError = (error) => error?.response?.status === 400
     && /^skill level not set for this sport\b/i.test(String(error?.response?.data?.error || ""));
@@ -75,7 +76,8 @@ export function UserPage() {
                 setFormData(createEditableProfile(profile));
             } catch (error) {
                 console.error("取得個人資料失敗：", error);
-                errorPopup("個人資料", "目前無法取得個人資料，請稍後再試。");
+                const failure = describeRequestError(error);
+                errorPopup(failure.title, failure.message);
             }
         };
 
@@ -199,13 +201,15 @@ export function UserPage() {
             console.error(savingLevel ? "更新程度失敗：" : "更新個人資料失敗：", error);
             const apiErrorText = String(error?.response?.data?.error || error?.response?.data?.message || "");
             if (savingLevel) {
-                errorPopup("儲存程度失敗", profileSaved
-                    ? "基本資料已更新，但程度未更新。請重試儲存。"
-                    : "無法更新程度，請稍後再試。");
+                const failure = describeRequestError(error);
+                errorPopup(failure.title, profileSaved
+                    ? `基本資料已更新，但程度未更新。${failure.message}`
+                    : failure.message);
             } else if ([400, 422].includes(error?.response?.status) && /phone|mobile|電話|手機/i.test(apiErrorText)) {
                 errorPopup("電話格式錯誤", "電話號碼未通過驗證，請確認格式後再試。");
             } else {
-                errorPopup("儲存失敗", "無法更新個人資料，請稍後再試。");
+                const failure = describeRequestError(error);
+                errorPopup(failure.title, failure.message);
             }
         } finally {
             setIsSaving(false);

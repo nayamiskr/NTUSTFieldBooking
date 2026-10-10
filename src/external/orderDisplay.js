@@ -1,11 +1,16 @@
+import { bookingTimestamp } from "../utils/bookingDateTime";
+
 const STATUS_PRIORITY = { confirmed: 0, pending: 1, cancel_request: 2, cancelled: 3 };
 const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
 
-const startTime = (order) => new Date(order?.start_time).getTime();
-const endTime = (order) => order?.end_time ? new Date(order.end_time).getTime() : NaN;
+const startTime = (order, kind = order?.orderKind) => kind === "booking"
+    ? bookingTimestamp(order?.start_time, order) : new Date(order?.start_time).getTime();
+const endTime = (order, kind = order?.orderKind) => order?.end_time
+    ? kind === "booking" ? bookingTimestamp(order.end_time, order) : new Date(order.end_time).getTime()
+    : NaN;
 
-export function isOrderExpired(order, now = Date.now()) {
-    const end = endTime(order);
+export function isOrderExpired(order, now = Date.now(), kind = order?.orderKind) {
+    const end = endTime(order, kind);
     return Number.isFinite(end) && end <= now;
 }
 
@@ -17,13 +22,13 @@ export function getHistoricalOrders(bookingOrders = [], pickupOrders = [], now =
         .sort((a, b) => endTime(b) - endTime(a));
 }
 
-export function sortOrdersForDisplay(orders = [], now = Date.now()) {
+export function sortOrdersForDisplay(orders = [], now = Date.now(), kind) {
     return orders.map((order, index) => ({ order, index })).sort((a, b) => {
         const statusDiff = (STATUS_PRIORITY[a.order.status] ?? 4) - (STATUS_PRIORITY[b.order.status] ?? 4);
         if (statusDiff) return statusDiff;
         if (a.order.status === "confirmed") {
-            const aStart = startTime(a.order);
-            const bStart = startTime(b.order);
+            const aStart = startTime(a.order, kind);
+            const bStart = startTime(b.order, kind);
             const aUpcoming = Number.isFinite(aStart) && aStart > now;
             const bUpcoming = Number.isFinite(bStart) && bStart > now;
             if (aUpcoming !== bUpcoming) return aUpcoming ? -1 : 1;

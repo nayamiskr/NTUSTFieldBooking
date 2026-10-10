@@ -4,6 +4,7 @@ import Navbar from "../components/navbar";
 import Loading from "../../components/loading";
 import NotificationCard from "../components/notifications/NotificationCard";
 import { notificationService } from "../../service/notificationService";
+import { describeRequestError } from "../../utils/requestError";
 
 const PAGE_SIZE = 20;
 
@@ -53,7 +54,7 @@ export function AnnouncePage() {
                 }
                 setResult(list.value);
             } else {
-                setError("目前無法載入通知，請稍後再試。");
+                setError(describeRequestError(list.reason).message);
             }
             setLoading(false);
         }
@@ -73,8 +74,8 @@ export function AnnouncePage() {
             if (!mountedRef.current) return;
             setFeedback(id ? "通知已標記為已讀。" : "全部通知已標記為已讀。");
             setRefresh((value) => value + 1);
-        } catch {
-            if (mountedRef.current) setActionError("標記已讀失敗，請再試一次。");
+        } catch (error) {
+            if (mountedRef.current) setActionError(describeRequestError(error).message);
         } finally {
             mutationRef.current = false;
             if (mountedRef.current) setPending(null);

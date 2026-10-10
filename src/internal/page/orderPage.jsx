@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import api from "../../baseApi"
 import Navbar from "../components/navbar";
 import Loading from "../../components/loading";
-import { formatDateTime } from "../../utils/dateTimeFormat";
+import { formatBookingDateTime } from "../../utils/bookingDateTime";
+import { describeRequestError } from "../../utils/requestError";
 
 function OrderPage() {
     const [orders, setOrders] = useState(null);
@@ -50,6 +51,7 @@ function OrderPage() {
             resourceName: order.location.name + " - " + (order?.resource?.name ?? ""),
             start: order?.start_time,
             end: order?.end_time,
+            bookingSeriesId: order?.booking_series_id,
         });
         setCancelModalOpen(true);
     };
@@ -128,8 +130,8 @@ function OrderPage() {
         <div>
             <Navbar />
             <Loading isLoading={loading} text="取得訂單資料中..." />
-            {error && <p>取得訂單資料失敗: {error.message}</p>}
-            {cancelActionError && <p className="text-red-600 text-center mt-2">取消申請失敗: {cancelActionError.message}</p>}
+            {error && <p>取得訂單資料失敗：{describeRequestError(error).message}</p>}
+            {cancelActionError && <p className="text-red-600 text-center mt-2">取消申請失敗：{describeRequestError(cancelActionError).message}</p>}
             {pdfImportError && <p className="text-red-600 text-center mt-2">匯入 PDF 失敗: {pdfImportError.message}</p>}
             {!loading && orders &&
                 (
@@ -161,7 +163,7 @@ function OrderPage() {
                                                 </button>
                                             </div>
                                         </div>
-                                        <p className="text-start text-md text-gray-400">預約時間：{order.start_time ? `${formatDateTime(order.start_time).date} ${formatDateTime(order.start_time).time} - ${formatDateTime(order.end_time).time}` : ""}</p>
+                                        <p className="text-start text-md text-gray-400">預約時間：{order.start_time ? `${formatBookingDateTime(order.start_time, order).date} ${formatBookingDateTime(order.start_time, order).time} - ${formatBookingDateTime(order.end_time, order).time}` : ""}</p>
                                     </div>
 
                                     <div className=" flex flex-col h-auto items-end justify-between p-4">
@@ -195,10 +197,10 @@ function OrderPage() {
                             你確定要取消「{selectedCancelOrder?.resourceName || ""}」這筆預約嗎？
                         </p>
                         <p className="mt-1 text-sm text-gray-500">
-                            {selectedCancelOrder?.start ? formatDateTime(selectedCancelOrder.start).date : ""}
+                            {selectedCancelOrder?.start ? formatBookingDateTime(selectedCancelOrder.start, { booking_series_id: selectedCancelOrder.bookingSeriesId }).date : ""}
                             {selectedCancelOrder?.start ? " " : ""}
                             {selectedCancelOrder?.start
-                                ? `${formatDateTime(selectedCancelOrder.start).time} - ${formatDateTime(selectedCancelOrder.end).time}`
+                                ? `${formatBookingDateTime(selectedCancelOrder.start, { booking_series_id: selectedCancelOrder.bookingSeriesId }).time} - ${formatBookingDateTime(selectedCancelOrder.end, { booking_series_id: selectedCancelOrder.bookingSeriesId }).time}`
                                 : ""}
                         </p>
 

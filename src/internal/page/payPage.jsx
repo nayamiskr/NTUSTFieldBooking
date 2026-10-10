@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import api from "../../baseApi";
+import { describeRequestError } from "../../utils/requestError";
 
 function PayPage() {
   const location = useLocation();
@@ -157,12 +158,7 @@ function PayPage() {
       alert("訂單已送出！請耐心等候審核。");
       navigate(`/ntust/order`);
     } catch (e) {
-      const msg =
-        e?.response?.data?.message ||
-        e?.response?.data?.error ||
-        e?.message ||
-        "送出失敗";
-      setSubmitError(msg);
+      setSubmitError(describeRequestError(e).message);
     } finally {
       setIsSubmitting(false);
     }

@@ -12,6 +12,8 @@ import PickUpDetailPopUp from "../components/pickUp/pickUpDetailPopUp";
 import { isRegistrationClosed } from "../pickUpTiming";
 import { getHistoricalOrders, isOrderExpired, sortOrdersForDisplay } from "../orderDisplay";
 import { getPickUpPartyDetails } from "../pickUpOrderDetails";
+import { describeRequestError } from "../../utils/requestError";
+import { bookingTimestamp, formatBookingDateTime } from "../../utils/bookingDateTime";
 
 const STARTING_SOON_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -31,9 +33,9 @@ const getDirectionsUrl = (location) => {
         : null;
 };
 
-const isStartingSoon = (order, now) => {
+const isStartingSoon = (order, now, isPickupOrder) => {
     if (["cancelled", "cancel_request", "rejected"].includes(order.status)) return false;
-    const startTime = new Date(order.start_time).getTime();
+    const startTime = isPickupOrder ? new Date(order.start_time).getTime() : bookingTimestamp(order.start_time, order);
     const timeUntilStart = startTime - now;
     return Number.isFinite(startTime) && timeUntilStart > 0 && timeUntilStart <= STARTING_SOON_WINDOW_MS;
 };
@@ -129,6 +131,7 @@ export default function OrderPage({ historyOnly = false }) {
             ordereName: activeTab === "booking" ? order.location.name + " - " + (order?.resource?.name ?? "") : order.title,
             start: order?.start_time,
             end: order?.end_time,
+            bookingSeriesId: order?.booking_series_id,
         });
         setCancelModalOpen(true);
     };
@@ -206,15 +209,20 @@ export default function OrderPage({ historyOnly = false }) {
         ? getHistoricalOrders(bookingOrders, pickupOrders, now)
         : sortOrdersForDisplay(
             (activeTab === "booking" ? bookingOrders : pickupOrders)
-                .filter((order) => !isOrderExpired(order, now)), now
+                .filter((order) => !isOrderExpired(order, now, activeTab)), now, activeTab
         );
+    const cancelTime = (value) => activeTab === "booking"
+        ? formatBookingDateTime(value, { booking_series_id: selectedCancelOrder?.bookingSeriesId })
+        : formatDateTime(value);
+    const cancelStart = cancelTime(selectedCancelOrder?.start);
+    const cancelEnd = cancelTime(selectedCancelOrder?.end);
 
     return (
         <div className="app-page pb-12 text-slate-900">
             <Navbar />
             <Loading isLoading={loading} text="取得訂單資料中..." />
-            {error && <p>取得訂單資料失敗: {error.message}</p>}
-            {cancelActionError && <p className="text-red-600 text-center mt-2">取消申請失敗: {cancelActionError.message}</p>}
+            {error && <p>取得訂單資料失敗：{describeRequestError(error).message}</p>}
+            {cancelActionError && <p className="text-red-600 text-center mt-2">取消申請失敗：{describeRequestError(cancelActionError).message}</p>}
             {!loading && orders &&
                 (
                     <div>
@@ -256,8 +264,10 @@ export default function OrderPage({ historyOnly = false }) {
                             {visibleOrders.map((order) => {
                                 const directionsUrl = getDirectionsUrl(order.location);
                                 const isPickupOrder = activeTab === "pickup" || (activeTab === "history" && order.orderKind === "pickup");
+                                const start = isPickupOrder ? formatDateTime(order.start_time) : formatBookingDateTime(order.start_time, order);
+                                const end = isPickupOrder ? formatDateTime(order.end_time) : formatBookingDateTime(order.end_time, order);
                                 const partyDetails = isPickupOrder ? getPickUpPartyDetails(order) : null;
-                                const startingSoon = activeTab !== "history" && isStartingSoon(order, now);
+                                const startingSoon = activeTab !== "history" && isStartingSoon(order, now, isPickupOrder);
                                 return (
                                     <li
                                         key={`${order.orderKind || activeTab}-${order.id}`}
@@ -301,8 +311,8 @@ export default function OrderPage({ historyOnly = false }) {
 
                                     {/* 詳細資訊 */}
                                     <div className="text-sm text-gray-600 mb-4">
-                                        <p>日期：{formatDateTime(order.start_time).date}</p>
-                                        <p>時間：{formatDateTime(order.start_time).time} - {formatDateTime(order.end_time).time}</p>
+                                        <p>日期：{start.date}</p>
+                                        <p>時間：{start.time} - {end.time}</p>
                                         <p>地點：{order.location?.name || "未指定"}</p>
                                     </div>
                                     {isPickupOrder && <p className="mb-3 text-sm font-semibold text-blue-600">點擊查看臨打團詳細資訊 →</p>}
@@ -342,8 +352,8 @@ export default function OrderPage({ historyOnly = false }) {
                             你確定要取消「{selectedCancelOrder?.ordereName || ""}」這筆預約嗎？
                         </p>
                         <p className="mt-1 text-sm text-gray-500">
-                            <p>日期：{formatDateTime(selectedCancelOrder.start).date}</p>
-                            <p>時間：{formatDateTime(selectedCancelOrder.start).time} - {formatDateTime(selectedCancelOrder.end).time}</p>
+                            <p>日期：{cancelStart.date}</p>
+                            <p>時間：{cancelStart.time} - {cancelEnd.time}</p>
                         </p>
 
                         <div className="mt-6 flex gap-3">

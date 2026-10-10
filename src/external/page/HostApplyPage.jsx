@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import Navbar from "../components/navbar"; 
 import { successPopup, errorPopup } from "../../components/pop-up"; 
+import { describeRequestError } from "../../utils/requestError";
 
 function HostApplyPage() {
   const navigate = useNavigate();
@@ -49,7 +50,8 @@ function HostApplyPage() {
       successPopup("送出成功", "申請已送出！管理員將在 1-3 個工作天內審核。");
       navigate("/external/group"); 
     } catch (error) {
-      errorPopup("送出失敗", "請稍後再試或聯繫客服。");
+      const failure = describeRequestError(error);
+      errorPopup(failure.title, failure.message);
     } finally {
       setIsSubmitting(false);
     }

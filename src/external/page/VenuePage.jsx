@@ -11,6 +11,7 @@ import { sportService } from "../../service/sportService";
 import { findVenueSport, resourcesForSport, resourceTypeForSport } from "../venueSportFilter";
 import { formatDateTime } from "../../utils/dateTimeFormat";
 import { useSportStore } from "../../store/sportStore";
+import { describeRequestError } from "../../utils/requestError";
 
 export default function VenuePage() {
   const { fieldType } = useParams();
@@ -67,7 +68,7 @@ function VenuePageContent({ selection }) {
         }
       }
       catch (error) {
-        if (!cancelled) setError(true);
+        if (!cancelled) setError(describeRequestError(error).message);
       }
       finally {
         if (!cancelled) {
@@ -115,7 +116,7 @@ function VenuePageContent({ selection }) {
             </div>
           </div>
         </section>
-        {error && <section role="alert" className="mb-8 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700 sm:p-6">場地資料載入失敗，請重新整理頁面。</section>}
+        {error && <section role="alert" className="mb-8 rounded-2xl border border-red-200 bg-red-50 p-4 text-red-700 sm:p-6">場地資料載入失敗：{error}</section>}
         {!loading && !error && filteredFields.length === 0 && <section role="status" aria-label="場地搜尋結果" className="mb-8 rounded-2xl border border-slate-200 bg-white p-4 text-slate-600 shadow-sm sm:p-6">目前沒有提供{selectedSport?.name}場面的場館。</section>}
       </main>
       {!loading && !error && filteredFields.length > 0 && <VenueBookingCards key={selectedSport?.id} fields={filteredFields} selectedDate={selectedDate} selectedVenueId={selectedVenueId} sportFilter={selectedSport?.id} />}

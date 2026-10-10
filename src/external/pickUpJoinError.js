@@ -1,3 +1,5 @@
+import { describeRequestError } from "../utils/requestError";
+
 const errorText = (value) => {
     if (typeof value === "string") return value.trim();
     if (Array.isArray(value)) return value.map(errorText).filter(Boolean).join("；");
@@ -6,6 +8,8 @@ const errorText = (value) => {
 };
 
 export function describePickUpJoinError(error) {
+    const commonFailure = describeRequestError(error);
+    if (commonFailure.title === "連線逾時" || commonFailure.title === "網路連線失敗") return commonFailure;
     const data = error?.response?.data;
     const status = error?.response?.status;
     const message = [data?.message, data?.error, data?.detail].map(errorText).find(Boolean) || "";
@@ -27,7 +31,5 @@ export function describePickUpJoinError(error) {
     if (status === 401) return { title: "登入已失效", message: "請重新登入後再報名。" };
     if (status === 403) return { title: "無法報名", message: "目前的帳號沒有報名權限。" };
     if (status === 404) return { title: "活動不存在", message: "找不到這個臨打團，請重新整理列表。", refresh: true };
-    if (!error?.response) return { title: "連線失敗", message: "無法送出報名，請檢查網路連線後再試。" };
-    if (status >= 500) return { title: "報名失敗", message: "系統暫時無法處理報名，請稍後再試。" };
-    return { title: "報名失敗", message: message || "無法完成報名，請稍後再試。" };
+    return commonFailure;
 }

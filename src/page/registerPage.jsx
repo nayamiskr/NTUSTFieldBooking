@@ -7,6 +7,7 @@ import { registerService } from "../service/registerService";
 import { validateRegister } from "../utils/validator";
 import { errorPopup } from "../components/pop-up";
 import Calendar from "../components/dayPicker/dayPick";
+import { describeRequestError, requestErrorDetail } from "../utils/requestError";
 
 const inputClassName = "mt-1.5 w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-800 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100";
 
@@ -52,12 +53,11 @@ function RegisterPage() {
       });
       navigate("/");
     } catch (error) {
-      errorPopup(
-        zhTWDictionary.registerPage.errorMessage.error,
-        error?.response?.status === 409
-          ? zhTWDictionary.registerPage.errorMessage.emailExist
-          : zhTWDictionary.registerPage.errorMessage.registrationFailed
-      );
+      const duplicateName = /username|使用者名稱/i.test(requestErrorDetail(error));
+      const failure = describeRequestError(error, {
+        409: { title: "註冊錯誤", message: duplicateName ? "該使用者名稱已被使用" : zhTWDictionary.registerPage.errorMessage.emailExist },
+      });
+      errorPopup(failure.title, failure.message);
     } finally {
       setLoading(false);
     }

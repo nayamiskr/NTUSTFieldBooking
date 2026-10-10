@@ -10,6 +10,7 @@ import { zhTWDictionary } from "../locale/zh-TW/translate";
 import { functionIconMap } from "../constant/IconMap";
 import { useAuthPageTransition } from "../components/useAuthPageTransition";
 import { useSportStore } from "../store/sportStore";
+import { describeRequestError } from "../utils/requestError";
 
 
 function LoginPage() {
@@ -43,6 +44,8 @@ function LoginPage() {
         setSport(data.items);
       } catch (error) {
         console.error("Error fetching sport list:", error);
+        const failure = describeRequestError(error);
+        errorPopup(failure.title, failure.message);
       } finally {
         setLoading(false);
       }
@@ -88,7 +91,13 @@ function LoginPage() {
       navigate(`external/group`);
 
     } catch (error) {
-      errorPopup(zhTWDictionary.loginPage.errorMessage.error, zhTWDictionary.loginPage.errorMessage.invalidCredentials);
+      const failure = error?.message === "Invalid credentials" ? {
+        title: "登入錯誤", message: zhTWDictionary.loginPage.errorMessage.invalidCredentials,
+      } : describeRequestError(error, {
+        400: { title: "登入錯誤", message: zhTWDictionary.loginPage.errorMessage.invalidCredentials },
+        401: { title: "登入錯誤", message: zhTWDictionary.loginPage.errorMessage.invalidCredentials },
+      });
+      errorPopup(failure.title, failure.message);
       console.error("Login error:", error);
     } finally {
       setLoading(false);
