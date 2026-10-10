@@ -1,6 +1,6 @@
 import { bookingTimestamp } from "../utils/bookingDateTime";
 
-const STATUS_PRIORITY = { confirmed: 0, pending: 1, cancel_request: 2, cancelled: 3 };
+const STATUS_PRIORITY = { confirmed: 0, pending: 1, cancel_request: 2, cancelled_request: 2, cancelled: 3 };
 const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
 
 const startTime = (order, kind = order?.orderKind) => kind === "booking"

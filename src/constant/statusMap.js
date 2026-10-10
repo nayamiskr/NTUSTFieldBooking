@@ -21,6 +21,10 @@ export const statusMap = {
     label: dictionary.common.status.cancel_request,
     class: "bg-red-300 text-black-500 border border-red-300",
   },
+  cancelled_request: {
+    label: dictionary.common.status.cancel_request,
+    class: "bg-red-100 text-red-800 border border-red-300",
+  },
   rejected: {
     label: dictionary.common.status.rejected,
     class: "bg-red-500 cursor-not-allowed opacity-80",

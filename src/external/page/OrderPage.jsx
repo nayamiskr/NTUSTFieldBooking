@@ -34,7 +34,7 @@ const getDirectionsUrl = (location) => {
 };
 
 const isStartingSoon = (order, now, isPickupOrder) => {
-    if (["cancelled", "cancel_request", "rejected"].includes(order.status)) return false;
+    if (["cancelled", "cancel_request", "cancelled_request", "rejected"].includes(order.status)) return false;
     const startTime = isPickupOrder ? new Date(order.start_time).getTime() : bookingTimestamp(order.start_time, order);
     const timeUntilStart = startTime - now;
     return Number.isFinite(startTime) && timeUntilStart > 0 && timeUntilStart <= STARTING_SOON_WINDOW_MS;
@@ -136,6 +136,13 @@ export default function OrderPage({ historyOnly = false }) {
         setCancelModalOpen(true);
     };
 
+    const closeCancelModal = () => {
+        if (selectedCancelOrder?.id && cancellingIds.has(selectedCancelOrder.id)) return;
+        setCancelModalOpen(false);
+        setSelectedCancelOrder(null);
+        setCancelActionError(null);
+    };
+
     const openPickUpDetail = (order) => {
         if (!order.pickupGroup) return;
         setSelectedPickUpGroup({ ...order.pickupGroup, enrolledStatus: order.status || "pending" });
@@ -166,6 +173,7 @@ export default function OrderPage({ historyOnly = false }) {
             if (activeTab === "pickup") {
                 await pickUpService.cancelPickUpOrder(orderId);
             } else {
+                await bookingService.requestCancellation(orderId);
             }
 
             setOrders((prev) => {
@@ -174,7 +182,7 @@ export default function OrderPage({ historyOnly = false }) {
                         ...prev,
                         booking: {
                             ...prev.booking,
-                            items: prev.booking.items.map(o => o.id === orderId ? { ...o, status: "cancel_request" } : o)
+                            items: prev.booking.items.map(o => o.id === orderId ? { ...o, status: "cancelled_request" } : o)
                         }
                     };
                 } else {
@@ -193,6 +201,7 @@ export default function OrderPage({ historyOnly = false }) {
             });
             setCancelModalOpen(false);
             setSelectedCancelOrder(null);
+            setCancelActionError(null);
         } catch (err) {
             setCancellingIds((prev) => {
                 const next = new Set(prev);
@@ -222,7 +231,6 @@ export default function OrderPage({ historyOnly = false }) {
             <Navbar />
             <Loading isLoading={loading} text="取得訂單資料中..." />
             {error && <p>取得訂單資料失敗：{describeRequestError(error).message}</p>}
-            {cancelActionError && <p className="text-red-600 text-center mt-2">取消申請失敗：{describeRequestError(cancelActionError).message}</p>}
             {!loading && orders &&
                 (
                     <div>
@@ -326,7 +334,7 @@ export default function OrderPage({ historyOnly = false }) {
                                                 <MapPinned size={16} aria-hidden="true" />Google Maps 導航
                                             </a>
                                         )}
-                                        {activeTab !== "history" && !cancellingIds.has(order.id) && (order.status !== "cancelled" && order.status !== "cancel_request") && !order._cancelRequested && (
+                                        {activeTab !== "history" && !cancellingIds.has(order.id) && !["cancelled", "cancel_request", "cancelled_request"].includes(order.status) && !order._cancelRequested && (
                                             <button
                                                 className="w-full sm:w-auto border border-red-500 text-red-600 bg-white hover:bg-red-50 text-sm font-semibold py-2 px-6 rounded-lg transition"
                                                 onClick={(event) => { event.stopPropagation(); openCancelModal(order); }}
@@ -344,23 +352,24 @@ export default function OrderPage({ historyOnly = false }) {
             {/* {確認要刪除彈窗} */}
             {cancelModalOpen && (
                 <div className="fixed inset-0 z-9999 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/40" onClick={() => setCancelModalOpen(false)} />
+                    <div className="absolute inset-0 bg-black/40" onClick={closeCancelModal} />
 
                     <div className="relative w-[92%] max-w-md rounded-xl bg-white p-6 shadow-xl">
                         <h2 className="text-xl font-bold text-gray-900">確認取消預約？</h2>
                         <p className="mt-2 text-gray-600">
                             你確定要取消「{selectedCancelOrder?.ordereName || ""}」這筆預約嗎？
                         </p>
-                        <p className="mt-1 text-sm text-gray-500">
+                        <div className="mt-1 text-sm text-gray-500">
                             <p>日期：{cancelStart.date}</p>
                             <p>時間：{cancelStart.time} - {cancelEnd.time}</p>
-                        </p>
+                        </div>
+                        {cancelActionError && <p role="alert" className="mt-3 text-sm text-red-600">取消申請失敗：{describeRequestError(cancelActionError).message}</p>}
 
                         <div className="mt-6 flex gap-3">
                             <button
                                 type="button"
                                 className="flex-1 rounded-lg border border-gray-300 py-2 font-semibold text-gray-700 hover:bg-gray-50"
-                                onClick={() => setCancelModalOpen(false)}
+                                onClick={closeCancelModal}
                             >
                                 先不要
                             </button>
@@ -368,8 +377,9 @@ export default function OrderPage({ historyOnly = false }) {
                                 type="button"
                                 className="flex-1 rounded-lg bg-red-600 py-2 font-semibold text-white hover:bg-red-700"
                                 onClick={confirmCancel}
+                                disabled={cancellingIds.has(selectedCancelOrder?.id)}
                             >
-                                確認取消
+                                {cancellingIds.has(selectedCancelOrder?.id) ? "送出中..." : "確認取消"}
                             </button>
                         </div>
                     </div>

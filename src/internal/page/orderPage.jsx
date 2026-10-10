@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import api from "../../baseApi"
+import { bookingService } from "../../service/bookingService";
 import Navbar from "../components/navbar";
 import Loading from "../../components/loading";
 import { formatBookingDateTime } from "../../utils/bookingDateTime";
@@ -30,6 +31,10 @@ function OrderPage() {
         cancel_requested : {
             label: "取消申請中",
             class: "bg-red-100 text-red-800 border border-red-300"
+        },
+        cancelled_request: {
+            label: "取消申請中",
+            class: "bg-red-100 text-red-800 border border-red-300"
         }
     }
     useEffect(() => {
@@ -56,6 +61,13 @@ function OrderPage() {
         setCancelModalOpen(true);
     };
 
+    const closeCancelModal = () => {
+        if (selectedCancelOrder?.id && cancellingIds.has(selectedCancelOrder.id)) return;
+        setCancelModalOpen(false);
+        setSelectedCancelOrder(null);
+        setCancelActionError(null);
+    };
+
     const confirmCancel = async () => {
         if (!selectedCancelOrder?.id) return;
         const orderId = selectedCancelOrder.id;
@@ -68,20 +80,23 @@ function OrderPage() {
         });
 
         try {
-            await api.patch(`/bookings/${orderId}`, {
-                status: "pending",
-            });
-
-
+            await bookingService.requestCancellation(orderId);
+            setOrders((previous) => ({
+                ...previous,
+                items: previous.items.map((order) => order.id === orderId
+                    ? { ...order, status: "cancelled_request" } : order),
+            }));
             setCancelModalOpen(false);
             setSelectedCancelOrder(null);
+            setCancelActionError(null);
         } catch (err) {
+            setCancelActionError(err);
+        } finally {
             setCancellingIds((prev) => {
                 const next = new Set(prev);
                 next.delete(orderId);
                 return next;
             });
-            setCancelActionError(err);
         }
     };
 
@@ -109,6 +124,7 @@ function OrderPage() {
         confirmed: 1,
         completed: 2,
         cancel_requested: 3,
+        cancelled_request: 3,
         cancelled: 4,
     };
 
@@ -131,7 +147,6 @@ function OrderPage() {
             <Navbar />
             <Loading isLoading={loading} text="取得訂單資料中..." />
             {error && <p>取得訂單資料失敗：{describeRequestError(error).message}</p>}
-            {cancelActionError && <p className="text-red-600 text-center mt-2">取消申請失敗：{describeRequestError(cancelActionError).message}</p>}
             {pdfImportError && <p className="text-red-600 text-center mt-2">匯入 PDF 失敗: {pdfImportError.message}</p>}
             {!loading && orders &&
                 (
@@ -172,7 +187,7 @@ function OrderPage() {
                                                 {statusStyle[order.status].label}
                                             </span>
                                         </p>
-                                        {!cancellingIds.has(order.id) && order.status !== "cancelled" && !order._cancelRequested && (
+                                        {!cancellingIds.has(order.id) && !["cancelled", "cancel_requested", "cancelled_request"].includes(order.status) && !order._cancelRequested && (
                                             <button
                                                 className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-md"
                                                 onClick={() => openCancelModal(order)}
@@ -189,7 +204,7 @@ function OrderPage() {
                 )}
             {cancelModalOpen && (
                 <div className="fixed inset-0 z-9999 flex items-center justify-center">
-                    <div className="absolute inset-0 bg-black/40" onClick={() => setCancelModalOpen(false)} />
+                    <div className="absolute inset-0 bg-black/40" onClick={closeCancelModal} />
 
                     <div className="relative w-[92%] max-w-md rounded-xl bg-white p-6 shadow-xl">
                         <h2 className="text-xl font-bold text-gray-900">確認取消預約？</h2>
@@ -203,12 +218,13 @@ function OrderPage() {
                                 ? `${formatBookingDateTime(selectedCancelOrder.start, { booking_series_id: selectedCancelOrder.bookingSeriesId }).time} - ${formatBookingDateTime(selectedCancelOrder.end, { booking_series_id: selectedCancelOrder.bookingSeriesId }).time}`
                                 : ""}
                         </p>
+                        {cancelActionError && <p role="alert" className="mt-3 text-sm text-red-600">取消申請失敗：{describeRequestError(cancelActionError).message}</p>}
 
                         <div className="mt-6 flex gap-3">
                             <button
                                 type="button"
                                 className="flex-1 rounded-lg border border-gray-300 py-2 font-semibold text-gray-700 hover:bg-gray-50"
-                                onClick={() => setCancelModalOpen(false)}
+                                onClick={closeCancelModal}
                             >
                                 先不要
                             </button>
@@ -216,8 +232,9 @@ function OrderPage() {
                                 type="button"
                                 className="flex-1 rounded-lg bg-red-600 py-2 font-semibold text-white hover:bg-red-700"
                                 onClick={confirmCancel}
+                                disabled={cancellingIds.has(selectedCancelOrder?.id)}
                             >
-                                確認取消
+                                {cancellingIds.has(selectedCancelOrder?.id) ? "送出中..." : "確認取消"}
                             </button>
                         </div>
                     </div>

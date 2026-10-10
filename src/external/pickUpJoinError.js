@@ -23,7 +23,7 @@ export function describePickUpJoinError(error) {
         return { title: "活動報名已截止", message: "這個臨打團已超過報名截止時間，無法再報名。", refresh: true, closeDialog: true };
     }
     if (/fully[_\s-]?booked|(?:group|event)[_\s-]+(?:is[_\s-]+)?full\b|capacity[_\s-]?(?:exceeded|full)|not enough (?:remaining )?(?:slots|seats|capacity)|名額不足|已?額滿/.test(reason)) {
-        return { title: "名額不足", message: "剩餘名額不足以完成此次報名，請重新整理後調整人數。", refresh: true };
+        return { title: "預約額滿", message: "請持續關注通知並了解是否有名額釋出，重新整理後調整人數。", refresh: true };
     }
     if (/already.*(?:booked|registered|joined)|duplicate.*(?:order|registration)|已(?:報名|預約)/.test(reason)) {
         return { title: "已經報名", message: "你已報名這個臨打團，請到我的預約查看。", refresh: true };

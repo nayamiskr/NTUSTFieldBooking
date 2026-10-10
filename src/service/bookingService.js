@@ -1,6 +1,10 @@
 import api from "../baseApi.js";
 
 export const bookingService = {
+    requestCancellation: async (bookingId) => {
+        const res = await api.patch(`/bookings/${encodeURIComponent(bookingId)}`, { status: "cancelled" });
+        return res.data;
+    },
     getBookingList: async (params = {}, withResourceType = false) => {
         const res = await api.get("/bookings", { params });
         if (!withResourceType) return res.data;
