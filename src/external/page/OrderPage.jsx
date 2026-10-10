@@ -11,6 +11,7 @@ import { MapPinned } from "lucide-react";
 import PickUpDetailPopUp from "../components/pickUp/pickUpDetailPopUp";
 import { isRegistrationClosed } from "../pickUpTiming";
 import { getHistoricalOrders, isOrderExpired, sortOrdersForDisplay } from "../orderDisplay";
+import { getPickUpPartyDetails } from "../pickUpOrderDetails";
 
 const STARTING_SOON_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -60,6 +61,27 @@ function OrderSportTag({ order }) {
             {name}
         </span>
     );
+}
+
+const genderLabels = { male: "男性", female: "女性", other: "其他" };
+
+function PickUpPartyInfo({ details }) {
+    return <section aria-label="團體報名資訊" className="mt-3 rounded-lg border border-blue-100 bg-blue-50/60 p-3 text-sm text-slate-700">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+            <h3 className="font-bold text-blue-800">團體報名 · {details.partySize} 人（含本人）</h3>
+        </div>
+        <p className="mt-3 font-semibold text-slate-700">成員資料</p>
+        {details.members.length > 0 ? <ol className="mt-2 grid gap-2 sm:grid-cols-2">
+            {details.members.map((member, index) => <li key={index} className="rounded-lg border border-blue-100 bg-white p-3">
+                <p className="font-semibold text-slate-900">第 {index + 1} 位 · {index === 0 ? "本人" : `團員 ${index}`}</p>
+                <p className="mt-1 text-slate-600">性別：{genderLabels[member?.gender] || "未提供"}</p>
+                <p className="text-slate-600">程度：{member?.skill_level !== null && member?.skill_level !== undefined && member?.skill_level !== ""
+                    ? member.skill_level : "未提供"}</p>
+            </li>)}
+        </ol> : <p className="mt-2 text-slate-500">這筆訂單尚未提供成員資料。</p>}
+        {details.members.length > 0 && details.members.length < details.partySize &&
+            <p className="mt-2 text-slate-500">其餘 {details.partySize - details.members.length} 位成員資料尚未提供。</p>}
+    </section>;
 }
 
 export default function OrderPage({ historyOnly = false }) {
@@ -188,7 +210,7 @@ export default function OrderPage({ historyOnly = false }) {
         );
 
     return (
-        <div>
+        <div className="app-page pb-12 text-slate-900">
             <Navbar />
             <Loading isLoading={loading} text="取得訂單資料中..." />
             {error && <p>取得訂單資料失敗: {error.message}</p>}
@@ -234,6 +256,7 @@ export default function OrderPage({ historyOnly = false }) {
                             {visibleOrders.map((order) => {
                                 const directionsUrl = getDirectionsUrl(order.location);
                                 const isPickupOrder = activeTab === "pickup" || (activeTab === "history" && order.orderKind === "pickup");
+                                const partyDetails = isPickupOrder ? getPickUpPartyDetails(order) : null;
                                 const startingSoon = activeTab !== "history" && isStartingSoon(order, now);
                                 return (
                                     <li
@@ -263,6 +286,9 @@ export default function OrderPage({ historyOnly = false }) {
                                                     : `${order.title}`}
                                             </h2>
                                             {activeTab === "history" && <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600">{isPickupOrder ? "臨打團" : "場地預約"}</span>}
+                                            {isPickupOrder && <span className="rounded-md bg-blue-100 px-2 py-1 text-xs font-semibold text-blue-700">
+                                                {partyDetails ? `團體報名 · ${partyDetails.partySize} 人` : "個人報名"}
+                                            </span>}
                                             <OrderSportTag order={order} />
                                             {startingSoon && (
                                                 <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-bold text-amber-800">即將開始 · 24 小時內</span>
@@ -281,6 +307,7 @@ export default function OrderPage({ historyOnly = false }) {
                                     </div>
                                     {isPickupOrder && <p className="mb-3 text-sm font-semibold text-blue-600">點擊查看臨打團詳細資訊 →</p>}
                                     </div>
+                                    {partyDetails && <PickUpPartyInfo details={partyDetails} />}
 
                                     {/* 按鈕區塊 */}
                                     <div className="flex flex-wrap justify-end gap-2 mt-4 pt-4 border-t border-gray-100">

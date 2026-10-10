@@ -56,7 +56,7 @@ function HostApplyPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-12">
+    <div className="app-page pb-12 text-slate-900">
       <Navbar /> 
       
       <div className="flex justify-center items-start px-4 mt-8">

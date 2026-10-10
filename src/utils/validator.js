@@ -12,6 +12,15 @@ export const isValidBirthDate = (birthDate) => {
     && parsedBirthDate <= today;
 };
 
+export const normalizePhoneNumber = (phone) => phone.trim().replace(/[\s()-]/g, "");
+
+export const isValidPhoneNumber = (phone) => {
+  if (typeof phone !== "string") return false;
+  const normalized = normalizePhoneNumber(phone);
+  if (!normalized) return true;
+  return /^(?:09\d{8}|\+8869\d{8}|0[2-8]\d{7,8})$/.test(normalized);
+};
+
 export const validateRegister = ({ name, username, gender, birth_date, email, password, confirmPassword }) => {
   const errors = zhTWDictionary.registerPage.errorMessage;
   if (!name || !username || !gender || !birth_date || !email || !password || !confirmPassword) return errors.requiredFields;

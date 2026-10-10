@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { formatHour24 } from "../../utils/dateTimeFormat";
+import { formatDateTime } from "../../utils/dateTimeFormat";
 
 function SelectFieldSection({ fields, fieldChecked = null, selectedDate, defaultViewMode }) {
   const navigate = useNavigate();
@@ -18,12 +18,7 @@ function SelectFieldSection({ fields, fieldChecked = null, selectedDate, default
     return d;
   });
 
-  const formatDate = (d) => {
-    const m = d.getMonth() + 1;
-    const day = d.getDate();
-    const week = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
-    return `${m}/${day} (${week})`;
-  };
+  const formatDate = (d) => formatDateTime(d).shortDate;
 
   const getSelectedTotalPrice = () => {
     if (!selectedSlots?.hours?.length) return 0;
@@ -147,8 +142,8 @@ function SelectFieldSection({ fields, fieldChecked = null, selectedDate, default
 
           <tbody>
             {HOURS.map((h) => {
-              const start = formatHour24(h);
-              const end = formatHour24(h + 1);
+              const start = formatDateTime(h, { input: "hour" }).time;
+              const end = formatDateTime(h + 1, { input: "hour" }).time;
               const isLunch = h === 0; // 之後依需求改成訂單判斷
 
               return (
@@ -239,8 +234,8 @@ function SelectFieldSection({ fields, fieldChecked = null, selectedDate, default
               </tr>
             ) : (
               HOURS.map((h) => {
-                const start = formatHour24(h);
-                const end = formatHour24(h + 1);
+                const start = formatDateTime(h, { input: "hour" }).time;
+                const end = formatDateTime(h + 1, { input: "hour" }).time;
                 const isLunch = h === 20; // 之後依需求改成訂單判斷
 
                 return (
@@ -319,7 +314,7 @@ function SelectFieldSection({ fields, fieldChecked = null, selectedDate, default
             {(() => {
               const startHour = Math.min(...selectedSlots.hours);
               const endHour = Math.max(...selectedSlots.hours) + 1;
-              return `你已選擇：${formatHour24(startHour)} - ${formatHour24(endHour)}`;
+              return `你已選擇：${formatDateTime(startHour, { input: "hour" }).time} - ${formatDateTime(endHour, { input: "hour" }).time}`;
             })()}
             <br />
             {`場地：${fields[selectedSlots.fieldIdx].name} / 第 ${selectedSlots.resourceIdx + 1} 面`}
@@ -340,10 +335,8 @@ function SelectFieldSection({ fields, fieldChecked = null, selectedDate, default
                   fieldName: fields[selectedSlots.fieldIdx].name,
                   fieldIdx: selectedSlots.fieldIdx,
                   resourceIdx: fields[selectedSlots.fieldIdx].resources[selectedSlots.resourceIdx].id,
-                  date: selectedSlots.date
-                    ? new Date(selectedSlots.date).toLocaleDateString("zh-TW")
-                    : new Date().toLocaleDateString("zh-TW"),
-                  timeRange: `${formatHour24(startHour)} - ${formatHour24(endHour)}`,
+                  date: formatDateTime(selectedSlots.date || new Date()).numericDate,
+                  timeRange: `${formatDateTime(startHour, { input: "hour" }).time} - ${formatDateTime(endHour, { input: "hour" }).time}`,
                   hours: selectedSlots.hours.length,
                   totalPrice: getSelectedTotalPrice(),
                 },

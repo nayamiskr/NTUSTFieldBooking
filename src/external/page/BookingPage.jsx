@@ -8,7 +8,10 @@ import Loading from "../../components/loading";
 import api from "../../baseApi";
 import { facilityMap } from "../../constant/IconMap";
 import { earliestBookingDate } from "../bookingWindow";
-import { formatClock24 } from "../../utils/dateTimeFormat";
+import { formatDateTime } from "../../utils/dateTimeFormat";
+import { useSportStore } from "../../store/sportStore";
+import { sportService } from "../../service/sportService";
+import { findVenueSport, resourcesForSport, resourceTypeForSport } from "../venueSportFilter";
 
 const splitItems = (value) => typeof value === "string" ? value.split(/[,，;；\n]+/).map((item) => item.trim()).filter(Boolean) : [];
 const splitFacilities = (value) => typeof value === "string" ? value.split(/[,，;；\n_]+/).map((item) => item.trim()).filter(Boolean) : [];
@@ -31,6 +34,7 @@ function mapsUrl(latitude, longitude) {
 
 export default function BookingPage() {
   const { id } = useParams();
+  const sportId = useSportStore((state) => state.sportId);
   const [location, setLocation] = useState(null);
   const [resources, setResources] = useState([]);
   const [selectedDate, setSelectedDate] = useState(earliestBookingDate);
@@ -44,18 +48,22 @@ export default function BookingPage() {
       setLoading(true);
       setError(false);
       setCoverFailed(false);
+      setResources([]);
       try {
+        const sportResponse = await sportService.getSportList();
+        const sport = findVenueSport(sportResponse?.items || [], sportId || "badminton");
+        if (!sport) throw new Error("無法辨識選取的球類");
         const token = localStorage.getItem("token");
         const [locationResponse, resourceResponse] = await Promise.all([
           api.get(`/locations/${id}`),
           api.get("/resources", {
             headers: token ? { Authorization: `Bearer ${token}` } : undefined,
-            params: { location_id: id },
+            params: { location_id: id, resource_type: resourceTypeForSport(sport) },
           }),
         ]);
         if (!active) return;
         setLocation(locationResponse.data);
-        setResources(Array.isArray(resourceResponse.data?.items) ? resourceResponse.data.items : []);
+        setResources(resourcesForSport(resourceResponse.data?.items, sport));
       } catch {
         if (active) setError(true);
       } finally {
@@ -64,7 +72,7 @@ export default function BookingPage() {
     }
     if (id) loadLocation();
     return () => { active = false; };
-  }, [id]);
+  }, [id, sportId]);
 
   const cover = imageUrl(location?.cover || location?.cover_thumbnail);
   const rules = splitItems(location?.rule);
@@ -85,11 +93,11 @@ export default function BookingPage() {
     });
   }
 
-  return <div className="min-h-screen bg-slate-50 text-slate-900">
+  return <div className="app-page text-slate-900">
     <Navbar />
     <Loading isLoading={loading} text="取得場地資訊中..." />
     <main className="mx-auto max-w-7xl px-4 pt-6 sm:px-6">
-      <Link to="/external/home/all" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-blue-700"><ArrowLeft size={17} />返回場地列表</Link>
+      <Link to={`/external/home/${sportId || "badminton"}`} className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-blue-700"><ArrowLeft size={17} />返回場地列表</Link>
       {error && <div role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-6 text-red-800">場地資訊載入失敗，請重新整理頁面。</div>}
       {!loading && !error && location && <>
         <section className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
@@ -107,7 +115,7 @@ export default function BookingPage() {
             </div>
             <p className="mt-4 max-w-3xl whitespace-pre-line leading-7 text-slate-600">{location.description?.trim() || "此場地尚未提供詳細介紹。"}</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl bg-slate-50 p-4"><p className="flex items-center gap-2 text-sm text-slate-500"><Clock3 size={16} />開放時間</p><p className="mt-2 font-bold">{formatClock24(location.opening_hours_start)}–{formatClock24(location.opening_hours_end)}</p></div>
+              <div className="rounded-xl bg-slate-50 p-4"><p className="flex items-center gap-2 text-sm text-slate-500"><Clock3 size={16} />開放時間</p><p className="mt-2 font-bold">{formatDateTime(location.opening_hours_start).time}–{formatDateTime(location.opening_hours_end).time}</p></div>
               <div className="rounded-xl bg-slate-50 p-4"><p className="flex items-center gap-2 text-sm text-slate-500"><Users size={16} />容納人數</p><p className="mt-2 font-bold">{Number(location.capacity) > 0 ? `${location.capacity} 人` : "未提供"}</p></div>
               <div className="rounded-xl bg-slate-50 p-4"><p className="flex items-center gap-2 text-sm text-slate-500"><Building2 size={16} />可預約場面</p><p className="mt-2 font-bold">{resources.length} 面</p></div>
             </div>
@@ -146,15 +154,15 @@ export default function BookingPage() {
             <h2 className="flex items-center gap-2 text-lg font-bold"><CalendarDays size={19} className="text-blue-700" />選擇預約週次</h2>
             <Calendar align="end" selectedDate={selectedDate} onDayPicked={({ date }) => setSelectedDate(date)} />
           </div>
-          <p className="mt-2 text-sm text-slate-600">需提前 7 天預約，最早可選 {earliestBookingDate().toLocaleDateString("zh-TW")}。</p>
+          <p className="mt-2 text-sm text-slate-600">需提前 7 天預約，最早可選 {formatDateTime(earliestBookingDate()).numericDate}。</p>
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <button type="button" onClick={() => shiftWeek(-1)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50">上一週</button>
-            <span className="text-sm font-semibold text-slate-700">{dates[0].toLocaleDateString("zh-TW")}–{dates[6].toLocaleDateString("zh-TW")}</span>
+            <span className="text-sm font-semibold text-slate-700">{formatDateTime(dates[0]).numericDate}–{formatDateTime(dates[6]).numericDate}</span>
             <button type="button" onClick={() => shiftWeek(1)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold hover:bg-slate-50">下一週</button>
           </div>
         </section>
       </>}
     </main>
-    {!loading && !error && location && (resources.length ? <VenueBookingCards fields={[{ ...location, resources }]} selectedDate={selectedDate} selectedVenueId={id} detailMode /> : <p className="mx-auto max-w-7xl px-4 pb-12 text-slate-600 sm:px-6">此場地目前沒有可預約的場面。</p>)}
+    {!loading && !error && location && (resources.length ? <VenueBookingCards key={sportId} fields={[{ ...location, resources }]} selectedDate={selectedDate} selectedVenueId={id} sportFilter={sportId} detailMode /> : <p className="mx-auto max-w-7xl px-4 pb-12 text-slate-600 sm:px-6">此場地目前沒有可預約的場面。</p>)}
   </div>;
 }

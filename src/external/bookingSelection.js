@@ -1,4 +1,4 @@
-import { formatHour24 } from "../utils/dateTimeFormat";
+import { formatDateTime } from "../utils/dateTimeFormat";
 
 export const bookingSlotKey = (resourceId, date, hour) => `${resourceId}|${date}|${hour}`;
 
@@ -33,6 +33,6 @@ export function groupBookingSlots(slots) {
 
   return groups.map(({ startHour, endHour, ...group }) => ({
     ...group,
-    timeRange: `${formatHour24(startHour)} - ${formatHour24(endHour)}`,
+    timeRange: `${formatDateTime(startHour, { input: "hour" }).time} - ${formatDateTime(endHour, { input: "hour" }).time}`,
   }));
 }

@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../baseApi";
-import { formatHour24 } from "../../utils/dateTimeFormat";
+import { formatDateTime } from "../../utils/dateTimeFormat";
 
 function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate}) {
   const navigate = useNavigate();
@@ -129,13 +129,6 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate})
     return map;
   }, [bookings]);
 
-  const formatDate = (d) => {
-    const m = d.getMonth() + 1;
-    const day = d.getDate();
-    const week = ["日", "一", "二", "三", "四", "五", "六"][d.getDay()];
-    return `${m}/${day} (${week})`;
-  };
-
   const handleFieldClick = (fieldId) => {
     navigate(`/${fieldId}/`);
   };
@@ -216,8 +209,8 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate})
 
           <tbody>
             {HOURS.map((h) => {
-              const start = formatHour24(h);
-              const end = formatHour24(h + 1);
+              const start = formatDateTime(h, { input: "hour" }).time;
+              const end = formatDateTime(h + 1, { input: "hour" }).time;
 
               return (
                 <tr key={h} className="bg-white">
@@ -307,7 +300,7 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate})
             {(() => {
               const startHour = Math.min(...selectedSlots.hours);
               const endHour = Math.max(...selectedSlots.hours) + 1;
-              return `你已選擇：${formatHour24(startHour)} - ${formatHour24(endHour)}`;
+              return `你已選擇：${formatDateTime(startHour, { input: "hour" }).time} - ${formatDateTime(endHour, { input: "hour" }).time}`;
             })()}
             <br />
             {`場地：${fields[selectedSlots.fieldIdx].name} / 第 ${selectedSlots.resourceIdx + 1} 面`}
@@ -325,8 +318,8 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate})
                   fieldName: fields[selectedSlots.fieldIdx].name + "-" + typeMap[fields[selectedSlots.fieldIdx].resources[0].resource_type],
                   fieldKey: fields[selectedSlots.fieldIdx].resources[selectedSlots.resourceIdx].id,
                   resourceIdx: selectedSlots.resourceIdx,
-                  date: selectedDate.toLocaleDateString("zh-TW"),
-                  timeRange: `${formatHour24(startHour)} - ${formatHour24(endHour)}`,
+                  date: formatDateTime(selectedDate).numericDate,
+                  timeRange: `${formatDateTime(startHour, { input: "hour" }).time} - ${formatDateTime(endHour, { input: "hour" }).time}`,
                   hours: selectedSlots.hours.length,
                 },
               });

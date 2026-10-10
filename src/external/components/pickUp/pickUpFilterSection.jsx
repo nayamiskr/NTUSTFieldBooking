@@ -27,7 +27,6 @@ function FilterContent({ activeFilter, onFilterChange, selectedDate, onDatePicke
                     <button
                         type="button"
                         onClick={onClose}
-                        aria-label="關閉篩選"
                         className="grid h-9 w-9 place-items-center rounded-full text-xl text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
                     >
                         {functionIconMap.cancel.icon}

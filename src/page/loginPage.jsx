@@ -9,6 +9,7 @@ import { errorPopup } from "../components/pop-up";
 import { zhTWDictionary } from "../locale/zh-TW/translate";
 import { functionIconMap } from "../constant/IconMap";
 import { useAuthPageTransition } from "../components/useAuthPageTransition";
+import { useSportStore } from "../store/sportStore";
 
 
 function LoginPage() {
@@ -23,6 +24,7 @@ function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
+  const setSportId = useSportStore((state) => state.setSportId);
   const { isLeaving, switchPage } = useAuthPageTransition();
 
   // const handleVersionFilp = () => {
@@ -76,7 +78,7 @@ function LoginPage() {
       await loginService(email, password);
       // const baseUrl = forSchool ? "ntust" : "external";
       // const typePath = forSchool ? "" : filter;
-      localStorage.setItem("sportType", filter);
+      setSportId(filter);
       try {
         await skillLevelService.refreshSkillLevels(filter);
       } catch (error) {
@@ -128,6 +130,7 @@ function LoginPage() {
             <div>
               <label className="block text-start text-gray-600 mb-1" htmlFor="email">{zhTWDictionary.loginPage.input.label.email}</label>
               <input
+                id="email"
                 name="email"
                 type="email"
                 placeholder={zhTWDictionary.loginPage.input.placeholder.email}

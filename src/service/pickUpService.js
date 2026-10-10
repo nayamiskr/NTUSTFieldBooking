@@ -68,7 +68,7 @@ export const pickUpService = {
 
   // 報名臨打團
   joinPickUpGroup: async (groupId, payload) => {
-    const path = `/pickup-groups/${groupId}/party-orders`;
+    const path = `/pickup-groups/${groupId}/${payload ? 'party-orders' : 'orders'}`;
     if (payload) {
       console.log(`[團體報名 API]\nPOST ${path}\nContent-Type: application/json\n\n${JSON.stringify(payload, null, 2)}`);
     }

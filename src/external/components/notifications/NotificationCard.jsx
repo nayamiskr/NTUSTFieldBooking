@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Bell, CalendarDays, Check, CheckCheck, ChevronDown, ClipboardList, Clock3, CreditCard, MapPin, Star, UserRound } from "lucide-react";
 import { pickUpService } from "../../../service/pickUpService";
 import { locationService } from "../../../service/locationService";
+import { formatDateTime } from "../../../utils/dateTimeFormat";
 
 const typeLabels = {
   pickup_order_created: "報名通知",
@@ -21,10 +22,9 @@ const orderStatuses = { pending: "待確認", confirmed: "已確認", cancelled:
 const paymentStatuses = { pending: "待付款", done: "已付款", failed: "付款失敗" };
 
 export function formatNotificationDate(value) {
-  const date = value ? new Date(value) : null;
-  return date && !Number.isNaN(date.getTime())
-    ? new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" }).format(date)
-    : "時間未提供";
+  if (!value) return "時間未提供";
+  const formatted = formatDateTime(value);
+  return formatted.date === "未定日期" ? "時間未提供" : `${formatted.fullDate} ${formatted.time}`;
 }
 
 function RelatedInfo({ notification }) {

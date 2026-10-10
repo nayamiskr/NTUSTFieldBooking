@@ -1,3 +1,5 @@
+import { functionIconMap } from "../../../constant/IconMap";
+
 export default function SkillLevelPrompt({ levels, levelsError, value, onChange, onSave, onClose, onRetry, saving, saveError }) {
     return (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/55 px-4 py-6">
@@ -7,7 +9,13 @@ export default function SkillLevelPrompt({ levels, levelsError, value, onChange,
                         <h2 id="skill-level-title" className="text-xl font-bold text-slate-900">設定你的運動程度</h2>
                         <p id="skill-level-description" className="mt-2 text-sm leading-6 text-slate-600">你還沒有設定這個球類的程度。請選擇符合自己的程度後儲存。</p>
                     </div>
-                    <button type="button" onClick={onClose} disabled={saving} aria-label="稍後再設定程度" className="rounded-lg px-2 py-1 text-xl text-slate-500 hover:bg-slate-100 disabled:opacity-50">×</button>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="grid h-9 w-9 place-items-center rounded-full text-xl text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
+                    >
+                        {functionIconMap.cancel.icon}
+                    </button>
                 </div>
 
                 <form onSubmit={onSave} className="mt-6 space-y-4">

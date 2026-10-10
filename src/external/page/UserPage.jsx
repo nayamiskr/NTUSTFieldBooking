@@ -6,9 +6,11 @@ import { getUserProfile, updateUserProfile } from "../../service/userService";
 import { InfoIconMap } from "../../constant/IconMap";
 import Loading from "../../components/loading";
 import { errorPopup, successPopup } from "../../components/pop-up";
-import { isValidBirthDate } from "../../utils/validator";
+import { isValidBirthDate, isValidPhoneNumber, normalizePhoneNumber } from "../../utils/validator";
 import Calendar from "../../components/dayPicker/dayPick";
 import { skillLevelService } from "../../service/skillLevelService";
+import { formatDateTime } from "../../utils/dateTimeFormat";
+import { useSportStore } from "../../store/sportStore";
 
 const isMissingSkillLevelError = (error) => error?.response?.status === 400
     && /^skill level not set for this sport\b/i.test(String(error?.response?.data?.error || ""));
@@ -63,7 +65,7 @@ export function UserPage() {
         gender: "",
         birth_date: "",
     });
-    const sportId = localStorage.getItem("sportType");
+    const sportId = useSportStore((state) => state.sportId);
 
     useEffect(() => {
         const fetchUserProfile = async () => {
@@ -146,10 +148,14 @@ export function UserPage() {
             errorPopup("出生日期錯誤", "請選擇有效且不晚於今天的出生日期。");
             return;
         }
+        if (!isValidPhoneNumber(formData.phone)) {
+            errorPopup("電話格式錯誤", "請輸入有效的手機號碼");
+            return;
+        }
 
         const editableData = {
             display_name: formData.display_name.trim(),
-            phone: formData.phone.trim(),
+            phone: normalizePhoneNumber(formData.phone),
             gender: formData.gender,
             birth_date: formData.birth_date,
         };
@@ -191,10 +197,13 @@ export function UserPage() {
             }
         } catch (error) {
             console.error(savingLevel ? "更新程度失敗：" : "更新個人資料失敗：", error);
+            const apiErrorText = String(error?.response?.data?.error || error?.response?.data?.message || "");
             if (savingLevel) {
                 errorPopup("儲存程度失敗", profileSaved
                     ? "基本資料已更新，但程度未更新。請重試儲存。"
                     : "無法更新程度，請稍後再試。");
+            } else if ([400, 422].includes(error?.response?.status) && /phone|mobile|電話|手機/i.test(apiErrorText)) {
+                errorPopup("電話格式錯誤", "電話號碼未通過驗證，請確認格式後再試。");
             } else {
                 errorPopup("儲存失敗", "無法更新個人資料，請稍後再試。");
             }
@@ -207,9 +216,7 @@ export function UserPage() {
 
     const avatar = user.avatar;
     const displayName = user.display_name || user.username || "使用者";
-    const birthDate = user.birth_date
-        ? new Intl.DateTimeFormat("zh-TW", { year: "numeric", month: "long", day: "numeric" }).format(new Date(user.birth_date))
-        : "未提供";
+    const birthDate = user.birth_date ? formatDateTime(user.birth_date).fullDate : "未提供";
     const genderMap = { male: "男性", female: "女性", other: "其他" };
     const today = new Date();
     const levelLabel = levelOptions.find((item) => item.level === myLevel)?.label;
@@ -219,7 +226,7 @@ export function UserPage() {
                 : myLevel === null ? "尚未設定" : levelLabel || `等級 ${myLevel}`;
 
     return (
-        <div className="min-h-screen bg-gray-50 pb-12">
+        <div className="app-page pb-12 text-slate-900">
             <Navbar />
             <main className="mx-auto w-[92%] max-w-4xl pt-8 sm:pt-10">
                 <div className="mb-5">

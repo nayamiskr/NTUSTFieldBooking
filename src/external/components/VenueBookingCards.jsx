@@ -3,12 +3,11 @@ import { useNavigate } from "react-router-dom";
 import api from "../../baseApi";
 import { useAuthStore } from "../../store/authStore";
 import { earliestBookingDate } from "../bookingWindow";
-import { formatClock24, formatHour24 } from "../../utils/dateTimeFormat";
+import { formatDateTime } from "../../utils/dateTimeFormat";
 import { bookingSlotKey, groupBookingSlots } from "../bookingSelection";
 
 const HOURS = Array.from({ length: 24 }, (_, index) => index);
-const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
-const hourText = formatHour24;
+const hourText = (hour) => formatDateTime(hour, { input: "hour" }).time;
 const dateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 const priceText = (price) => Number.isFinite(Number(price)) ? `NT$ ${Number(price).toLocaleString("zh-TW")}` : "價格未提供";
 const resourceLabel = (resource, index) => typeof resource?.name === "string" && resource.name.trim() ? resource.name.trim() : `第 ${index + 1} 面`;
@@ -53,7 +52,7 @@ function slotIsBooked(bookings, resourceId, slotStart) {
   });
 }
 
-export default function VenueBookingCards({ fields, selectedDate, selectedVenueId = null, detailMode = false }) {
+export default function VenueBookingCards({ fields, selectedDate, selectedVenueId = null, detailMode = false, sportFilter = null }) {
   const navigate = useNavigate();
   const userId = useAuthStore((state) => state.userId);
   const [bookings, setBookings] = useState([]);
@@ -229,7 +228,7 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
       <div>
         <h2 className="text-2xl font-bold text-slate-900">{detailMode ? "預約時段" : "選擇場地與時段"}</h2>
-        <p className="mt-1 text-sm text-slate-600">{viewMode === "week" && focusedField ? `${focusedField.name}・${weekDates[0].toLocaleDateString("zh-TW")} 至 ${weekDates[6].toLocaleDateString("zh-TW")}` : `${selectedDate.toLocaleDateString("zh-TW", { year: "numeric", month: "long", day: "numeric", weekday: "long" })}・${visibleFields.length} 個場地`}</p>
+        <p className="mt-1 text-sm text-slate-600">{viewMode === "week" && focusedField ? `${focusedField.name}・${formatDateTime(weekDates[0]).numericDate} 至 ${formatDateTime(weekDates[6]).numericDate}` : `${formatDateTime(selectedDate).fullDate}・${visibleFields.length} 個場地`}</p>
         <p className="mt-1 text-xs text-slate-500">可同時選擇不同場面與時段；再次點擊已選時段可取消。</p>
       </div>
       {!detailMode && <div className="flex flex-wrap gap-2">
@@ -257,7 +256,7 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
         <thead><tr className="bg-blue-50">
           <th scope="col" className="sticky left-0 z-20 w-[76px] min-w-[76px] border-b border-r border-slate-200 bg-blue-50 px-1 py-4 text-slate-800 sm:w-32 sm:min-w-32 sm:px-3">時段</th>
           {visibleFields.map((field) => <th id={`venue-${field.id}`} key={field.id} scope="col" className="min-w-44 border-b border-r border-slate-200 px-4 py-3 text-slate-900">
-            <button type="button" onClick={() => navigate(`/external/${field.id}`)} className="font-bold text-blue-800 hover:underline">{field.name}</button>
+            <button type="button" onClick={() => navigate(`/external/${field.id}`, { state: { venueSportFilter: sportFilter } })} className="font-bold text-blue-800 hover:underline">{field.name}</button>
             <span className="mt-1 block text-xs font-normal text-slate-600">{field.resources.length} 面場地</span>
           </th>)}
         </tr></thead>
@@ -287,7 +286,7 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
         <thead><tr className="bg-blue-50">
           <th scope="col" className="sticky left-0 z-20 w-[76px] min-w-[76px] border-b border-r border-slate-200 bg-blue-50 px-1 py-4 text-slate-800 sm:w-32 sm:min-w-32 sm:px-3">時段</th>
           {weekDates.map((date) => <th key={dateKey(date)} scope="col" className="min-w-36 border-b border-r border-slate-200 px-3 py-3 text-slate-900">
-            <span className="block font-bold">{date.getMonth() + 1}/{date.getDate()}（{WEEKDAYS[date.getDay()]}）</span>
+            <span className="block font-bold">{formatDateTime(date).shortDate}</span>
           </th>)}
         </tr></thead>
         <tbody>{focusedHours.map((hour) => <tr key={hour}>
@@ -301,7 +300,7 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
               const available = status === "可選擇";
               const selected = isSelected(resource, hour, date);
               return <button key={resource.id} type="button" disabled={!available && !selected} onClick={() => chooseHour(focusedField, resource, hour, date)} aria-pressed={Boolean(selected)}
-                aria-label={`${date.getMonth() + 1}月${date.getDate()}日 ${resourceLabel(resource, index)} ${hourText(hour)} 至 ${hourText(hour + 1)}，${status}`}
+                aria-label={`${formatDateTime(date).date} ${resourceLabel(resource, index)} ${hourText(hour)} 至 ${hourText(hour + 1)}，${status}`}
                 title={`${resourceLabel(resource, index)}・${priceText(resource.price)} / 小時`}
                 className={`min-h-11 min-w-20 rounded-lg border px-2 py-1 text-xs font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${selected ? "border-blue-700 bg-blue-700 text-white" : available ? "border-blue-200 bg-blue-50 text-blue-800 hover:border-blue-600 hover:bg-blue-100" : status === "我已預約" ? "cursor-not-allowed border-amber-200 bg-amber-50 text-amber-800" : "cursor-not-allowed border-slate-100 bg-slate-100 text-slate-400"}`}>
                 <span className="block">{resourceLabel(resource, index)}</span><span className="block text-[10px] font-normal">{status}</span>
@@ -320,7 +319,7 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
               {availabilityLoading ? "確認中" : availabilityError ? "部分未確認" : hasAvailability(field) ? "有可選時段" : "暫無空位"}
             </span>
           </div>
-          <p className="mt-4 text-sm text-slate-600">開放時間 {formatClock24(field.opening_hours_start)}–{formatClock24(field.opening_hours_end)}　・　{field.resources.length} 面場地</p>
+          <p className="mt-4 text-sm text-slate-600">開放時間 {formatDateTime(field.opening_hours_start).time}–{formatDateTime(field.opening_hours_end).time}　・　{field.resources.length} 面場地</p>
         </div>
         <div className="space-y-5 p-5 sm:p-6">
           {field.resources.map((resource, index) => <div key={resource.id}>
@@ -337,7 +336,7 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
             </div>
           </div>)}
           {!bookableHours(field).length && <p className="text-sm text-slate-500">{field.opening === false ? "此場地暫停開放。" : "目前沒有可顯示的營業時段。"}</p>}
-          <button type="button" onClick={() => navigate(`/external/${field.id}`)} className="text-sm font-semibold text-blue-700 hover:underline">查看場地詳情 →</button>
+          <button type="button" onClick={() => navigate(`/external/${field.id}`, { state: { venueSportFilter: sportFilter } })} className="text-sm font-semibold text-blue-700 hover:underline">查看場地詳情 →</button>
         </div>
       </article>)}
     </div>}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { formatDateTime } from "../../../utils/dateTimeFormat";
 import { getUserProfile } from "../../../service/userService";
+import { functionIconMap } from "../../../constant/IconMap";
 
 const emptyMember = () => ({ gender: "", skill_level: "" });
 const GENDERS = [{ value: "male", label: "男性" }, { value: "female", label: "女性" }, { value: "other", label: "其他" }];
@@ -83,7 +84,14 @@ export default function JoinGroupDialog({ group, levels, levelsLoading, levelsEr
                     <p className="mt-1 font-semibold text-slate-800">{group.title}</p>
                     <p className="mt-1 text-sm text-slate-600">{formatDateTime(group.start_time).date}　{formatDateTime(group.start_time).time}</p>
                 </div>
-                <button type="button" aria-label="關閉報名視窗" disabled={joining} onClick={onClose} className="rounded-lg px-2 text-2xl text-slate-500 hover:bg-slate-100 disabled:opacity-50">×</button>
+                <button
+                    type="button"
+                    onClick={onClose}
+                    disabled={joining}
+                    className="grid h-9 w-9 place-items-center rounded-full text-xl text-gray-500 transition hover:bg-gray-100 hover:text-gray-800"
+                >
+                    {functionIconMap.cancel.icon}
+                </button>
             </div>
 
             <form onSubmit={submit} className="mt-5 space-y-5">

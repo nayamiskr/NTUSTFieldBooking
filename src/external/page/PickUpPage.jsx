@@ -10,6 +10,7 @@ import PickUpDetailPopUp from "../components/pickUp/pickUpDetailPopUp";
 import SkillLevelPrompt from "../components/pickUp/SkillLevelPrompt";
 import JoinGroupDialog from "../components/pickUp/JoinGroupDialog";
 import { isGroupExpired, isRegistrationClosed } from "../pickUpTiming";
+import { describePickUpJoinError } from "../pickUpJoinError";
 import { getUpcomingConfirmedOrders } from "../orderDisplay";
 
 import { facilityMap, functionIconMap, InfoIconMap, sportIconMap } from "../../constant/IconMap";
@@ -17,19 +18,22 @@ import { statusMap } from "../../constant/statusMap";
 import { zhTWDictionary } from "../../locale/zh-TW/translate";
 import { pickUpService } from "../../service/pickUpService";
 import { skillLevelService } from "../../service/skillLevelService";
+import { useSportStore } from "../../store/sportStore";
 
 const isMissingSkillLevelError = (error) => error?.response?.status === 400
     && /^skill level not set for this sport\b/i.test(String(error?.response?.data?.error || ""));
-const isTimeConflictError = (error) => {
-    const data = error?.response?.data;
-    return [data?.error, data?.code, data?.error_code, data?.error?.code]
-        .some((code) => typeof code === "string" && code.trim().toLowerCase() === "time_conflict");
-};
 const HOST_CREATE_URL = "https://vdmin.chenmh.dev/login";
 const PAGE_SIZES = [10, 20, 50];
 
 
 export default function PickUpPage() {
+    const sportTypeId = useSportStore((state) => state.sportId);
+    if (!sportTypeId) return <div className="app-page text-slate-900"><Navbar /><Loading isLoading text="載入球類資料中..." /></div>;
+    // 切換球類時重設頁碼、程度篩選與報名狀態，舊請求由各 effect 清理。
+    return <PickUpPageContent key={sportTypeId} sportTypeId={sportTypeId} />;
+}
+
+function PickUpPageContent({ sportTypeId }) {
     const [groups, setGroups] = useState([]);
     const [myPickUpOrders, setMyPickUpOrders] = useState([]);
     const [myOrdersError, setMyOrdersError] = useState(false);
@@ -60,7 +64,6 @@ export default function PickUpPage() {
     const [levelsLoading, setLevelsLoading] = useState(true);
     const [levelsError, setLevelsError] = useState("");
     const [levelsRetry, setLevelsRetry] = useState(0);
-    const sportTypeId = localStorage.getItem("sportType");
 
     let userPosition = null;
     try {
@@ -282,25 +285,10 @@ export default function PickUpPage() {
                 : zhTWDictionary.pickUpPage.successMessage.registrationSuccess);
             return true;
         } catch (error) {
-            if ([400, 409].includes(error?.response?.status)
-                && /(?:deadline|registration.*(?:closed|ended|expired)|group.*(?:ended|expired)|報名.*截止)/i
-                    .test(String(error?.response?.data?.error || error?.response?.data?.message || ""))) {
-                errorPopup("活動報名已截止", "這個臨打團已超過報名截止時間，無法再報名。");
-                setJoinDialogGroup(null);
-                setRefreshTrigger((pre) => pre + 1);
-                return false;
-            }
-            if (isTimeConflictError(error)) {
-                errorPopup("報名時間衝突", zhTWDictionary.pickUpPage.errorMessage.timeConflict);
-                return false;
-            }
-            if (error?.response?.status === 409 && /group is fully booked/i.test(String(error?.response?.data?.error || error?.response?.data?.message || ""))) {
-                errorPopup("名額不足", "剩餘名額不足以完成此次團體報名，請重新整理後調整人數。");
-                setRefreshTrigger((pre) => pre + 1);
-                return false;
-            }
-            errorPopup(zhTWDictionary.pickUpPage.errorMessage.error, zhTWDictionary.pickUpPage.errorMessage.registrationFailed);
-            setRefreshTrigger((pre) => pre + 1);
+            const failure = describePickUpJoinError(error);
+            errorPopup(failure.title, failure.message);
+            if (failure.closeDialog) setJoinDialogGroup(null);
+            if (failure.refresh) setRefreshTrigger((pre) => pre + 1);
             return false;
         } finally {
             joinInFlight.current = false;
@@ -396,12 +384,13 @@ export default function PickUpPage() {
         ? null : Math.max(1, Math.ceil(pageInfo.total / pageInfo.pageSize));
     const visibleGroups = groups.filter((group) => !isGroupExpired(group, now)
         && (!selectedDate || formatDateTime(group.start_time).date === formatDateTime(selectedDate).date));
-    const upcomingOrders = getUpcomingConfirmedOrders(myPickUpOrders, now);
+    const upcomingOrders = getUpcomingConfirmedOrders(myPickUpOrders, now).filter((order) =>
+        String(order.sport?.id || order.pickupGroup?.sport?.id || order.pickupGroup?.sport_id || "") === String(sportTypeId));
     const showPageControls = pageInfo.total === null
         ? page > 1 || pageInfo.hasNext : pageInfo.total > 0;
 
     return (
-        <div>
+        <div className="app-page text-slate-900">
             <Navbar />
             <header className="relative mx-auto my-8 w-[95%] max-w-7xl">
                 <h1 className="px-12 text-center text-3xl font-bold">{zhTWDictionary.pickUpPage.title}</h1>

@@ -5,7 +5,7 @@ import Calendar from "../../components/dayPicker/dayPick";
 import { useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import FieldPicker from "../../components/fieldPicker";
-import { formatHour24 } from "../../utils/dateTimeFormat";
+import { formatDateTime } from "../../utils/dateTimeFormat";
 
 const OPEN_HOUR = 8;
 const CLOSE_HOUR = 22;
@@ -177,11 +177,7 @@ function Bookpage() {
                                                 key={i}
                                                 className="px-3 py-2 border border-gray-300 whitespace-nowrap"
                                             >
-                                                {d.toLocaleDateString("zh-TW", {
-                                                    weekday: "short",
-                                                    month: "numeric",
-                                                    day: "numeric",
-                                                })}
+                                                {formatDateTime(d).shortDate}
                                             </th>
                                         );
                                     })}
@@ -194,7 +190,7 @@ function Bookpage() {
                                     return (
                                         <tr key={hour} className="hover:bg-gray-50 transition">
                                             <td className="px-2 py-2 border border-gray-300 sticky left-0 bg-blue-50 text-sm z-50">
-                                                {`${formatHour24(hour)} - ${formatHour24(hour + 1)}`}
+                                                {`${formatDateTime(hour, { input: "hour" }).time} - ${formatDateTime(hour + 1, { input: "hour" }).time}`}
                                             </td>
 
                                             {Array.from({ length: 7 }).map((_, i) => {

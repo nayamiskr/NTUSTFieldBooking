@@ -90,7 +90,7 @@ export function AnnouncePage() {
         setQuery({ unreadOnly, page: 1 });
     };
 
-    return <div className="min-h-screen bg-slate-50/50">
+    return <div className="app-page text-slate-900">
         <Navbar />
         <Loading isLoading={loading} text="正在載入通知…" />
         <main className="mx-auto w-[92%] max-w-4xl py-8 sm:py-10">

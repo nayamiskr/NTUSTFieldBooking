@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import api from "../../baseApi"
 import Navbar from "../components/navbar";
 import Loading from "../../components/loading";
-import { formatTime24 } from "../../utils/dateTimeFormat";
+import { formatDateTime } from "../../utils/dateTimeFormat";
 
 function OrderPage() {
     const [orders, setOrders] = useState(null);
@@ -161,7 +161,7 @@ function OrderPage() {
                                                 </button>
                                             </div>
                                         </div>
-                                        <p className="text-start text-md text-gray-400">預約時間：{order.start_time ? new Date(order.start_time).toLocaleDateString("zh-TW") : ""} {order.start_time ? " " : ""}{order.start_time ? `${formatTime24(order.start_time)} - ${formatTime24(order.end_time)}` : ""}</p>
+                                        <p className="text-start text-md text-gray-400">預約時間：{order.start_time ? `${formatDateTime(order.start_time).date} ${formatDateTime(order.start_time).time} - ${formatDateTime(order.end_time).time}` : ""}</p>
                                     </div>
 
                                     <div className=" flex flex-col h-auto items-end justify-between p-4">
@@ -195,10 +195,10 @@ function OrderPage() {
                             你確定要取消「{selectedCancelOrder?.resourceName || ""}」這筆預約嗎？
                         </p>
                         <p className="mt-1 text-sm text-gray-500">
-                            {selectedCancelOrder?.start ? new Date(selectedCancelOrder.start).toLocaleDateString("zh-TW") : ""}
+                            {selectedCancelOrder?.start ? formatDateTime(selectedCancelOrder.start).date : ""}
                             {selectedCancelOrder?.start ? " " : ""}
                             {selectedCancelOrder?.start
-                                ? `${formatTime24(selectedCancelOrder.start)} - ${formatTime24(selectedCancelOrder.end)}`
+                                ? `${formatDateTime(selectedCancelOrder.start).time} - ${formatDateTime(selectedCancelOrder.end).time}`
                                 : ""}
                         </p>
 

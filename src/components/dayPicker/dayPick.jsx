@@ -3,10 +3,10 @@ import { zhTW } from "react-day-picker/locale";
 import { useState } from "react";
 import "react-day-picker/style.css";
 import "./dayPick.css";
+import { formatDateTime } from "../../utils/dateTimeFormat";
 
 function getWeekday(date) {
-  const weekdays = ["日", "一", "二", "三", "四", "五", "六"]
-  return weekdays[date.getDay()];
+  return formatDateTime(date).weekdayShort;
 }
 
 function Calendar({
@@ -33,11 +33,7 @@ function Calendar({
       onDayPicked({
         date,
         weekday,
-        formatted: date.toLocaleDateString("zh-TW", {
-          year: "numeric",
-          month: "2-digit",
-          day: "2-digit"
-        })
+        formatted: formatDateTime(date).numericDate,
       });
     }
     setShowCalendar(false);
@@ -54,11 +50,7 @@ function Calendar({
         className="relative inline-block w-full rounded-lg border border-gray-300 bg-white px-6 py-2 hover:bg-gray-100 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-100 sm:w-auto"
       >
         {selected
-          ? selected.toLocaleDateString("zh-TW", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-          })
+          ? formatDateTime(selected).numericDate
           : placeholder}
       </button>
       <div

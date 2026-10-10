@@ -1,19 +1,70 @@
 import { GiHamburgerMenu } from "react-icons/gi";
 import { IoPersonCircle } from "react-icons/io5";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { getUserProfile } from "../../service/userService";
 import { notificationService } from "../../service/notificationService";
+import { sportService } from "../../service/sportService";
+import { useSportStore } from "../../store/sportStore";
+import { findVenueSport } from "../venueSportFilter";
 import './navbar.css';
 
 function Navbar() {
-  const { fieldType } = useParams(); // 自動從當前網址抓出是羽球還是籃球 (例如 badminton)
+  const { fieldType, id: locationId } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const sportId = useSportStore((state) => state.sportId);
+  const setSportId = useSportStore((state) => state.setSportId);
   const setLogout = useAuthStore((state) => state.setLogout);
+  const [sports, setSports] = useState([]);
   const [user, setUser] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [unread, setUnread] = useState({ count: 0, exact: true });
   const dropdownRef = useRef(null);
+
+  const currentType = sportId || (fieldType && fieldType !== "all" ? fieldType : null) || "badminton";
+  const selectedSport = findVenueSport(sports, currentType);
+
+  useEffect(() => {
+    let active = true;
+    sportService.getSportList()
+      .then((response) => {
+        if (active) setSports(Array.isArray(response?.items) ? response.items : []);
+      })
+      .catch(() => {
+        if (active) setSports([]);
+      });
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedSport) return;
+    if (sportId !== selectedSport.id) setSportId(selectedSport.id);
+    if (fieldType && fieldType !== selectedSport.id) {
+      navigate(`/external/home/${selectedSport.id}`, { replace: true });
+    }
+  }, [fieldType, navigate, selectedSport, setSportId, sportId]);
+
+  const handleSportChange = (event) => {
+    const sport = findVenueSport(sports, event.target.value);
+    if (!sport) return;
+    setSportId(sport.id);
+    setIsMenuOpen(false);
+    if (fieldType || locationId || location.pathname === "/external/pay") {
+      navigate(`/external/home/${sport.id}`);
+    }
+  };
+
+  const sportSelector = (id) => (
+    <label className="navbar-sport-switch" htmlFor={id}>
+      <span>球類</span>
+      <select id={id} value={selectedSport?.id || ""} onChange={handleSportChange} disabled={sports.length === 0}>
+        {!selectedSport && <option value="">載入中</option>}
+        {sports.map((sport) => <option key={sport.id} value={sport.id}>{sport.name}</option>)}
+      </select>
+    </label>
+  );
 
   useEffect(() => {
     let isMounted = true;
@@ -79,7 +130,6 @@ function Navbar() {
 
   };
 
-  const currentType = fieldType || "badminton";
   const hasUnread = unread.count > 0;
   const notificationLabel = hasUnread
     ? unread.exact ? `通知，${unread.count} 則未讀` : "通知，有未讀通知"
@@ -100,6 +150,8 @@ function Navbar() {
         <li><Link to="/external/order">我的預約</Link></li>
       </ul>
       
+      <div className="navbar-actions">
+      <div className="navbar-sport-desktop">{sportSelector("navbar-sport-desktop")}</div>
       <div ref={dropdownRef} className={`navbar-right dropdown ${isMenuOpen ? "is-open" : ""}`}>
         <button
           type="button"
@@ -136,6 +188,7 @@ function Navbar() {
             </div>
           </div>
           <div className="dropdown-links">
+            <div className="navbar-sport-mobile">{sportSelector("navbar-sport-mobile")}</div>
             <Link onClick={() => setIsMenuOpen(false)} to="/external/group">臨打</Link>
             <Link onClick={() => setIsMenuOpen(false)} to={`/external/home/${currentType}`}>場地</Link>
             <Link className="nav-notification-link" aria-label={notificationLabel} onClick={() => setIsMenuOpen(false)} to="/external/announce">通知{badge}</Link>
@@ -145,6 +198,7 @@ function Navbar() {
           </div>
           <a className="logout-link" href="/" onClick={handleLogout}>登出</a>
         </div>
+      </div>
       </div>
     </nav>
   );

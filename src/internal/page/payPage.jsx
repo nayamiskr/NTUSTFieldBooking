@@ -31,7 +31,7 @@ function PayPage() {
 
   if (!location.state) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="app-page flex items-center justify-center">
         <button
           onClick={() => navigate(-1)}
           className="px-6 py-3 bg-blue-600 text-white rounded-lg"
@@ -169,7 +169,7 @@ function PayPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white px-6 py-6">
+    <div className="app-page px-6 py-6">
       {/* Top bar */}
       <div className="flex items-center mb-10">
         <button
