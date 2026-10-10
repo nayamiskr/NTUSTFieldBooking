@@ -1,10 +1,21 @@
 import api from "../baseApi.js";
 
+let cachedSportList;
+let pendingSportList;
+
 export const sportService = {
     // 取得運動種類清單
-    getSportList: async () => {
-        const res = await api.get("/sports");
-        return res.data;
+    getSportList: () => {
+        if (cachedSportList !== undefined) return Promise.resolve(cachedSportList);
+        if (!pendingSportList) {
+            pendingSportList = api.get("/sports")
+                .then((res) => {
+                    cachedSportList = res.data;
+                    return cachedSportList;
+                })
+                .finally(() => { pendingSportList = null; });
+        }
+        return pendingSportList;
     },
 
     getSportById: async (sportId) => {

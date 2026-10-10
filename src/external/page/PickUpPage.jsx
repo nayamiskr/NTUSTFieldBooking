@@ -8,6 +8,9 @@ import { formatDateTime } from "../../utils/dateTimeFormat";
 import { errorPopup, successPopup } from "../../components/pop-up";
 import PickUpDetailPopUp from "../components/pickUp/pickUpDetailPopUp";
 import SkillLevelPrompt from "../components/pickUp/SkillLevelPrompt";
+import JoinGroupDialog from "../components/pickUp/JoinGroupDialog";
+import { isGroupExpired, isRegistrationClosed } from "../pickUpTiming";
+import { getUpcomingConfirmedOrders } from "../orderDisplay";
 
 import { facilityMap, functionIconMap, InfoIconMap, sportIconMap } from "../../constant/IconMap";
 import { statusMap } from "../../constant/statusMap";
@@ -28,6 +31,8 @@ const PAGE_SIZES = [10, 20, 50];
 
 export default function PickUpPage() {
     const [groups, setGroups] = useState([]);
+    const [myPickUpOrders, setMyPickUpOrders] = useState([]);
+    const [myOrdersError, setMyOrdersError] = useState(false);
     const [loading, setLoading] = useState(true);
     const [activeFilter, setActiveFilter] = useState("distance");
     const [page, setPage] = useState(1);
@@ -35,6 +40,7 @@ export default function PickUpPage() {
     const [pageInfo, setPageInfo] = useState({ total: 0, hasNext: false, pageSize: PAGE_SIZES[0] });
     const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [now, setNow] = useState(() => Date.now());
     const [selectedDate, setSelectedDate] = useState(null);
     const [selectedGroup, setSelectedGroup] = useState(null);
     const [showHostRedirectPrompt, setShowHostRedirectPrompt] = useState(false);
@@ -45,7 +51,8 @@ export default function PickUpPage() {
     const [selectedMyLevel, setSelectedMyLevel] = useState("");
     const [savingMyLevel, setSavingMyLevel] = useState(false);
     const [myLevelSaveError, setMyLevelSaveError] = useState("");
-    const [pendingJoinGroupId, setPendingJoinGroupId] = useState(null);
+    const [pendingJoinRequest, setPendingJoinRequest] = useState(null);
+    const [joinDialogGroup, setJoinDialogGroup] = useState(null);
     const [joiningGroupId, setJoiningGroupId] = useState(null);
     const joinInFlight = useRef(false);
     const [levelRange, setLevelRange] = useState(null);
@@ -66,6 +73,19 @@ export default function PickUpPage() {
     const hasPosition = Number.isFinite(latitude) && Number.isFinite(longitude);
     const minSkillLevel = appliedLevelRange?.[0];
     const maxSkillLevel = appliedLevelRange?.[1];
+
+    useEffect(() => {
+        const timer = window.setInterval(() => setNow(Date.now()), 30000);
+        return () => window.clearInterval(timer);
+    }, []);
+
+    useEffect(() => {
+        if (selectedGroup && isGroupExpired(selectedGroup, now)) setSelectedGroup(null);
+        if (joinDialogGroup && (isRegistrationClosed(joinDialogGroup, now) || isGroupExpired(joinDialogGroup, now))) {
+            setJoinDialogGroup(null);
+            errorPopup("活動報名已截止", "這個臨打團已超過報名截止時間，無法再報名。");
+        }
+    }, [now, selectedGroup, joinDialogGroup]);
 
     useEffect(() => {
         let cancelled = false;
@@ -177,27 +197,51 @@ export default function PickUpPage() {
         return () => { cancelled = true; };
     }, [sportTypeId, refreshTrigger, activeFilter, page, pageSize, hasPosition, latitude, longitude, minSkillLevel, maxSkillLevel, levelsLoading]);
 
-    const promptForMyLevel = (groupId) => {
-        setPendingJoinGroupId(groupId);
+    useEffect(() => {
+        let cancelled = false;
+        setMyOrdersError(false);
+        pickUpService.getMyPickUpList(true).then((orders) => {
+            if (!cancelled) setMyPickUpOrders(orders);
+        }).catch((error) => {
+            if (cancelled) return;
+            console.error("取得近期臨打報名失敗:", error);
+            setMyPickUpOrders([]);
+            setMyOrdersError(true);
+        });
+        return () => { cancelled = true; };
+    }, [refreshTrigger]);
+
+    const promptForMyLevel = (groupId, payload) => {
+        setPendingJoinRequest({ groupId, payload });
         setSelectedMyLevel("");
         setMyLevelSaveError("");
         setMyLevelStatus("missing");
         setLevelDialogDismissed(false);
     };
 
-    const handleJoinGroup = async (groupId, skipLevelCheck = false) => {
+    const handleJoinGroup = async (groupId, requestPayload = null, skipLevelCheck = false, savedLevel = null) => {
         if (joinInFlight.current) return false;
+        const group = groups.find((item) => item.id === groupId) || joinDialogGroup || selectedGroup;
+        if (group && (isRegistrationClosed(group) || isGroupExpired(group))) {
+            errorPopup("活動報名已截止", "這個臨打團已超過報名截止時間，無法再報名。");
+            setJoinDialogGroup(null);
+            setNow(Date.now());
+            return false;
+        }
         joinInFlight.current = true;
         setJoiningGroupId(groupId);
 
         try {
+            let myLevel = savedLevel;
             if (!skipLevelCheck) {
                 try {
-                    await skillLevelService.getMyLevel(sportTypeId);
+                    const levelData = await skillLevelService.getMyLevel(sportTypeId);
+                    const rawLevel = levelData?.skill_level?.level ?? levelData?.skill_level ?? levelData?.level;
+                    myLevel = rawLevel == null || rawLevel === "" ? null : Number(rawLevel);
                     setMyLevelStatus("ready");
                 } catch (error) {
                     if (isMissingSkillLevelError(error)) {
-                        promptForMyLevel(groupId);
+                        promptForMyLevel(groupId, requestPayload);
                     } else {
                         errorPopup("讀取程度失敗", "目前無法確認你的運動程度，請稍後再試。");
                     }
@@ -205,11 +249,22 @@ export default function PickUpPage() {
                 }
             }
 
+            const payload = requestPayload ? {
+                ...requestPayload,
+                members: requestPayload.members.map((member, index) => index === 0 && Number.isInteger(myLevel)
+                    ? { ...member, skill_level: myLevel } : member),
+            } : undefined;
+            if (group && (isRegistrationClosed(group) || isGroupExpired(group))) {
+                errorPopup("活動報名已截止", "這個臨打團已超過報名截止時間，無法再報名。");
+                setJoinDialogGroup(null);
+                setNow(Date.now());
+                return false;
+            }
             try {
-                await pickUpService.joinPickUpGroup(groupId);
+                await pickUpService.joinPickUpGroup(groupId, payload);
             } catch (error) {
                 if (isMissingSkillLevelError(error)) {
-                    promptForMyLevel(groupId);
+                    promptForMyLevel(groupId, requestPayload);
                     return false;
                 }
                 throw error;
@@ -218,15 +273,30 @@ export default function PickUpPage() {
             setGroups((prevGroups) =>
                 prevGroups.map((group) => group.id === groupId ? {
                     ...group, enrolledStatus: "pending",
-                    current_enrolled: Number(group.current_enrolled || 0) + 1
+                    current_enrolled: Number(group.current_enrolled || 0) + (payload?.party_size || 1)
                 } : group)
             );
 
-            successPopup("", zhTWDictionary.pickUpPage.successMessage.registrationSuccess);
+            successPopup("", payload
+                ? `已送出 ${payload.party_size} 人的團體報名，請等待主揪確認。`
+                : zhTWDictionary.pickUpPage.successMessage.registrationSuccess);
             return true;
         } catch (error) {
+            if ([400, 409].includes(error?.response?.status)
+                && /(?:deadline|registration.*(?:closed|ended|expired)|group.*(?:ended|expired)|報名.*截止)/i
+                    .test(String(error?.response?.data?.error || error?.response?.data?.message || ""))) {
+                errorPopup("活動報名已截止", "這個臨打團已超過報名截止時間，無法再報名。");
+                setJoinDialogGroup(null);
+                setRefreshTrigger((pre) => pre + 1);
+                return false;
+            }
             if (isTimeConflictError(error)) {
                 errorPopup("報名時間衝突", zhTWDictionary.pickUpPage.errorMessage.timeConflict);
+                return false;
+            }
+            if (error?.response?.status === 409 && /group is fully booked/i.test(String(error?.response?.data?.error || error?.response?.data?.message || ""))) {
+                errorPopup("名額不足", "剩餘名額不足以完成此次團體報名，請重新整理後調整人數。");
+                setRefreshTrigger((pre) => pre + 1);
                 return false;
             }
             errorPopup(zhTWDictionary.pickUpPage.errorMessage.error, zhTWDictionary.pickUpPage.errorMessage.registrationFailed);
@@ -235,6 +305,15 @@ export default function PickUpPage() {
         } finally {
             joinInFlight.current = false;
             setJoiningGroupId(null);
+        }
+    };
+
+    const confirmJoinFromDialog = async (groupId, payload) => {
+        const joined = await handleJoinGroup(groupId, payload);
+        if (joined) {
+            setJoinDialogGroup(null);
+            setSelectedGroup(null);
+            setIsDetailModalClosing(false);
         }
     };
 
@@ -251,11 +330,12 @@ export default function PickUpPage() {
         try {
             await skillLevelService.setMyLevel(sportTypeId, level);
             setMyLevelStatus("ready");
-            const groupId = pendingJoinGroupId;
-            setPendingJoinGroupId(null);
-            if (groupId) {
-                const joined = await handleJoinGroup(groupId, true);
-                if (joined && selectedGroup?.id === groupId) {
+            const request = pendingJoinRequest;
+            setPendingJoinRequest(null);
+            if (request?.groupId) {
+                const joined = await handleJoinGroup(request.groupId, request.payload, true, level);
+                if (joined) {
+                    setJoinDialogGroup(null);
                     setSelectedGroup(null);
                     setIsDetailModalClosing(false);
                 }
@@ -272,8 +352,18 @@ export default function PickUpPage() {
     };
 
     const openDetailModal = (group) => {
+        if (isGroupExpired(group)) return;
         setIsDetailModalClosing(false);
         setSelectedGroup(group);
+    };
+
+    const requestJoin = (group) => {
+        if (isRegistrationClosed(group) || isGroupExpired(group)) {
+            errorPopup("活動報名已截止", "這個臨打團已超過報名截止時間，無法再報名。");
+            setNow(Date.now());
+            return;
+        }
+        setJoinDialogGroup(group);
     };
 
     const closeDetailModal = () => {
@@ -304,9 +394,9 @@ export default function PickUpPage() {
 
     const pageCount = pageInfo.total === null
         ? null : Math.max(1, Math.ceil(pageInfo.total / pageInfo.pageSize));
-    const visibleGroups = selectedDate
-        ? groups.filter((group) => formatDateTime(group.start_time).date === formatDateTime(selectedDate).date)
-        : groups;
+    const visibleGroups = groups.filter((group) => !isGroupExpired(group, now)
+        && (!selectedDate || formatDateTime(group.start_time).date === formatDateTime(selectedDate).date));
+    const upcomingOrders = getUpcomingConfirmedOrders(myPickUpOrders, now);
     const showPageControls = pageInfo.total === null
         ? page > 1 || pageInfo.hasNext : pageInfo.total > 0;
 
@@ -328,6 +418,22 @@ export default function PickUpPage() {
             </header>
             <Loading isLoading={loading || levelsLoading} text={zhTWDictionary.pickUpPage.loadingMessage} />
 
+            {upcomingOrders.length > 0 && <section role="status" aria-label="即將開始的已報名活動" className="mx-auto mb-6 w-[95%] max-w-7xl rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-950 shadow-sm sm:p-5">
+                <h2 className="text-lg font-bold">提醒：你報名的臨打團將在兩天內開始</h2>
+                <div className="mt-3 grid gap-3 md:grid-cols-2">
+                    {upcomingOrders.map((order) => <article key={order.id} className="rounded-xl border border-amber-200 bg-white p-4">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h3 className="font-bold text-slate-900">{order.title}</h3>
+                            <span className="rounded-full bg-green-100 px-2.5 py-1 text-xs font-semibold text-green-800">已報名</span>
+                        </div>
+                        <p className="mt-2 text-sm text-slate-700">{formatDateTime(order.start_time).date}・{formatDateTime(order.start_time).time} 至 {formatDateTime(order.end_time).time}</p>
+                        <p className="mt-1 text-sm text-slate-600">地點：{order.location?.name || "未指定"}</p>
+                        {order.pickupGroup && <button type="button" onClick={() => openDetailModal(order.pickupGroup)} className="mt-3 min-h-10 rounded-lg border border-amber-300 px-3 text-sm font-semibold text-amber-900 hover:bg-amber-100">查看活動資訊</button>}
+                    </article>)}
+                </div>
+            </section>}
+            {myOrdersError && <p role="alert" className="mx-auto mb-4 w-[95%] max-w-7xl rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">暫時無法載入近期已報名活動。<button type="button" onClick={() => setRefreshTrigger((value) => value + 1)} className="ml-2 font-semibold underline">重新載入</button></p>}
+
             {myLevelStatus === "missing" && levelDialogDismissed && (
                 <div className="mx-auto mb-4 flex w-[95%] max-w-7xl items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900" role="status">
                     <span>你還沒有設定這個球類的程度。</span>
@@ -341,7 +447,7 @@ export default function PickUpPage() {
                     value={selectedMyLevel}
                     onChange={(value) => { setSelectedMyLevel(value); setMyLevelSaveError(""); }}
                     onSave={handleSaveMyLevel}
-                    onClose={() => { setPendingJoinGroupId(null); setLevelDialogDismissed(true); }}
+                    onClose={() => { setPendingJoinRequest(null); setLevelDialogDismissed(true); }}
                     onRetry={() => setLevelsRetry((previous) => previous + 1)}
                     saving={savingMyLevel}
                     saveError={myLevelSaveError}
@@ -376,6 +482,7 @@ export default function PickUpPage() {
                     <div>
                         {visibleGroups.map((group) => {
                             const isFull = Number(group.current_enrolled || 0) >= Number(group.capacity || 0);
+                            const registrationClosed = isRegistrationClosed(group, now);
                             const status = group.enrolledStatus;
 
                             return (
@@ -384,12 +491,13 @@ export default function PickUpPage() {
                                     {/* 標題與人數狀態 */}
                                     <div className="mb-3 flex items-start justify-between gap-3">
                                         <div className="flex min-w-0 flex-1 flex-col gap-1">
-                                            <div className="flex min-w-0 items-center gap-2">
+                                            <div className="flex min-w-0 flex-wrap items-center gap-2">
                                                 <h2 className="min-w-0 max-w-[8em] break-words text-xl font-bold text-gray-900 sm:max-w-96">{group.title}</h2>
                                                 <p className="flex w-fit shrink-0 items-center gap-1 whitespace-nowrap rounded-md border border-gray-300 px-2 py-1 text-sm text-gray-600">
                                                     {sportIconMap[group.sport?.code]?.icon}
                                                     {group.sport?.name || "-"}
                                                 </p>
+                                                {registrationClosed && <span className="shrink-0 rounded-md bg-red-100 px-2 py-1 text-sm font-semibold text-red-700">報名已截止</span>}
                                             </div>
                                             <p className="break-words text-sm font-semibold text-gray-400">{zhTWDictionary.pickUpPage.label.hostName} {group.host?.display_name || "-"}</p>
                                         </div>
@@ -463,13 +571,15 @@ export default function PickUpPage() {
                                             {/* 報名按鈕 */}
                                             <button
                                                 disabled={status !== null || isFull || joiningGroupId === group.id}
-                                                onClick={() => handleJoinGroup(group.id)}
+                                                onClick={() => requestJoin(group)}
                                                 className={`min-h-11 flex-1 rounded-lg px-6 py-2 font-bold tracking-wide text-white transition sm:flex-none
                                                     ${(status !== null || isFull || joiningGroupId === group.id) ? "opacity-60 cursor-not-allowed" : "hover:opacity-90"}
-                                                    ${isFull && status === null ? statusMap.full.class : (statusMap[status]?.class || statusMap.default.class)}`}
+                                                    ${registrationClosed && status === null && !isFull ? "bg-gray-500" : isFull && status === null ? statusMap.full.class : (statusMap[status]?.class || statusMap.default.class)}`}
                                             >
                                                 {status !== null
                                                     ? (statusMap[status]?.label || statusMap.default.label)
+                                                    : registrationClosed && !isFull
+                                                        ? "報名已截止"
                                                     : isFull
                                                         ? statusMap.full.label
                                                         : statusMap.default.label}
@@ -516,14 +626,27 @@ export default function PickUpPage() {
                     >
                         <PickUpDetailPopUp
                             selectedGroup={selectedGroup}
-                            handleJoinGroup={handleJoinGroup}
+                            onRequestJoin={requestJoin}
                             joining={joiningGroupId === selectedGroup.id}
+                            registrationClosed={isRegistrationClosed(selectedGroup, now)}
                             closeDetailModal={closeDetailModal}
                             isClosing={isDetailModalClosing}
                             onContactHost={handleContactHost}
                         />
                     </div>
                 )}
+
+                {joinDialogGroup && <JoinGroupDialog
+                    key={joinDialogGroup.id}
+                    group={joinDialogGroup}
+                    levels={levels}
+                    levelsLoading={levelsLoading}
+                    levelsError={levelsError}
+                    onRetryLevels={() => setLevelsRetry((previous) => previous + 1)}
+                    joining={joiningGroupId === joinDialogGroup.id}
+                    onClose={() => setJoinDialogGroup(null)}
+                    onConfirm={confirmJoinFromDialog}
+                />}
 
                 {/* 重新載入按鈕 */}
                 <button

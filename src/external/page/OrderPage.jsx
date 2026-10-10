@@ -8,6 +8,9 @@ import { formatDateTime } from "../../utils/dateTimeFormat";
 import { sportIconMap, functionIconMap } from "../../constant/IconMap";
 import { zhTWDictionary } from "../../locale/zh-TW/translate";
 import { MapPinned } from "lucide-react";
+import PickUpDetailPopUp from "../components/pickUp/pickUpDetailPopUp";
+import { isRegistrationClosed } from "../pickUpTiming";
+import { getHistoricalOrders, isOrderExpired, sortOrdersForDisplay } from "../orderDisplay";
 
 const STARTING_SOON_WINDOW_MS = 24 * 60 * 60 * 1000;
 
@@ -59,17 +62,18 @@ function OrderSportTag({ order }) {
     );
 }
 
-export default function OrderPage() {
+export default function OrderPage({ historyOnly = false }) {
     const [orders, setOrders] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState("pickup");
+    const [activeTab, setActiveTab] = useState(historyOnly ? "history" : "pickup");
     const [cancelModalOpen, setCancelModalOpen] = useState(false);
     const [selectedCancelOrder, setSelectedCancelOrder] = useState(null);
     const [cancellingIds, setCancellingIds] = useState(() => new Set());
     const [cancelActionError, setCancelActionError] = useState(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [now, setNow] = useState(() => Date.now());
+    const [selectedPickUpGroup, setSelectedPickUpGroup] = useState(null);
 
     useEffect(() => {
         const timer = window.setInterval(() => setNow(Date.now()), 60 * 1000);
@@ -105,6 +109,22 @@ export default function OrderPage() {
             end: order?.end_time,
         });
         setCancelModalOpen(true);
+    };
+
+    const openPickUpDetail = (order) => {
+        if (!order.pickupGroup) return;
+        setSelectedPickUpGroup({ ...order.pickupGroup, enrolledStatus: order.status || "pending" });
+    };
+
+    const handleContactHost = (host) => {
+        const contactUrl = host.contact_url || host.line_url || host.lineUrl;
+        if (contactUrl) {
+            window.open(contactUrl, "_blank", "noopener,noreferrer");
+        } else if (host.email) {
+            window.location.href = `mailto:${host.email}`;
+        } else if (host.phone) {
+            window.location.href = `tel:${host.phone}`;
+        }
     };
 
     const confirmCancel = async () => {
@@ -158,6 +178,15 @@ export default function OrderPage() {
         }
     };
 
+    const bookingOrders = orders?.booking?.items || [];
+    const pickupOrders = orders?.pickUp || [];
+    const visibleOrders = activeTab === "history"
+        ? getHistoricalOrders(bookingOrders, pickupOrders, now)
+        : sortOrdersForDisplay(
+            (activeTab === "booking" ? bookingOrders : pickupOrders)
+                .filter((order) => !isOrderExpired(order, now)), now
+        );
+
     return (
         <div>
             <Navbar />
@@ -167,13 +196,13 @@ export default function OrderPage() {
             {!loading && orders &&
                 (
                     <div>
-                        <h1 className="text-3xl font-bold text-center my-8">我的預約</h1>
+                        <h1 className="text-3xl font-bold text-center my-8">{historyOnly ? "歷史預約" : "我的預約"}</h1>
 
                         {/* Tab Buttons */}
-                        <div className="flex justify-center w-full mb-6">
-                            <div className="inline-flex bg-blue-50 p-1 rounded-lg shadow-inner">
+                        {!historyOnly && <div className="flex justify-center w-full mb-6">
+                            <div className="inline-flex max-w-[95%] bg-blue-50 p-1 rounded-lg shadow-inner">
                                 <button
-                                    className={`w-32 py-2 text-center rounded-md transition-all duration-200 text-ellipsis font-bold ${activeTab === "pickup"
+                                    className={`w-24 sm:w-32 py-2 text-center rounded-md transition-all duration-200 text-sm sm:text-base font-bold ${activeTab === "pickup"
                                         ? "bg-white text-gray-900 shadow-sm"
                                         : "text-gray-500 hover:text-gray-700"
                                         }`}
@@ -183,7 +212,7 @@ export default function OrderPage() {
                                 </button>
 
                                 <button
-                                    className={`w-32 py-2 text-center rounded-md transition-all duration-200 text-ellipsis font-bold ${activeTab === "booking"
+                                    className={`w-24 sm:w-32 py-2 text-center rounded-md transition-all duration-200 text-sm sm:text-base font-bold ${activeTab === "booking"
                                         ? "bg-white text-gray-900 shadow-sm"
                                         : "text-gray-500 hover:text-gray-700"
                                         }`}
@@ -191,25 +220,49 @@ export default function OrderPage() {
                                 >
                                     場地預約
                                 </button>
+
                             </div>
-                        </div>
+                        </div>}
 
                         {/* Order List */}
+                        {visibleOrders.length === 0 && (
+                            <p className="mx-auto w-[95%] rounded-xl border border-gray-200 bg-white px-5 py-10 text-center text-gray-500 md:w-[50%]">
+                                {activeTab === "history" ? "目前沒有歷史預約" : "目前沒有進行中或即將開始的預約"}
+                            </p>
+                        )}
                         <ul>
-                            {(activeTab === "booking" ? orders.booking?.items : orders.pickUp)?.map((order) => {
+                            {visibleOrders.map((order) => {
                                 const directionsUrl = getDirectionsUrl(order.location);
-                                const startingSoon = isStartingSoon(order, now);
+                                const isPickupOrder = activeTab === "pickup" || (activeTab === "history" && order.orderKind === "pickup");
+                                const startingSoon = activeTab !== "history" && isStartingSoon(order, now);
                                 return (
-                                    <li key={order.id} className={`w-[95%] md:w-[50%] mx-auto mb-4 p-5 border border-gray-200 rounded-xl shadow-sm bg-white ${order.status === "cancelled" ? "opacity-40" : ""}`}>
+                                    <li
+                                        key={`${order.orderKind || activeTab}-${order.id}`}
+                                        onClick={isPickupOrder ? () => openPickUpDetail(order) : undefined}
+                                        className={`w-[95%] md:w-[50%] mx-auto mb-4 rounded-xl border border-gray-200 bg-white p-5 shadow-sm transition-colors ${isPickupOrder ? "cursor-pointer hover:border-blue-300 hover:bg-blue-50/50" : ""} ${order.status === "cancelled" ? "opacity-40" : ""}`}
+                                    >
 
-                                    {/* 標題與狀態 */}
+                                    {/* 點擊臨打訂單摘要可查看所報名的活動 */}
+                                    <div
+                                        role={isPickupOrder ? "button" : undefined}
+                                        tabIndex={isPickupOrder ? 0 : undefined}
+                                        aria-label={isPickupOrder ? `查看${order.title}臨打團詳細資訊` : undefined}
+                                        onKeyDown={isPickupOrder ? (event) => {
+                                            if (event.key === "Enter" || event.key === " ") {
+                                                event.preventDefault();
+                                                openPickUpDetail(order);
+                                            }
+                                        } : undefined}
+                                        className={isPickupOrder ? "cursor-pointer rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-blue-500" : ""}
+                                    >
                                     <div className="flex justify-between items-start mb-3 gap-3">
                                         <div className="flex min-w-0 flex-wrap items-center gap-2">
                                             <h2 className="text-xl font-bold text-gray-900 break-words">
-                                                {activeTab === "booking"
+                                                {!isPickupOrder
                                                     ? `${order.location?.name} ${order.resource ? `- ${order.resource.name}` : ""}`
                                                     : `${order.title}`}
                                             </h2>
+                                            {activeTab === "history" && <span className="rounded-md bg-gray-100 px-2 py-1 text-xs font-semibold text-gray-600">{isPickupOrder ? "臨打團" : "場地預約"}</span>}
                                             <OrderSportTag order={order} />
                                             {startingSoon && (
                                                 <span className="rounded-md border border-amber-200 bg-amber-50 px-2 py-1 text-xs font-bold text-amber-800">即將開始 · 24 小時內</span>
@@ -226,18 +279,20 @@ export default function OrderPage() {
                                         <p>時間：{formatDateTime(order.start_time).time} - {formatDateTime(order.end_time).time}</p>
                                         <p>地點：{order.location?.name || "未指定"}</p>
                                     </div>
+                                    {isPickupOrder && <p className="mb-3 text-sm font-semibold text-blue-600">點擊查看臨打團詳細資訊 →</p>}
+                                    </div>
 
                                     {/* 按鈕區塊 */}
                                     <div className="flex flex-wrap justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
                                         {directionsUrl && (
-                                            <a href={directionsUrl} target="_blank" rel="noopener noreferrer" className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 sm:w-auto">
+                                            <a href={directionsUrl} target="_blank" rel="noopener noreferrer" onClick={(event) => event.stopPropagation()} className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100 sm:w-auto">
                                                 <MapPinned size={16} aria-hidden="true" />Google Maps 導航
                                             </a>
                                         )}
-                                        {!cancellingIds.has(order.id) && (order.status !== "cancelled" && order.status !== "cancel_request") && !order._cancelRequested && (
+                                        {activeTab !== "history" && !cancellingIds.has(order.id) && (order.status !== "cancelled" && order.status !== "cancel_request") && !order._cancelRequested && (
                                             <button
                                                 className="w-full sm:w-auto border border-red-500 text-red-600 bg-white hover:bg-red-50 text-sm font-semibold py-2 px-6 rounded-lg transition"
-                                                onClick={() => openCancelModal(order)}
+                                                onClick={(event) => { event.stopPropagation(); openCancelModal(order); }}
                                             >
                                                 取消預約
                                             </button>
@@ -283,6 +338,19 @@ export default function OrderPage() {
                     </div>
                 </div>
             )}
+            {selectedPickUpGroup && <div
+                role="presentation"
+                className="fixed inset-0 z-[60] flex items-end bg-black/45 p-0 sm:items-center sm:justify-center sm:p-6"
+                onMouseDown={() => setSelectedPickUpGroup(null)}
+            >
+                <PickUpDetailPopUp
+                    selectedGroup={selectedPickUpGroup}
+                    closeDetailModal={() => setSelectedPickUpGroup(null)}
+                    onContactHost={handleContactHost}
+                    registrationClosed={isRegistrationClosed(selectedPickUpGroup, now)}
+                    hideJoin
+                />
+            </div>}
             {/* 重新載入按鈕 */}
             <button
                 onClick={() => setRefreshTrigger(prev => prev + 1)}

@@ -3,6 +3,7 @@ import VenuePage from '../external/page/VenuePage';
 import BookingPage from '../external/page/BookingPage';
 import PayPage from '../external/page/PayPage';
 import OrderPage from '../external/page/OrderPage';
+import HistoryOrderPage from '../external/page/HistoryOrderPage';
 import PickUpPage from '../external/page/PickUpPage';
 import { AnnouncePage } from '../external/page/AnnouncePage';
 import { UserPage } from '../external/page/UserPage';
@@ -16,6 +17,7 @@ function OutsideApp() {
       <Route path="/group" element={<PickUpPage />} />
       <Route path='/pay' element={<PayPage />} />
       <Route path='/order' element={<OrderPage />} />
+      <Route path='/order/history' element={<HistoryOrderPage />} />
       <Route path='/announce' element={<AnnouncePage />} />
       <Route path="/apply-host" element={<HostApplyPage />} />
       <Route path='/user' element={<UserPage />} />

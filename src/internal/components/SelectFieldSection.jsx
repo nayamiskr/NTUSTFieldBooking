@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../baseApi";
+import { formatHour24 } from "../../utils/dateTimeFormat";
 
 function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate}) {
   const navigate = useNavigate();
@@ -215,8 +216,8 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate})
 
           <tbody>
             {HOURS.map((h) => {
-              const start = `${h}:00`;
-              const end = `${h + 1}:00`;
+              const start = formatHour24(h);
+              const end = formatHour24(h + 1);
 
               return (
                 <tr key={h} className="bg-white">
@@ -306,7 +307,7 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate})
             {(() => {
               const startHour = Math.min(...selectedSlots.hours);
               const endHour = Math.max(...selectedSlots.hours) + 1;
-              return `你已選擇：${startHour}:00 - ${endHour}:00`;
+              return `你已選擇：${formatHour24(startHour)} - ${formatHour24(endHour)}`;
             })()}
             <br />
             {`場地：${fields[selectedSlots.fieldIdx].name} / 第 ${selectedSlots.resourceIdx + 1} 面`}
@@ -325,7 +326,7 @@ function SelectFieldSection({ token, fields, fieldChecked = null, selectedDate})
                   fieldKey: fields[selectedSlots.fieldIdx].resources[selectedSlots.resourceIdx].id,
                   resourceIdx: selectedSlots.resourceIdx,
                   date: selectedDate.toLocaleDateString("zh-TW"),
-                  timeRange: `${startHour}:00 - ${endHour}:00`,
+                  timeRange: `${formatHour24(startHour)} - ${formatHour24(endHour)}`,
                   hours: selectedSlots.hours.length,
                 },
               });

@@ -5,6 +5,7 @@ import Calendar from "../../components/dayPicker/dayPick";
 import { useState, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import FieldPicker from "../../components/fieldPicker";
+import { formatHour24 } from "../../utils/dateTimeFormat";
 
 const OPEN_HOUR = 8;
 const CLOSE_HOUR = 22;
@@ -193,7 +194,7 @@ function Bookpage() {
                                     return (
                                         <tr key={hour} className="hover:bg-gray-50 transition">
                                             <td className="px-2 py-2 border border-gray-300 sticky left-0 bg-blue-50 text-sm z-50">
-                                                {`${hour}:00 - ${hour + 1}:00`}
+                                                {`${formatHour24(hour)} - ${formatHour24(hour + 1)}`}
                                             </td>
 
                                             {Array.from({ length: 7 }).map((_, i) => {

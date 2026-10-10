@@ -23,7 +23,7 @@ const paymentStatuses = { pending: "待付款", done: "已付款", failed: "付�
 export function formatNotificationDate(value) {
   const date = value ? new Date(value) : null;
   return date && !Number.isNaN(date.getTime())
-    ? new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short" }).format(date)
+    ? new Intl.DateTimeFormat("zh-TW", { dateStyle: "medium", timeStyle: "short", hourCycle: "h23" }).format(date)
     : "時間未提供";
 }
 

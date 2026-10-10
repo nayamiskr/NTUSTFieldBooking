@@ -4,6 +4,7 @@ import { Link, useParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { useAuthStore } from "../../store/authStore";
 import { getUserProfile } from "../../service/userService";
+import { notificationService } from "../../service/notificationService";
 import './navbar.css';
 
 function Navbar() {
@@ -11,6 +12,7 @@ function Navbar() {
   const setLogout = useAuthStore((state) => state.setLogout);
   const [user, setUser] = useState(null);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [unread, setUnread] = useState({ count: 0, exact: true });
   const dropdownRef = useRef(null);
 
   useEffect(() => {
@@ -38,6 +40,36 @@ function Navbar() {
     return () => document.removeEventListener("mousedown", closeMenuWhenClickOutside);
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    let requestId = 0;
+    const loadUnread = async () => {
+      const currentRequest = ++requestId;
+      try {
+        const count = await notificationService.getUnreadCount();
+        if (active && currentRequest === requestId) setUnread({ count, exact: true });
+      } catch {
+        try {
+          const list = await notificationService.getList({ page: 1, pageSize: 20 });
+          const count = list.items.filter((item) => !item.is_read).length;
+          if (active && currentRequest === requestId) setUnread({ count, exact: false });
+        } catch {
+          if (active && currentRequest === requestId) setUnread({ count: 0, exact: false });
+        }
+      }
+    };
+    loadUnread();
+    const timer = window.setInterval(loadUnread, 60000);
+    window.addEventListener("focus", loadUnread);
+    window.addEventListener("notifications:changed", loadUnread);
+    return () => {
+      active = false;
+      window.clearInterval(timer);
+      window.removeEventListener("focus", loadUnread);
+      window.removeEventListener("notifications:changed", loadUnread);
+    };
+  }, []);
+
   // 安全登出流程
   const handleLogout = (e) => {
     e.preventDefault(); 
@@ -48,6 +80,11 @@ function Navbar() {
   };
 
   const currentType = fieldType || "badminton";
+  const hasUnread = unread.count > 0;
+  const notificationLabel = hasUnread
+    ? unread.exact ? `通知，${unread.count} 則未讀` : "通知，有未讀通知"
+    : "通知";
+  const badge = hasUnread && <span className="notification-badge" aria-hidden="true">{unread.exact ? unread.count > 99 ? "99+" : unread.count : ""}</span>;
 
   return (
     <nav className="navbar">
@@ -59,7 +96,7 @@ function Navbar() {
       <ul className="navbar-center">
         <li><Link to="/external/group">臨打</Link></li>
         <li><Link to={`/external/home/${currentType}`}>場地</Link></li>
-        <li><Link to="/external/announce">公告</Link></li>
+        <li><Link className="nav-notification-link" aria-label={notificationLabel} to="/external/announce">通知{badge}</Link></li>
         <li><Link to="/external/order">我的預約</Link></li>
       </ul>
       
@@ -67,6 +104,7 @@ function Navbar() {
         <button
           type="button"
           className="icon-container"
+          aria-label={hasUnread ? "選單，有未讀通知" : "選單"}
           aria-expanded={isMenuOpen}
           aria-controls="user-menu"
           onClick={() => setIsMenuOpen((isOpen) => !isOpen)}
@@ -82,6 +120,7 @@ function Navbar() {
               />
             )}
           </span>
+          {hasUnread && <span className="notification-menu-dot" aria-hidden="true" />}
         </button>
         
         {/* dropdown content */}
@@ -99,8 +138,9 @@ function Navbar() {
           <div className="dropdown-links">
             <Link onClick={() => setIsMenuOpen(false)} to="/external/group">臨打</Link>
             <Link onClick={() => setIsMenuOpen(false)} to={`/external/home/${currentType}`}>場地</Link>
-            <Link onClick={() => setIsMenuOpen(false)} to="/external/announce">公告</Link>
+            <Link className="nav-notification-link" aria-label={notificationLabel} onClick={() => setIsMenuOpen(false)} to="/external/announce">通知{badge}</Link>
             <Link onClick={() => setIsMenuOpen(false)} to="/external/order">我的預約</Link>
+            <Link onClick={() => setIsMenuOpen(false)} to="/external/order/history">歷史預約</Link>
             <Link onClick={() => setIsMenuOpen(false)} to="/external/user">個人資料</Link>
           </div>
           <a className="logout-link" href="/" onClick={handleLogout}>登出</a>

@@ -67,8 +67,12 @@ export const pickUpService = {
   },
 
   // 報名臨打團
-  joinPickUpGroup: async (groupId) => {
-    const res = await api.post(`/pickup-groups/${groupId}/orders`);
+  joinPickUpGroup: async (groupId, payload) => {
+    const path = `/pickup-groups/${groupId}/party-orders`;
+    if (payload) {
+      console.log(`[團體報名 API]\nPOST ${path}\nContent-Type: application/json\n\n${JSON.stringify(payload, null, 2)}`);
+    }
+    const res = await api.post(path, payload);
     return res.data;
   },
 
@@ -94,6 +98,13 @@ export const pickUpService = {
           sport: pickUpdetail.sport || order.sport,
           start_time: pickUpdetail.start_time,
           end_time: pickUpdetail.end_time,
+          pickupGroup: {
+            ...pickUpdetail,
+            location: locationInfo,
+            facilities: typeof locationInfo?.facility === "string"
+              ? locationInfo.facility.split("_").filter(Boolean) : [],
+            enrolledStatus: order.status || "pending",
+          },
         };
       }),
     );

@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import api from "../../baseApi";
 import { useAuthStore } from "../../store/authStore";
 import { earliestBookingDate } from "../bookingWindow";
+import { formatClock24, formatHour24 } from "../../utils/dateTimeFormat";
+import { bookingSlotKey, groupBookingSlots } from "../bookingSelection";
 
 const HOURS = Array.from({ length: 24 }, (_, index) => index);
 const WEEKDAYS = ["日", "一", "二", "三", "四", "五", "六"];
-const hourText = (hour) => `${String(hour).padStart(2, "0")}:00`;
+const hourText = formatHour24;
 const dateKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 const priceText = (price) => Number.isFinite(Number(price)) ? `NT$ ${Number(price).toLocaleString("zh-TW")}` : "價格未提供";
 const resourceLabel = (resource, index) => typeof resource?.name === "string" && resource.name.trim() ? resource.name.trim() : `第 ${index + 1} 面`;
@@ -59,7 +61,8 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
   const [error, setError] = useState(false);
   const [availableOnly, setAvailableOnly] = useState(false);
   const [viewMode, setViewMode] = useState(detailMode ? "week" : "table");
-  const [selection, setSelection] = useState(null);
+  const [selection, setSelection] = useState([]);
+  const [selectionError, setSelectionError] = useState("");
   const availabilityCache = useRef(new Map());
   const [availabilityByKey, setAvailabilityByKey] = useState({});
   const now = new Date();
@@ -82,11 +85,9 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
   useEffect(() => {
     if (selectedVenueId == null) {
       if (!detailMode) setViewMode("table");
-      setSelection(null);
       return;
     }
     setViewMode("week");
-    setSelection(null);
   }, [selectedVenueId, detailMode]);
 
   useEffect(() => {
@@ -97,7 +98,6 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
     end.setDate(end.getDate() + 7);
     setLoading(true);
     setError(false);
-    setSelection(null);
     if (!userId) {
       setBookings([]);
       setError(true);
@@ -168,7 +168,8 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
     if (!bookableHours(field).includes(hour)) return "未開放";
     if (slotStart <= now) return "已過時段";
     if (slotStart < firstBookableDate) return "需提前 7 天";
-    const availability = availabilityByKey[availabilityKey(resource.id, date)];
+    const key = availabilityKey(resource.id, date);
+    const availability = availabilityByKey[key] ?? availabilityCache.current.get(key);
     if (!availability || availability.error) return "未確認";
     const slotEnd = new Date(slotStart);
     slotEnd.setHours(slotEnd.getHours() + 1);
@@ -184,42 +185,44 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
   const visibleFields = availableOnly && !availabilityLoading && !availabilityError ? fields.filter(hasAvailability) : fields;
   const visibleHours = [...new Set(visibleFields.flatMap(bookableHours))].sort((a, b) => a - b);
   const focusedHours = bookableHours(focusedField);
-  const selectedField = fields.find((field) => String(field.id) === String(selection?.fieldId));
-  const selectedResource = selectedField?.resources.find((resource) => String(resource.id) === String(selection?.resourceId));
-  const selectedResourceLabel = selectedResource ? resourceLabel(selectedResource, selectedField.resources.indexOf(selectedResource)) : "";
-  const hours = selection?.hours || [];
-  const selectedDay = selection?.date || selectedDate;
-  const totalPrice = Number(selectedResource?.price) * hours.length;
+  const bookingItems = groupBookingSlots(selection);
+  const totalPrice = bookingItems.reduce((sum, item) => sum + item.totalPrice, 0);
+  const isSelected = (resource, hour, date) => selection.some((slot) =>
+    bookingSlotKey(slot.resourceId, slot.date, slot.hour) === bookingSlotKey(resource.id, dateKey(date), hour)
+  );
 
   function chooseHour(field, resource, hour, date = selectedDate) {
-    if (!isAvailable(field, resource, hour, date)) return;
+    const day = dateKey(date);
+    const key = bookingSlotKey(resource.id, day, hour);
+    const alreadySelected = selection.some((slot) => bookingSlotKey(slot.resourceId, slot.date, slot.hour) === key);
+    if (!alreadySelected && !isAvailable(field, resource, hour, date)) return;
+    setSelectionError("");
     setSelection((previous) => {
-      if (previous?.fieldId !== field.id || previous?.resourceId !== resource.id || dateKey(previous.date) !== dateKey(date)) {
-        return { fieldId: field.id, resourceId: resource.id, date, hours: [hour] };
+      if (previous.some((slot) => bookingSlotKey(slot.resourceId, slot.date, slot.hour) === key)) {
+        return previous.filter((slot) => bookingSlotKey(slot.resourceId, slot.date, slot.hour) !== key);
       }
-      if (previous.hours.includes(hour)) {
-        const remaining = previous.hours.filter((item) => item !== hour);
-        return remaining.length ? { ...previous, hours: remaining } : null;
-      }
-      const next = [...previous.hours, hour].sort((a, b) => a - b);
-      const contiguous = next.every((item, index) => index === 0 || item === next[index - 1] + 1);
-      return { ...previous, hours: contiguous ? next : [hour] };
+      return [...previous, {
+        fieldId: field.id, fieldName: field.name,
+        resourceId: resource.id,
+        resourceName: resourceLabel(resource, field.resources.indexOf(resource)),
+        date: day, hour, price: resource.price,
+      }];
     });
   }
 
   function continueBooking() {
-    if (!selectedField || !selectedResource || !hours.length || !Number.isFinite(totalPrice)) return;
-    if (!hours.every((hour) => isAvailable(selectedField, selectedResource, hour, selectedDay))) return;
-    navigate("/external/pay", { state: {
-      fieldName: selectedField.name,
-      fieldId: selectedField.id,
-      resourceName: selectedResourceLabel,
-      resourceIdx: selectedResource.id,
-      date: selectedDay.toLocaleDateString("zh-TW"),
-      timeRange: `${hourText(hours[0])} - ${hourText(hours[hours.length - 1] + 1)}`,
-      hours: hours.length,
-      totalPrice,
-    } });
+    if (!selection.length || !Number.isFinite(totalPrice)) return;
+    const valid = selection.every((slot) => {
+      const field = fields.find((item) => String(item.id) === String(slot.fieldId));
+      const resource = field?.resources.find((item) => String(item.id) === String(slot.resourceId));
+      const [year, month, day] = slot.date.split("-").map(Number);
+      return field && resource && isAvailable(field, resource, slot.hour, new Date(year, month - 1, day));
+    });
+    if (!valid) {
+      setSelectionError("部分已選時段目前無法預約，請取消該時段或清除選取後重新選擇。");
+      return;
+    }
+    navigate("/external/pay", { state: { bookingItems, totalPrice } });
   }
 
   return <section id="venue-booking-section" aria-label="場地與可預約時段" className="mx-auto max-w-7xl scroll-mt-4 px-4 pb-36 sm:px-6">
@@ -227,6 +230,7 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
       <div>
         <h2 className="text-2xl font-bold text-slate-900">{detailMode ? "預約時段" : "選擇場地與時段"}</h2>
         <p className="mt-1 text-sm text-slate-600">{viewMode === "week" && focusedField ? `${focusedField.name}・${weekDates[0].toLocaleDateString("zh-TW")} 至 ${weekDates[6].toLocaleDateString("zh-TW")}` : `${selectedDate.toLocaleDateString("zh-TW", { year: "numeric", month: "long", day: "numeric", weekday: "long" })}・${visibleFields.length} 個場地`}</p>
+        <p className="mt-1 text-xs text-slate-500">可同時選擇不同場面與時段；再次點擊已選時段可取消。</p>
       </div>
       {!detailMode && <div className="flex flex-wrap gap-2">
         {viewMode !== "week" && <button type="button" aria-pressed={availableOnly} onClick={() => setAvailableOnly((value) => !value)}
@@ -244,6 +248,7 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
     {(loading || availabilityLoading) && <p role="status" className="mb-4 rounded-xl bg-blue-50 p-4 text-sm text-blue-800">正在確認場地可預約時段…</p>}
     {error && <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{userId ? "目前無法確認我的預約時段，請稍後重新整理頁面。" : "請先登入，才能確認自己的預約時段。"}</p>}
     {availabilityError && <p role="alert" className="mb-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">部分場地時段暫時無法確認，請稍後重新整理頁面。</p>}
+    {selectionError && <p role="alert" className="mb-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">{selectionError}</p>}
     {!loading && !availabilityLoading && viewMode !== "week" && !visibleFields.length && <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-600">{availableOnly ? "這個日期目前沒有符合條件的場地，試試其他日期。" : "目前沒有場地資料。"}</p>}
     {viewMode === "table" && visibleFields.length > 0 && !visibleHours.length && <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-600">目前沒有可顯示的營業時段。</p>}
     {viewMode === "week" && focusedField && !focusedHours.length && <p className="rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-600">{focusedField.opening === false ? "此場地目前暫停開放。" : "目前沒有可顯示的營業時段。"}</p>}
@@ -265,8 +270,8 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
             {bookableHours(field).includes(hour) ? <div className="flex min-w-max justify-center gap-2">{field.resources.map((resource, index) => {
               const status = slotStatus(field, resource, hour);
               const available = status === "可選擇";
-              const selected = selection?.fieldId === field.id && selection?.resourceId === resource.id && hours.includes(hour);
-              return <button key={resource.id} type="button" disabled={!available} onClick={() => chooseHour(field, resource, hour)} aria-pressed={selected}
+              const selected = isSelected(resource, hour, selectedDate);
+              return <button key={resource.id} type="button" disabled={!available && !selected} onClick={() => chooseHour(field, resource, hour)} aria-pressed={selected}
                 aria-label={`${field.name}${resourceLabel(resource, index)} ${hourText(hour)} 至 ${hourText(hour + 1)}，${status}`}
                 title={`${resourceLabel(resource, index)}・${priceText(resource.price)} / 小時`}
                 className={`min-h-11 min-w-16 rounded-lg border px-3 py-1 font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${selected ? "border-blue-700 bg-blue-700 text-white" : available ? "border-blue-200 bg-blue-50 text-blue-800 hover:border-blue-600 hover:bg-blue-100" : status === "我已預約" ? "cursor-not-allowed border-amber-200 bg-amber-50 text-amber-800" : "cursor-not-allowed border-slate-100 bg-slate-100 text-slate-400"}`}>
@@ -294,8 +299,8 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
             <div className="flex min-w-max justify-center gap-2">{focusedField.resources.map((resource, index) => {
               const status = slotStatus(focusedField, resource, hour, date);
               const available = status === "可選擇";
-              const selected = selection?.fieldId === focusedField.id && selection?.resourceId === resource.id && selection?.date && dateKey(selection.date) === dateKey(date) && hours.includes(hour);
-              return <button key={resource.id} type="button" disabled={!available} onClick={() => chooseHour(focusedField, resource, hour, date)} aria-pressed={Boolean(selected)}
+              const selected = isSelected(resource, hour, date);
+              return <button key={resource.id} type="button" disabled={!available && !selected} onClick={() => chooseHour(focusedField, resource, hour, date)} aria-pressed={Boolean(selected)}
                 aria-label={`${date.getMonth() + 1}月${date.getDate()}日 ${resourceLabel(resource, index)} ${hourText(hour)} 至 ${hourText(hour + 1)}，${status}`}
                 title={`${resourceLabel(resource, index)}・${priceText(resource.price)} / 小時`}
                 className={`min-h-11 min-w-20 rounded-lg border px-2 py-1 text-xs font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${selected ? "border-blue-700 bg-blue-700 text-white" : available ? "border-blue-200 bg-blue-50 text-blue-800 hover:border-blue-600 hover:bg-blue-100" : status === "我已預約" ? "cursor-not-allowed border-amber-200 bg-amber-50 text-amber-800" : "cursor-not-allowed border-slate-100 bg-slate-100 text-slate-400"}`}>
@@ -315,7 +320,7 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
               {availabilityLoading ? "確認中" : availabilityError ? "部分未確認" : hasAvailability(field) ? "有可選時段" : "暫無空位"}
             </span>
           </div>
-          <p className="mt-4 text-sm text-slate-600">開放時間 {field.opening_hours_start?.slice(0, 5) || "未提供"}–{field.opening_hours_end?.slice(0, 5) || "未提供"}　・　{field.resources.length} 面場地</p>
+          <p className="mt-4 text-sm text-slate-600">開放時間 {formatClock24(field.opening_hours_start)}–{formatClock24(field.opening_hours_end)}　・　{field.resources.length} 面場地</p>
         </div>
         <div className="space-y-5 p-5 sm:p-6">
           {field.resources.map((resource, index) => <div key={resource.id}>
@@ -324,8 +329,8 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
               {bookableHours(field).map((hour) => {
                 const status = slotStatus(field, resource, hour);
                 const available = status === "可選擇";
-                const selected = selection?.fieldId === field.id && selection?.resourceId === resource.id && hours.includes(hour);
-                return <button key={hour} type="button" disabled={!available} onClick={() => chooseHour(field, resource, hour)} aria-pressed={selected}
+                const selected = isSelected(resource, hour, selectedDate);
+                return <button key={hour} type="button" disabled={!available && !selected} onClick={() => chooseHour(field, resource, hour)} aria-pressed={selected}
                   aria-label={`${resourceLabel(resource, index)} ${hourText(hour)} 至 ${hourText(hour + 1)}，${status}`}
                   className={`min-h-11 rounded-lg border px-2 py-2 text-sm font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${selected ? "border-blue-700 bg-blue-700 text-white" : available ? "border-blue-200 bg-blue-50 text-blue-800 hover:border-blue-600 hover:bg-blue-100" : status === "我已預約" ? "cursor-not-allowed border-amber-200 bg-amber-50 text-amber-800" : "cursor-not-allowed border-slate-100 bg-slate-100 text-slate-400"}`}><span className="block">{hourText(hour)}</span>{["需提前 7 天", "我已預約"].includes(status) && <span className="block text-[10px]">{status}</span>}</button>;
               })}
@@ -336,12 +341,12 @@ export default function VenueBookingCards({ fields, selectedDate, selectedVenueI
         </div>
       </article>)}
     </div>}
-    {selectedField && selectedResource && hours.length > 0 && <div className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white px-4 py-3 shadow-2xl sm:px-6">
+    {selection.length > 0 && <div className="fixed inset-x-0 bottom-0 z-50 border-t border-slate-200 bg-white px-4 py-3 shadow-2xl sm:px-6">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 sm:flex-nowrap">
-        <div className="min-w-0 flex-1 text-sm"><p className="truncate font-bold">{selectedField.name}・{selectedResourceLabel}</p><p className="text-slate-600">{selectedDay.toLocaleDateString("zh-TW")}　{hourText(hours[0])}–{hourText(hours[hours.length - 1] + 1)}</p></div>
+        <div className="min-w-0 flex-1 text-sm"><p className="font-bold">已選 {selection.length} 個時段・{bookingItems.length} 筆預約</p><p className={selectionError ? "text-red-700" : "text-slate-600"}>{selectionError || "可複選不同場面、日期及不連續時段"}</p></div>
         <strong className="text-lg text-blue-800">{priceText(totalPrice)}</strong>
         <button type="button" onClick={continueBooking} className="min-h-11 rounded-xl bg-blue-700 px-5 py-2 font-semibold text-white hover:bg-blue-800">前往確認</button>
-        <button type="button" onClick={() => setSelection(null)} aria-label="清除選取" className="rounded-lg p-2 text-slate-600 hover:bg-slate-100">✕</button>
+        <button type="button" onClick={() => { setSelection([]); setSelectionError(""); }} aria-label="清除選取" className="rounded-lg p-2 text-slate-600 hover:bg-slate-100">✕</button>
       </div>
     </div>}
   </section>;

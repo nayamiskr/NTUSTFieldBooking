@@ -8,6 +8,7 @@ import Loading from "../../components/loading";
 import api from "../../baseApi";
 import { facilityMap } from "../../constant/IconMap";
 import { earliestBookingDate } from "../bookingWindow";
+import { formatClock24 } from "../../utils/dateTimeFormat";
 
 const splitItems = (value) => typeof value === "string" ? value.split(/[,，;；\n]+/).map((item) => item.trim()).filter(Boolean) : [];
 const splitFacilities = (value) => typeof value === "string" ? value.split(/[,，;；\n_]+/).map((item) => item.trim()).filter(Boolean) : [];
@@ -106,7 +107,7 @@ export default function BookingPage() {
             </div>
             <p className="mt-4 max-w-3xl whitespace-pre-line leading-7 text-slate-600">{location.description?.trim() || "此場地尚未提供詳細介紹。"}</p>
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <div className="rounded-xl bg-slate-50 p-4"><p className="flex items-center gap-2 text-sm text-slate-500"><Clock3 size={16} />開放時間</p><p className="mt-2 font-bold">{location.opening_hours_start?.slice(0, 5) || "未提供"}–{location.opening_hours_end?.slice(0, 5) || "未提供"}</p></div>
+              <div className="rounded-xl bg-slate-50 p-4"><p className="flex items-center gap-2 text-sm text-slate-500"><Clock3 size={16} />開放時間</p><p className="mt-2 font-bold">{formatClock24(location.opening_hours_start)}–{formatClock24(location.opening_hours_end)}</p></div>
               <div className="rounded-xl bg-slate-50 p-4"><p className="flex items-center gap-2 text-sm text-slate-500"><Users size={16} />容納人數</p><p className="mt-2 font-bold">{Number(location.capacity) > 0 ? `${location.capacity} 人` : "未提供"}</p></div>
               <div className="rounded-xl bg-slate-50 p-4"><p className="flex items-center gap-2 text-sm text-slate-500"><Building2 size={16} />可預約場面</p><p className="mt-2 font-bold">{resources.length} 面</p></div>
             </div>

@@ -34,6 +34,45 @@
     color: black;
 }
 
+.nav-notification-link {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+}
+
+.notification-badge {
+    display: inline-flex;
+    min-width: 18px;
+    height: 18px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 999px;
+    background: #dc2626;
+    color: white;
+    padding: 0 4px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.notification-badge:empty {
+    min-width: 9px;
+    width: 9px;
+    height: 9px;
+    padding: 0;
+}
+
+.notification-menu-dot {
+    position: absolute;
+    top: -3px;
+    right: -3px;
+    width: 10px;
+    height: 10px;
+    border: 2px solid white;
+    border-radius: 50%;
+    background: #dc2626;
+}
+
 .navbar-center li::after {
     content: "";
     position: absolute;
@@ -50,6 +89,7 @@
 }
 
 .icon-container {
+    position: relative;
     width: 82px;
     height: 42px;
     align-items: center;

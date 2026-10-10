@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { formatHour24 } from "../../utils/dateTimeFormat";
 
 function SelectFieldSection({ fields, fieldChecked = null, selectedDate, defaultViewMode }) {
   const navigate = useNavigate();
@@ -146,8 +147,8 @@ function SelectFieldSection({ fields, fieldChecked = null, selectedDate, default
 
           <tbody>
             {HOURS.map((h) => {
-              const start = `${h}:00`;
-              const end = `${h + 1}:00`;
+              const start = formatHour24(h);
+              const end = formatHour24(h + 1);
               const isLunch = h === 0; // 之後依需求改成訂單判斷
 
               return (
@@ -179,7 +180,7 @@ function SelectFieldSection({ fields, fieldChecked = null, selectedDate, default
                                   ? "bg-gray-200 text-gray-500"
                                   : "bg-blue-100 text-blue-600 hover:bg-blue-200"
                                 } w-8 h-10 rounded-full font-semibold flex items-center justify-center transition`}
-                              title={`第 ${i + 1} 面場地 / ${h}:00-${h + 1}:00`}
+                              title={`第 ${i + 1} 面場地 / ${start}-${end}`}
                             >
                               {i + 1}
                             </button>
@@ -238,8 +239,8 @@ function SelectFieldSection({ fields, fieldChecked = null, selectedDate, default
               </tr>
             ) : (
               HOURS.map((h) => {
-                const start = `${h}:00`;
-                const end = `${h + 1}:00`;
+                const start = formatHour24(h);
+                const end = formatHour24(h + 1);
                 const isLunch = h === 20; // 之後依需求改成訂單判斷
 
                 return (
@@ -318,7 +319,7 @@ function SelectFieldSection({ fields, fieldChecked = null, selectedDate, default
             {(() => {
               const startHour = Math.min(...selectedSlots.hours);
               const endHour = Math.max(...selectedSlots.hours) + 1;
-              return `你已選擇：${startHour}:00 - ${endHour}:00`;
+              return `你已選擇：${formatHour24(startHour)} - ${formatHour24(endHour)}`;
             })()}
             <br />
             {`場地：${fields[selectedSlots.fieldIdx].name} / 第 ${selectedSlots.resourceIdx + 1} 面`}
@@ -342,7 +343,7 @@ function SelectFieldSection({ fields, fieldChecked = null, selectedDate, default
                   date: selectedSlots.date
                     ? new Date(selectedSlots.date).toLocaleDateString("zh-TW")
                     : new Date().toLocaleDateString("zh-TW"),
-                  timeRange: `${startHour}:00 - ${endHour}:00`,
+                  timeRange: `${formatHour24(startHour)} - ${formatHour24(endHour)}`,
                   hours: selectedSlots.hours.length,
                   totalPrice: getSelectedTotalPrice(),
                 },

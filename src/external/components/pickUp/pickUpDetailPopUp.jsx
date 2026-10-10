@@ -2,7 +2,7 @@ import { statusMap } from "../../../constant/statusMap";
 import { formatDateTime } from "../../../utils/dateTimeFormat";
 import { facilityMap, functionIconMap, InfoIconMap, sportIconMap } from "../../../constant/IconMap";
 
-export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, closeDetailModal, isClosing, onContactHost, joining }) {
+export default function PickUpDetailPopUp({ selectedGroup, onRequestJoin, closeDetailModal, isClosing, onContactHost, joining, registrationClosed = false, hideJoin = false }) {
     const isFull = Number(selectedGroup.current_enrolled || 0) >= Number(selectedGroup.capacity || 0);
     const status = selectedGroup.enrolledStatus;
     const canJoin = status === null && !isFull;
@@ -61,6 +61,7 @@ export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, clos
                             <span className="text-base">{InfoIconMap.host?.icon}</span>
                             {selectedGroup.current_enrolled || 0}/{selectedGroup.capacity || 0} 人
                         </span>
+                        {registrationClosed && <span className="rounded-md bg-red-100 px-2.5 py-1 font-semibold text-red-700">報名已截止</span>}
                     </div>
                 </div>
                 <button
@@ -95,6 +96,10 @@ export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, clos
                                     <p className="mt-0.5 font-bold">{formatDateTime(selectedGroup.end_time).time}</p>
                                 </div>
                             </div>
+                        </div>
+                        <div className="mt-3 border-t border-gray-100 pt-3">
+                            <p className="text-xs font-semibold text-gray-500">報名截止日期</p>
+                            <p className="mt-1 font-semibold text-gray-500">{formatDateTime(selectedGroup.registration_deadline).date} {formatDateTime(selectedGroup.registration_deadline).time}</p>
                         </div>
                     </div>
 
@@ -210,21 +215,20 @@ export default function PickUpDetailPopUp({ selectedGroup, handleJoinGroup, clos
                 >
                     關閉
                 </button>
-                <button
+                {!hideJoin && <button
                     type="button"
                     disabled={!canJoin || joining}
-                    onClick={async () => {
-                        const joined = await handleJoinGroup(selectedGroup.id);
-                        if (joined) closeDetailModal();
-                    }}
-                    className={`min-h-11 flex-1 rounded-lg px-4 font-bold text-white transition ${!canJoin || joining ? "cursor-not-allowed opacity-60" : "hover:opacity-90"} ${isFull && status === null ? statusMap.full.class : (statusMap[status]?.class || statusMap.default.class)}`}
+                    onClick={() => onRequestJoin(selectedGroup)}
+                    className={`min-h-11 flex-1 rounded-lg px-4 font-bold text-white transition ${!canJoin || joining ? "cursor-not-allowed opacity-60" : "hover:opacity-90"} ${registrationClosed && canJoin ? "bg-gray-500" : isFull && status === null ? statusMap.full.class : (statusMap[status]?.class || statusMap.default.class)}`}
                 >
                     {joining ? "處理中..." : status !== null
                         ? (statusMap[status]?.label || statusMap.default.label)
+                        : registrationClosed && !isFull
+                            ? "報名已截止"
                         : isFull
                             ? statusMap.full.label
                             : statusMap.default.label}
-                </button>
+                </button>}
             </div>
         </section>
     )
