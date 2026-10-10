@@ -40,6 +40,11 @@ const isStartingSoon = (order, now, isPickupOrder) => {
     return Number.isFinite(startTime) && timeUntilStart > 0 && timeUntilStart <= STARTING_SOON_WINDOW_MS;
 };
 
+const isPickupCancellationClosed = (order, now) => {
+    const startTime = new Date(order?.start_time ?? order?.start).getTime();
+    return Number.isFinite(startTime) && startTime - now < STARTING_SOON_WINDOW_MS;
+};
+
 const resourceSportCodes = {
     baseball: "BASEBALL",
     volleyball: "VOLLEYBALL",
@@ -125,6 +130,10 @@ export default function OrderPage({ historyOnly = false }) {
     }, [refreshTrigger]);
 
     const openCancelModal = (order) => {
+        if (activeTab === "pickup" && isPickupCancellationClosed(order, Date.now())) {
+            setNow(Date.now());
+            return;
+        }
         setCancelActionError(null);
         setSelectedCancelOrder({
             id: order.id,
@@ -161,6 +170,13 @@ export default function OrderPage({ historyOnly = false }) {
 
     const confirmCancel = async () => {
         if (!selectedCancelOrder?.id) return;
+        if (activeTab === "pickup" && isPickupCancellationClosed(selectedCancelOrder, Date.now())) {
+            setNow(Date.now());
+            setCancelModalOpen(false);
+            setSelectedCancelOrder(null);
+            setCancelActionError(null);
+            return;
+        }
         const orderId = selectedCancelOrder.id;
 
         setCancellingIds((prev) => {
@@ -276,6 +292,7 @@ export default function OrderPage({ historyOnly = false }) {
                                 const end = isPickupOrder ? formatDateTime(order.end_time) : formatBookingDateTime(order.end_time, order);
                                 const partyDetails = isPickupOrder ? getPickUpPartyDetails(order) : null;
                                 const startingSoon = activeTab !== "history" && isStartingSoon(order, now, isPickupOrder);
+                                const pickupCancellationClosed = isPickupOrder && isPickupCancellationClosed(order, now);
                                 return (
                                     <li
                                         key={`${order.orderKind || activeTab}-${order.id}`}
@@ -326,6 +343,15 @@ export default function OrderPage({ historyOnly = false }) {
                                     {isPickupOrder && <p className="mb-3 text-sm font-semibold text-blue-600">點擊查看臨打團詳細資訊 →</p>}
                                     </div>
                                     {partyDetails && <PickUpPartyInfo details={partyDetails} />}
+                                    {activeTab === "pickup" && order.status === "confirmed" && (
+                                        <p className={`mt-3 rounded-lg px-3 py-2 text-sm ${pickupCancellationClosed
+                                            ? "bg-amber-50 font-semibold text-amber-900"
+                                            : "bg-blue-50 text-blue-800"}`}>
+                                            {pickupCancellationClosed
+                                                ? "距離活動開始不到 24 小時，已無法取消報名。"
+                                                : "活動開始前 24 小時內將無法取消報名。"}
+                                        </p>
+                                    )}
 
                                     {/* 按鈕區塊 */}
                                     <div className="flex flex-wrap justify-end gap-2 mt-4 pt-4 border-t border-gray-100">
@@ -334,7 +360,7 @@ export default function OrderPage({ historyOnly = false }) {
                                                 <MapPinned size={16} aria-hidden="true" />Google Maps 導航
                                             </a>
                                         )}
-                                        {activeTab !== "history" && !cancellingIds.has(order.id) && !["cancelled", "cancel_request", "cancelled_request"].includes(order.status) && !order._cancelRequested && (
+                                        {activeTab !== "history" && !pickupCancellationClosed && !cancellingIds.has(order.id) && !["cancelled", "cancel_request", "cancelled_request"].includes(order.status) && !order._cancelRequested && (
                                             <button
                                                 className="w-full sm:w-auto border border-red-500 text-red-600 bg-white hover:bg-red-50 text-sm font-semibold py-2 px-6 rounded-lg transition"
                                                 onClick={(event) => { event.stopPropagation(); openCancelModal(order); }}
